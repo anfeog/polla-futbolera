@@ -3,111 +3,201 @@
 {% block content %}
 
 <!-- Header -->
-<div class="text-center mb-8">
-    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-2">Evolución</p>
-    <h1 class="font-heavy text-4xl sm:text-5xl mb-2 brand-gradient">GRÁFICAS</h1>
-    <p class="text-white/50 text-sm max-w-md mx-auto">Puntos acumulados de cada jugador a lo largo del Mundial.</p>
+<div class="text-center mb-6">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-2">Estadísticas</p>
+    <h1 class="font-heavy text-4xl sm:text-5xl mb-1 brand-gradient">GRÁFICAS</h1>
+    <a href="/ranking" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition">← Volver a la tabla</a>
 </div>
 
 {% if not has_data %}
 <div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-12 text-center">
     <p class="text-4xl mb-3">📈</p>
     <p class="font-display text-base uppercase tracking-wide text-white/60 mb-1">Aún no hay datos</p>
-    <p class="text-white/40 text-sm">La gráfica se irá dibujando a medida que terminen los partidos y se sumen puntos.</p>
+    <p class="text-white/40 text-sm">Las gráficas se dibujarán a medida que terminen los partidos.</p>
 </div>
 {% else %}
 
-<!-- Gráfica -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-6 mb-6">
-    <div class="relative" style="height: 360px;">
-        <canvas id="pointsChart"></canvas>
-    </div>
-</div>
+<!-- Carrusel -->
+<div class="relative">
 
-<!-- Leyenda con totales -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.05] to-transparent border border-white/10 overflow-hidden">
-    <div class="px-5 py-3 border-b border-white/10">
-        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/60">Total actual</h2>
-    </div>
-    <div class="divide-y divide-white/5">
-    {% for d in datasets %}
-        <div class="flex items-center gap-3 px-5 py-3">
-            <span class="w-3 h-3 rounded-full shrink-0" style="background: {{ d.color }};"></span>
-            <span class="text-lg leading-none">{{ d.avatar }}</span>
-            <span class="flex-1 font-display text-sm uppercase tracking-wide text-white/80 truncate">{{ d.label }}</span>
-            <span class="font-heavy text-xl" style="color: {{ d.color }};">{{ d.total }}</span>
-            <span class="font-display text-[10px] uppercase tracking-wider text-white/30">pts</span>
+    <!-- Flecha izquierda -->
+    <button id="arrow-prev" aria-label="Anterior"
+            class="absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-ink/80 border border-white/15 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+    </button>
+    <!-- Flecha derecha -->
+    <button id="arrow-next" aria-label="Siguiente"
+            class="absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-ink/80 border border-white/15 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+    </button>
+
+    <!-- Slides apilados -->
+    <div class="relative mx-10 sm:mx-8" style="height: 440px;">
+
+        <!-- Slide 1: Evolución (líneas) -->
+        <div class="chart-slide absolute inset-0 transition-opacity duration-300" data-slide="0">
+            <div class="h-full rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-5 flex flex-col">
+                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">📈 Evolución de puntos</p>
+                <p class="text-white/40 text-xs mb-3">Puntos acumulados por día</p>
+                <div class="relative flex-1 min-h-0"><canvas id="chartLines"></canvas></div>
+            </div>
         </div>
-    {% endfor %}
+
+        <!-- Slide 2: Desglose (barras apiladas) -->
+        <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="1">
+            <div class="h-full rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-5 flex flex-col">
+                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">🧩 ¿De dónde salen los puntos?</p>
+                <p class="text-white/40 text-xs mb-3">Top 5 · desglose por tipo de acierto</p>
+                <div class="relative flex-1 min-h-0"><canvas id="chartBars"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Bola de cristal rota (peores) -->
+        <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="2">
+            <div class="h-full rounded-2xl bg-gradient-to-b from-red-500/[0.08] to-white/[0.01] border border-red-500/20 p-4 sm:p-5 flex flex-col">
+                <p class="font-display text-sm uppercase tracking-wide text-red-300 mb-0.5">🔮💥 Bola de Cristal Rota</p>
+                <p class="text-white/40 text-xs mb-3">Los que peor predicen — menos puntos pese a jugar</p>
+                <div class="relative flex-1 min-h-0"><canvas id="chartWorst"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Puntos indicadores -->
+    <div class="flex items-center justify-center gap-2 mt-4">
+        <button class="dot w-2.5 h-2.5 rounded-full bg-sky-400 transition" data-go="0" aria-label="Gráfica 1"></button>
+        <button class="dot w-2.5 h-2.5 rounded-full bg-white/20 transition" data-go="1" aria-label="Gráfica 2"></button>
+        <button class="dot w-2.5 h-2.5 rounded-full bg-white/20 transition" data-go="2" aria-label="Gráfica 3"></button>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-const LABELS = {{ labels | tojson }};
-const SERIES = {{ datasets | tojson }};
+// ── Datos desde el servidor ────────────────────────────────────
+const LINE_LABELS = {{ labels | tojson }};
+const LINE_SERIES = {{ datasets | tojson }};
+const BAR_LABELS  = {{ bar_labels | tojson }};
+const BAR_SEGS    = {{ bar_segments | tojson }};
+const WORST_LABELS  = {{ worst_labels | tojson }};
+const WORST_AVATARS = {{ worst_avatars | tojson }};
+const WORST_PTS     = {{ worst_pts | tojson }};
 
-const ctx = document.getElementById('pointsChart').getContext('2d');
+const GRID  = 'rgba(255,255,255,0.06)';
+const TICK  = 'rgba(255,255,255,0.45)';
+const OSWALD = { family: 'Oswald, sans-serif' };
+const baseTooltip = {
+    backgroundColor: 'rgba(7,11,22,0.95)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+    titleColor: '#fff', bodyColor: 'rgba(255,255,255,0.85)', padding: 10,
+    titleFont: OSWALD, bodyFont: { family: 'Inter, sans-serif' },
+};
 
-new Chart(ctx, {
+// ── 1) Líneas ──────────────────────────────────────────────────
+new Chart(document.getElementById('chartLines'), {
     type: 'line',
     data: {
-        labels: LABELS,
-        datasets: SERIES.map(s => ({
-            label: s.label,
-            data: s.data,
-            borderColor: s.color,
-            backgroundColor: s.color,
-            pointBackgroundColor: s.color,
-            pointBorderColor: s.color,
-            borderWidth: 2.5,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            tension: 0.25,
+        labels: LINE_LABELS,
+        datasets: LINE_SERIES.map(s => ({
+            label: s.label, data: s.data,
+            borderColor: s.color, backgroundColor: s.color,
+            pointBackgroundColor: s.color, borderWidth: 2.5,
+            pointRadius: 3, pointHoverRadius: 6, tension: 0.25,
         })),
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-            legend: {
-                labels: {
-                    color: 'rgba(255,255,255,0.7)',
-                    font: { family: 'Oswald, sans-serif', size: 12 },
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    padding: 14,
-                },
-            },
-            tooltip: {
-                backgroundColor: 'rgba(7,11,22,0.95)',
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderWidth: 1,
-                titleColor: '#fff',
-                bodyColor: 'rgba(255,255,255,0.8)',
-                titleFont: { family: 'Oswald, sans-serif' },
-                bodyFont: { family: 'Inter, sans-serif' },
-                padding: 10,
-                callbacks: {
-                    label: (c) => ` ${c.dataset.label}: ${c.parsed.y} pts`,
-                },
-            },
+            legend: { labels: { color: TICK, font: OSWALD, usePointStyle: true, pointStyle: 'circle', padding: 12 } },
+            tooltip: { ...baseTooltip, callbacks: { label: (c) => ` ${c.dataset.label}: ${c.parsed.y} pts` } },
         },
         scales: {
-            x: {
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                ticks: { color: 'rgba(255,255,255,0.45)', font: { family: 'Oswald, sans-serif', size: 11 } },
-            },
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                ticks: { color: 'rgba(255,255,255,0.45)', font: { family: 'Oswald, sans-serif', size: 11 }, precision: 0 },
-                title: { display: true, text: 'Puntos', color: 'rgba(255,255,255,0.4)', font: { family: 'Oswald, sans-serif' } },
-            },
+            x: { grid: { color: GRID }, ticks: { color: TICK, font: OSWALD } },
+            y: { beginAtZero: true, grid: { color: GRID }, ticks: { color: TICK, font: OSWALD, precision: 0 } },
         },
     },
 });
+
+// ── 2) Barras apiladas ─────────────────────────────────────────
+new Chart(document.getElementById('chartBars'), {
+    type: 'bar',
+    data: {
+        labels: BAR_LABELS,
+        datasets: BAR_SEGS.map(s => ({
+            label: s.label, data: s.data,
+            backgroundColor: s.color, borderRadius: 4, borderSkipped: false,
+        })),
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: TICK, font: OSWALD, usePointStyle: true, pointStyle: 'rectRounded', padding: 12 } },
+            tooltip: { ...baseTooltip, callbacks: { label: (c) => ` ${c.dataset.label}: ${c.parsed.y} pts` } },
+        },
+        scales: {
+            x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, font: OSWALD } },
+            y: { stacked: true, beginAtZero: true, grid: { color: GRID }, ticks: { color: TICK, font: OSWALD, precision: 0 } },
+        },
+    },
+});
+
+// ── 3) Bola de cristal rota (barras horizontales) ──────────────
+new Chart(document.getElementById('chartWorst'), {
+    type: 'bar',
+    data: {
+        labels: WORST_LABELS.map((n, i) => `${WORST_AVATARS[i]}  ${n}`),
+        datasets: [{
+            label: 'Puntos', data: WORST_PTS,
+            backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#a3a3a3'],
+            borderRadius: 6, borderSkipped: false,
+        }],
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { ...baseTooltip, callbacks: { label: (c) => ` ${c.parsed.x} pts en total` } },
+        },
+        scales: {
+            x: { beginAtZero: true, grid: { color: GRID }, ticks: { color: TICK, font: OSWALD, precision: 0 } },
+            y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.75)', font: { family: 'Oswald, sans-serif', size: 13 } } },
+        },
+    },
+});
+
+// ── Carrusel ───────────────────────────────────────────────────
+(function () {
+    const slides = document.querySelectorAll('.chart-slide');
+    const dots = document.querySelectorAll('.dot');
+    let cur = 0;
+    const N = slides.length;
+
+    function show(i) {
+        cur = (i + N) % N;
+        slides.forEach((s, idx) => {
+            const on = idx === cur;
+            s.classList.toggle('opacity-0', !on);
+            s.classList.toggle('pointer-events-none', !on);
+        });
+        dots.forEach((d, idx) => {
+            d.classList.toggle('bg-sky-400', idx === cur);
+            d.classList.toggle('bg-white/20', idx !== cur);
+        });
+    }
+    document.getElementById('arrow-prev').addEventListener('click', () => show(cur - 1));
+    document.getElementById('arrow-next').addEventListener('click', () => show(cur + 1));
+    dots.forEach(d => d.addEventListener('click', () => show(parseInt(d.dataset.go))));
+
+    // Swipe en móvil
+    let x0 = null;
+    const area = document.querySelector('.chart-slide').parentElement;
+    area.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    area.addEventListener('touchend', e => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1));
+        x0 = null;
+    }, { passive: true });
+})();
 </script>
 {% endif %}
 

@@ -134,10 +134,70 @@ def graficas(request: Request, user=Depends(require_login)):
     # Ordenar leyenda por total de puntos (desc)
     datasets.sort(key=lambda d: -d["total"])
 
+    # ── 2) Barras apiladas: desglose de puntos por origen (top 5) ──────────────
+    conn2 = get_db()
+    agg = conn2.execute("""
+        SELECT u.id, u.username, u.avatar,
+               COALESCE(SUM(p.points), 0)            AS pts,
+               COALESCE(SUM(p.hit_exact), 0)         AS ex,
+               COALESCE(SUM(p.hit_winner), 0)        AS wi,
+               COALESCE(SUM(p.advances_hit), 0)      AS adv,
+               COALESCE(SUM(p.penalty_score_hit), 0) AS pen,
+               SUM(CASE WHEN m.status='FINISHED' THEN 1 ELSE 0 END) AS played
+        FROM users u
+        LEFT JOIN predictions p ON p.user_id = u.id
+        LEFT JOIN matches m     ON m.id = p.match_id
+        WHERE u.is_admin = 0
+        GROUP BY u.id
+    """).fetchall()
+
+    breakdown = []
+    for r in agg:
+        exacto  = (r["ex"] or 0) * 3
+        ganador = (r["wi"] or 0) * 1
+        penales = (r["adv"] or 0) * 1 + (r["pen"] or 0) * 2
+        award   = award_points_for_user(r["id"], conn2)
+        # Lo que queda son goleadores/autogoles
+        goleador = max(0, (r["pts"] or 0) - exacto - ganador - penales)
+        total = (r["pts"] or 0) + award
+        breakdown.append({
+            "username": r["username"], "avatar": r["avatar"] or "⚽",
+            "exacto": exacto, "ganador": ganador, "goleador": round(goleador, 1),
+            "penales": penales, "premios": award,
+            "total": total, "played": r["played"] or 0,
+        })
+    conn2.close()
+
+    top5 = sorted(breakdown, key=lambda b: -b["total"])[:5]
+    bar_labels = [b["username"] for b in top5]
+    bar_segments = [
+        {"label": "Marcador exacto", "color": "#22c55e", "data": [b["exacto"]   for b in top5]},
+        {"label": "Ganador",         "color": "#3b82f6", "data": [b["ganador"]  for b in top5]},
+        {"label": "Goleadores",      "color": "#f59e0b", "data": [b["goleador"] for b in top5]},
+        {"label": "Penales",         "color": "#a855f7", "data": [b["penales"]  for b in top5]},
+        {"label": "Premios",         "color": "#ec4899", "data": [b["premios"]  for b in top5]},
+    ]
+    has_bars = any(b["total"] > 0 for b in top5)
+
+    # ── 3) "Bola de cristal rota" 🔮💥 — los peores prediciendo (humor) ─────────
+    played_users = [b for b in breakdown if b["played"] > 0]
+    for b in played_users:
+        hits_pts = b["exacto"] + b["ganador"]   # aprox de aciertos de resultado
+        b["pct"] = round((b["total"] / (b["played"] * 3)) * 100)  # % sobre el máximo posible por marcador
+    worst = sorted(played_users, key=lambda b: (b["total"], -b["played"]))[:5]
+    worst_labels  = [b["username"] for b in worst]
+    worst_avatars = [b["avatar"] for b in worst]
+    worst_pct     = [b["pct"] for b in worst]
+    worst_pts     = [b["total"] for b in worst]
+    has_worst = len(worst) > 0
+
     return templates.TemplateResponse("graficas.html", {
         "request": request, "user": user,
         "labels": labels, "datasets": datasets,
         "has_data": bool(days),
+        "bar_labels": bar_labels, "bar_segments": bar_segments, "has_bars": has_bars,
+        "worst_labels": worst_labels, "worst_avatars": worst_avatars,
+        "worst_pct": worst_pct, "worst_pts": worst_pts, "has_worst": has_worst,
     })
 
 
