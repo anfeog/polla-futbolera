@@ -21,18 +21,29 @@
     </div>
 </div>
 
-<!-- Próximos partidos -->
+<!-- Próximos partidos por pronosticar -->
 <div class="flex items-center gap-2 mb-4">
     <span class="text-lg">⏰</span>
-    <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">Próximos partidos</h2>
+    <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">Te falta pronosticar</h2>
     <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">Cierre 1h antes del pitido</span>
 </div>
 
 {% if not matches %}
-<div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-10 text-center">
-    <p class="text-3xl mb-2">🏟️</p>
-    <p class="text-white/40 text-sm font-display">No hay partidos próximos cargados todavía.</p>
-</div>
+    {% if any_upcoming %}
+    <!-- Hay partidos próximos pero el usuario ya los pronosticó todos -->
+    <div class="rounded-2xl bg-gradient-to-b from-emerald-500/[0.10] to-emerald-500/[0.02] border border-emerald-500/20 px-4 py-10 text-center">
+        <p class="text-4xl mb-2">✅</p>
+        <p class="font-display text-base uppercase tracking-wide text-emerald-300 mb-1">¡Estás al día!</p>
+        <p class="text-white/40 text-sm">Ya pronosticaste todos los próximos partidos. Vuelve cuando se acerquen nuevos.</p>
+        <a href="/ranking" class="inline-block mt-4 font-display text-xs uppercase tracking-wider text-emerald-300 hover:text-emerald-200 transition">Ver la tabla →</a>
+    </div>
+    {% else %}
+    <!-- No hay partidos cargados -->
+    <div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-10 text-center">
+        <p class="text-3xl mb-2">🏟️</p>
+        <p class="text-white/40 text-sm font-display">No hay partidos próximos cargados todavía.</p>
+    </div>
+    {% endif %}
 {% else %}
 <div class="space-y-3">
 {% for m in matches %}
@@ -78,12 +89,8 @@
             </span>
             {% endif %}
 
-            <!-- Estado -->
-            {% if m.predicted %}
-            <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
-                ✓ Pronosticado
-            </span>
-            {% elif not m.locked %}
+            <!-- Estado (estos partidos están sin pronosticar por definición) -->
+            {% if not m.locked %}
             <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-ink bg-sky-400 rounded-full px-2.5 py-1 group-hover:bg-sky-300 transition">
                 Pronosticar →
             </span>

@@ -116,13 +116,19 @@ def inicio(request: Request, user=Depends(require_login)):
     """).fetchall()
 
     upcoming = []
+    any_upcoming = False   # ¿hay algún partido futuro cargado? (para diferenciar vacíos)
     for m in rows:
         if is_past(m["kickoff"]):
             continue
+        any_upcoming = True
         predicted = conn.execute(
             "SELECT 1 FROM predictions WHERE user_id=? AND match_id=?",
             (user["id"], m["id"])
         ).fetchone() is not None
+        # Personalizado: ocultar los que el usuario ya pronosticó,
+        # así sube automáticamente el siguiente partido pendiente.
+        if predicted:
+            continue
         d = dict(m)
         d["predicted"] = predicted
         d["locked"]    = is_locked(m["kickoff"])
@@ -134,6 +140,7 @@ def inicio(request: Request, user=Depends(require_login)):
     conn.close()
     return templates.TemplateResponse("inicio.html", {
         "request": request, "user": user, "matches": upcoming,
+        "any_upcoming": any_upcoming,
     })
 
 
