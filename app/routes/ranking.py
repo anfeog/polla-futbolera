@@ -157,7 +157,7 @@ def ranking(request: Request, user=Depends(require_login)):
     conn = get_db()
 
     rows = conn.execute("""
-        SELECT u.id, u.username, u.avatar,
+        SELECT u.id, u.username, u.avatar, u.status_msg,
                COALESCE(SUM(p.points), 0)        AS match_points,
                COALESCE(SUM(p.hit_exact), 0)     AS exact_hits,
                COALESCE(SUM(p.hit_winner), 0)    AS winner_hits,
