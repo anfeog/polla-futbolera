@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Premios — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">Predicciones especiales</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🏅 PREMIOS</h1>
+    <p class="text-white/50 text-sm mt-1">
+        Predice los grandes premios del torneo. Cada acierto vale
+        <span class="text-amber-400 font-semibold">+10 puntos</span>.
+        Autogol acertado = <span class="text-amber-400 font-semibold">+20 puntos</span> 🤯
+    </p>
+</div>
+
+{% if locked %}
+<div class="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-3 rounded-xl mb-6 text-sm font-display uppercase tracking-wider">
+    🔒 Los premios se cerraron al empezar el Mundial.
+</div>
+{% endif %}
+
+{% set awards = [
+    ('top_scorer', '🥇 Bota de Oro', 'Máximo goleador del torneo', '⚽'),
+    ('best_player', '🏆 Balón de Oro', 'Mejor jugador del Mundial', '✨'),
+    ('best_keeper', '🧤 Guante de Oro', 'Mejor arquero del torneo', '🥅'),
+] %}
+
+<form method="post" action="/premios" class="space-y-4">
+    {% for key, title, desc, icon in awards %}
+    <div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 p-5">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">{{ icon }}</span>
+                <div>
+                    <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ title }}</h2>
+                    <p class="text-white/40 text-xs">{{ desc }}</p>
+                </div>
+            </div>
+            {% if real and real[key] %}
+            <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
+                {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred[key] and pred[key]|lower == real[key]|lower else 'bg-white/10 text-white/50' }}">
+                Ganó: {{ real[key] }}
+            </span>
+            {% endif %}
+        </div>
+        <input type="text" name="{{ key }}"
+            list="{{ 'keepers-list' if key == 'best_keeper' else 'players-list' }}"
+            value="{{ pred[key] if pred and pred[key] else '' }}"
+            placeholder="Nombre del jugador"
+            autocomplete="off"
+            {{ 'disabled' if locked else '' }}
+            class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition disabled:opacity-50">
+    </div>
+    {% endfor %}
+
+    <datalist id="players-list">
+        {% for p in all_players %}<option value="{{ p }}">{% endfor %}
+    </datalist>
+    <datalist id="keepers-list">
+        {% for k in keepers %}<option value="{{ k }}">{% endfor %}
+    </datalist>
+
+    {% if not locked %}
+    <button type="submit"
+        class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-amber-500/20">
+        Guardar premios
+    </button>
+    {% endif %}
+</form>
+
+{% endblock %}

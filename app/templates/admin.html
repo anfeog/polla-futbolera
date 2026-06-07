@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Admin — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-6 flex items-start justify-between gap-4 flex-wrap">
+    <div>
+        <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">Control de la polla</p>
+        <h1 class="font-display font-bold text-4xl tracking-wide">PANEL ADMIN</h1>
+    </div>
+    <a href="/admin/resultados"
+       class="font-display text-xs uppercase tracking-wider px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition mt-1">
+        ⚙️ Gestionar resultados →
+    </a>
+</div>
+
+{% if error %}
+<div class="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">{{ error }}</div>
+{% endif %}
+
+<!-- Crear usuario -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+    <h2 class="font-semibold mb-4">Añadir participante</h2>
+    <form method="post" action="/admin/crear-usuario" class="flex gap-3 flex-wrap">
+        <input name="username" type="text" placeholder="Nombre de usuario" required
+            class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-yellow-500 transition flex-1 min-w-[160px]">
+        <input name="password" type="text" placeholder="Contraseña inicial" required
+            class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-yellow-500 transition flex-1 min-w-[160px]">
+        <button type="submit"
+            class="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            Crear
+        </button>
+    </form>
+</div>
+
+<!-- Lista de usuarios -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-gray-800">
+        <h2 class="font-semibold">Participantes ({{ users | length }})</h2>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
+                <th class="py-2 px-4 text-left">Usuario</th>
+                <th class="py-2 px-4 text-left hidden sm:table-cell">Creado</th>
+                <th class="py-2 px-4 text-left">Rol</th>
+                <th class="py-2 px-4"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr class="border-b border-gray-800 last:border-0">
+                <td class="py-3 px-4 font-medium">{{ u.username }}</td>
+                <td class="py-3 px-4 text-gray-500 hidden sm:table-cell text-xs">{{ u.created_at[:10] }}</td>
+                <td class="py-3 px-4">
+                    {% if u.is_admin %}
+                    <span class="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-0.5 rounded">Admin</span>
+                    {% else %}
+                    <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">Jugador</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 px-4 text-right">
+                    {% if not u.is_admin %}
+                    <form method="post" action="/admin/eliminar-usuario/{{ u.id }}"
+                        onsubmit="return confirm('¿Eliminar a {{ u.username }}?')">
+                        <button type="submit" class="text-xs text-red-500 hover:text-red-400 transition">Eliminar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Cargar partidos -->
+<!-- Definir ganadores de premios -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+    <h2 class="font-semibold mb-1">🏅 Ganadores de los premios</h2>
+    <p class="text-sm text-gray-400 mb-4">Define los ganadores al terminar el Mundial. Cada acierto da +10 pts a quien los predijo.</p>
+    <form method="post" action="/admin/premios-ganadores" class="space-y-3">
+        <div class="flex items-center gap-3 flex-wrap">
+            <label class="text-sm text-gray-300 w-32">🥇 Bota de Oro</label>
+            <input name="top_scorer" value="{{ awards.top_scorer or '' }}" placeholder="Máximo goleador"
+                class="flex-1 min-w-[180px] bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-amber-500 transition">
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+            <label class="text-sm text-gray-300 w-32">🏆 Balón de Oro</label>
+            <input name="best_player" value="{{ awards.best_player or '' }}" placeholder="Mejor jugador"
+                class="flex-1 min-w-[180px] bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-amber-500 transition">
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+            <label class="text-sm text-gray-300 w-32">🧤 Guante de Oro</label>
+            <input name="best_keeper" value="{{ awards.best_keeper or '' }}" placeholder="Mejor arquero"
+                class="flex-1 min-w-[180px] bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-amber-500 transition">
+        </div>
+        <button type="submit"
+            class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+            Guardar ganadores
+        </button>
+    </form>
+</div>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <h2 class="font-semibold mb-2">Datos del Mundial</h2>
+    <p class="text-sm text-gray-400 mb-4">
+        Partidos cargados: <span class="text-white font-semibold">{{ n_matches or 0 }}</span> ·
+        Jugadores en plantillas: <span class="text-white font-semibold">{{ n_players or 0 }}</span>
+    </p>
+
+    {% if request.query_params.get('squads') == 'loading' %}
+    <div class="bg-blue-900/40 border border-blue-700/60 text-blue-200 px-4 py-3 rounded-lg mb-4 text-sm flex items-center gap-2">
+        <span class="animate-spin">⏳</span>
+        Importando plantillas en segundo plano… puede tardar ~5 min. Recarga esta página para ver el progreso.
+    </div>
+    {% endif %}
+    {% if request.query_params.get('imported') %}
+    <div class="bg-green-900/40 border border-green-700/60 text-green-200 px-4 py-3 rounded-lg mb-4 text-sm">
+        ✅ {{ request.query_params.get('imported') }} partidos importados correctamente. Los grupos aparecerán en Fase de Grupos.
+    </div>
+    {% endif %}
+
+    <div class="flex gap-3 flex-wrap">
+        <form method="post" action="/admin/cargar-partidos">
+            <button type="submit"
+                class="bg-green-700 hover:bg-green-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                Importar partidos ⚽
+            </button>
+        </form>
+        <form method="post" action="/admin/cargar-plantillas">
+            <button type="submit"
+                class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                Importar plantillas 👥
+            </button>
+        </form>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">
+        ⏱️ Las plantillas se cargan en background (~5 min, 10 llamadas/min × 48 selecciones).<br>
+        ⚽ Después de importar partidos, los Grupos A–L aparecerán en la Fase de Grupos.
+    </p>
+</div>
+
+{% endblock %}

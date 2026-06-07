@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Tabla — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+            <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">Clasificación general</p>
+            <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">TABLA</h1>
+        </div>
+        <a href="/partidos" class="font-display uppercase tracking-wider text-sm px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 transition">
+            ← Fixture
+        </a>
+    </div>
+</div>
+
+{% if not ranking %}
+<div class="text-center py-20 text-white/40">
+    <div class="text-6xl mb-4">🏆</div>
+    <p class="font-display uppercase tracking-wider">Aún no hay puntos acumulados</p>
+</div>
+{% else %}
+
+<!-- Podio top 3 -->
+{% if ranking | length >= 3 %}
+<div class="grid grid-cols-3 gap-3 mb-6">
+    {% set medals = ['🥇','🥈','🥉'] %}
+    {% for row in ranking[:3] %}
+    <div class="relative rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-4 text-center {{ 'sm:-mt-3 border-amber-400/40' if loop.index == 1 else '' }}">
+        <div class="text-2xl mb-1">{{ medals[loop.index0] }}</div>
+        <div class="text-4xl mb-1">{{ row.avatar }}</div>
+        <div class="font-display font-semibold uppercase tracking-wide text-sm truncate {{ 'text-amber-300' if loop.index==1 else '' }}">{{ row.username }}</div>
+        <div class="font-heavy text-2xl mt-1">{{ "%.1f"|format(row.total_points) }}</div>
+        <div class="text-[10px] uppercase tracking-wider text-white/40">puntos</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden overflow-x-auto">
+    <table class="w-full text-sm min-w-[520px]">
+        <thead>
+            <tr class="font-display text-[11px] uppercase tracking-wider text-white/40 border-b border-white/10">
+                <th class="py-3 px-3 text-left w-10">Pos</th>
+                <th class="py-3 px-3 text-left">Jugador</th>
+                <th class="py-3 px-2 text-center">Pts</th>
+                <th class="py-3 px-2 text-center" title="Marcador Acertado">MA</th>
+                <th class="py-3 px-2 text-center" title="Ganador acertado">GAN</th>
+                <th class="py-3 px-2 text-center" title="Goleadores acertados">GOL</th>
+                <th class="py-3 px-2 text-center" title="% de aciertos de resultado">%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in ranking %}
+            {% set is_me = row.username == user.username %}
+            <tr class="border-b border-white/5 last:border-0 {{ 'bg-sky-500/10' if is_me else 'hover:bg-white/[0.03]' }} transition">
+                <td class="py-3 px-3 font-display font-bold text-white/50">
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td class="py-3 px-3 font-display font-semibold uppercase tracking-wide {{ 'text-sky-300' if is_me else '' }}">
+                    <span class="text-lg mr-1.5 align-middle">{{ row.avatar }}</span>{{ row.username }}{% if is_me %} <span class="text-[10px] text-white/40 normal-case">(tú)</span>{% endif %}
+                    {% if row.award_points > 0 %}<span class="ml-1 text-[10px] text-amber-400" title="Puntos de premios">🏅{{ row.award_points }}</span>{% endif %}
+                </td>
+                <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">{{ "%.1f"|format(row.total_points) }}</td>
+                <td class="py-3 px-2 text-center text-emerald-400 font-semibold">{{ row.exact_hits }}</td>
+                <td class="py-3 px-2 text-center text-sky-400">{{ row.winner_hits }}</td>
+                <td class="py-3 px-2 text-center text-fuchsia-400">{{ row.scorers_hit }}</td>
+                <td class="py-3 px-2 text-center text-white/60">{{ row.pct }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/40 font-display uppercase tracking-wider">
+    <span>🟢 MA = Marcador exacto +3</span>
+    <span>🔵 GAN = Ganador +1</span>
+    <span>🟣 GOL = Goleador en orden +2</span>
+    <span>🤯 Autogol +20</span>
+    <span>🏅 Premio +10</span>
+</div>
+{% endif %}
+
+{% endblock %}

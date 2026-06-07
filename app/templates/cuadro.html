@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Cuadro Eliminatorio — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">FIFA World Cup 26</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🎲 CUADRO</h1>
+    <p class="text-white/40 text-sm mt-1">Bracket completo · mitad izquierda y mitad derecha se encuentran en la Final.</p>
+</div>
+
+{# ── Macro: tarjeta de partido ───────────────────────────────── #}
+{% macro match_card(m, side='left') %}
+{% set pred    = user_predictions[m.id] %}
+{% set closed  = locked[m.id] %}
+{% set finished = m.status == 'FINISHED' %}
+{% set live    = m.status in ['IN_PLAY','PAUSED'] %}
+{% set home_tbd = m.home_team == 'Por definir' %}
+{% set away_tbd = m.away_team == 'Por definir' %}
+{% set has_pen = m.penalty_home is not none %}
+{% set home_adv = (m.home_score is not none and m.home_score > m.away_score) or (has_pen and m.penalty_home > m.penalty_away) %}
+{% set away_adv = (m.away_score is not none and m.away_score > m.home_score) or (has_pen and m.penalty_away > m.penalty_home) %}
+
+<div class="rounded-xl overflow-hidden border
+    {{ 'border-red-500/40 bg-red-500/5' if live
+       else ('border-emerald-500/20 bg-emerald-500/5' if pred
+       else 'border-white/[0.08] bg-black/30') }}">
+
+    {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else (m.home_team[:3].upper() if not home_tbd else '?') %}
+    {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else (m.away_team[:3].upper() if not away_tbd else '?') %}
+    {% set hc = crest(m.home_team, m.home_flag) if not home_tbd else none %}
+    {% set ac = crest(m.away_team, m.away_flag) if not away_tbd else none %}
+
+    {# Local #}
+    <div class="flex items-center gap-2 px-2.5 py-2 border-b border-white/[0.05]
+                {{ 'bg-emerald-500/10' if home_adv else '' }}">
+        {# Escudo #}
+        <div class="relative shrink-0 w-6 h-6 flex items-center justify-center">
+            {% if hc %}
+                <img src="{{ hc }}" class="w-5 h-5 object-contain">
+            {% elif not home_tbd %}
+                <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center font-display text-[8px] font-bold">{{ htla[:2] }}</div>
+            {% else %}
+                <div class="w-5 h-5 rounded-full border border-dashed border-white/20 flex items-center justify-center font-display text-[10px] text-white/30">?</div>
+            {% endif %}
+            {% if home_adv and not home_tbd %}
+            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-ink"></span>
+            {% endif %}
+        </div>
+        {# TLA #}
+        <span class="font-display text-[11px] font-semibold uppercase tracking-wide flex-1 truncate
+            {{ 'text-white/25 italic' if home_tbd
+               else ('text-emerald-300' if home_adv else 'text-white/75') }}">
+            {{ htla }}
+        </span>
+        {% if m.home_score is not none %}
+        <span class="font-heavy text-base shrink-0 {{ 'text-emerald-300' if home_adv else 'text-white/50' }}">{{ m.home_score }}</span>
+        {% endif %}
+    </div>
+
+    {# Visitante #}
+    <div class="flex items-center gap-2 px-2.5 py-2 {{ 'bg-emerald-500/10' if away_adv else '' }}">
+        <div class="relative shrink-0 w-6 h-6 flex items-center justify-center">
+            {% if ac %}
+                <img src="{{ ac }}" class="w-5 h-5 object-contain">
+            {% elif not away_tbd %}
+                <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center font-display text-[8px] font-bold">{{ atla[:2] }}</div>
+            {% else %}
+                <div class="w-5 h-5 rounded-full border border-dashed border-white/20 flex items-center justify-center font-display text-[10px] text-white/30">?</div>
+            {% endif %}
+            {% if away_adv and not away_tbd %}
+            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-ink"></span>
+            {% endif %}
+        </div>
+        <span class="font-display text-[11px] font-semibold uppercase tracking-wide flex-1 truncate
+            {{ 'text-white/25 italic' if away_tbd
+               else ('text-emerald-300' if away_adv else 'text-white/75') }}">
+            {{ atla }}
+        </span>
+        {% if m.away_score is not none %}
+        <span class="font-heavy text-base shrink-0 {{ 'text-emerald-300' if away_adv else 'text-white/50' }}">{{ m.away_score }}</span>
+        {% endif %}
+    </div>
+
+    {# Penales (si los hubo) #}
+    {% if has_pen %}
+    <div class="px-2.5 py-1 border-t border-violet-500/10 bg-violet-500/5">
+        <span class="font-display text-[9px] uppercase tracking-wider text-violet-400/70">
+            p {{ m.penalty_home }}–{{ m.penalty_away }}
+            · {{ m.advances_team[:8] if m.advances_team else '' }}
+        </span>
+    </div>
+    {% endif %}
+
+    {# Pie #}
+    <div class="px-2.5 py-1.5 border-t border-white/[0.05] flex items-center justify-between gap-1">
+        <span class="text-[9px] font-display text-white/20">{{ m.kickoff[5:10] }}</span>
+        {% if live %}
+            <span class="text-[9px] font-display text-red-400 font-bold flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-red-500 animate-livepulse inline-block"></span>LIVE
+            </span>
+        {% elif pred %}
+            <span class="text-[9px] font-display text-emerald-400">✓ {{ pred.home_score_pred }}–{{ pred.away_score_pred }}</span>
+        {% elif not closed %}
+            <a href="/prediccion/{{ m.id }}"
+               class="text-[9px] font-display uppercase tracking-wider text-sky-400 hover:text-sky-300 transition">→</a>
+        {% else %}
+            <span class="text-[9px] text-white/20">🔒</span>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{# ── Bracket ──────────────────────────────────────────────────── #}
+<div class="overflow-x-auto pb-6 -mx-4 px-4">
+<div class="flex items-stretch gap-0 min-w-max" style="min-height: 800px;">
+
+    {# ── MITAD IZQUIERDA ── #}
+    {% set left_round_labels = ['Dieciseisavos', 'Octavos', 'Cuartos', 'Semis'] %}
+    {% for col in left_cols %}
+
+    {# Columna de partidos #}
+    <div class="flex flex-col gap-1.5" style="width: 162px;">
+        {# Label de ronda #}
+        <div class="text-center pb-1 pt-1 shrink-0">
+            <span class="font-display text-[9px] uppercase tracking-[0.15em] text-white/25">{{ left_round_labels[loop.index0] }}</span>
+        </div>
+        {# Partidos, ocupan todo el espacio restante #}
+        <div class="flex flex-col justify-around flex-1 gap-1.5">
+            {% for m in col.matches %}
+            {{ match_card(m, 'left') }}
+            {% endfor %}
+            {% if not col.matches %}
+            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">Por definir</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Conector → hacia el centro #}
+    <div class="flex flex-col items-center pt-7" style="width: 28px;">
+        <div class="flex-1 flex flex-col justify-around">
+            {% for _ in col.matches %}
+            <div class="text-white/15 text-sm">→</div>
+            {% else %}
+            <div class="text-white/10 text-sm">→</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% endfor %}
+
+    {# ── FINAL + TERCER PUESTO (centro) ── #}
+    <div class="flex flex-col items-center gap-3 px-2" style="width: 178px; min-width: 178px;">
+
+        {# Etiqueta FINAL #}
+        <div class="text-center pt-1 pb-1 shrink-0">
+            <span class="font-display text-[9px] uppercase tracking-[0.15em] text-amber-400/60">Final</span>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center gap-3 w-full">
+        <div class="text-center">
+            <div class="text-3xl mb-0.5">🏆</div>
+        </div>
+
+        {# Partido final #}
+        {% if final_matches %}
+            {% for m in final_matches %}
+            <div class="w-full">{{ match_card(m, 'center') }}</div>
+            {% endfor %}
+        {% else %}
+            <div class="w-full rounded-xl border-2 border-dashed border-amber-400/20 p-4 text-center">
+                <p class="font-display text-[10px] uppercase tracking-wider text-amber-400/40">Por disputar</p>
+            </div>
+        {% endif %}
+
+        {# Tercer puesto #}
+        {% if third_matches %}
+        <div class="w-full">
+            <p class="font-display text-[10px] uppercase tracking-wider text-amber-700/60 text-center mb-1.5">🥉 3er puesto</p>
+            {% for m in third_matches %}
+            {{ match_card(m, 'center') }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        </div>{# /flex-1 #}
+    </div>
+
+    {# ── MITAD DERECHA (SF→QF→L16→L32 saliendo del centro) ── #}
+    {% set right_round_labels = ['Semis', 'Cuartos', 'Octavos', 'Dieciseisavos'] %}
+    {% for col in right_cols %}
+
+    {# Conector ← desde el centro #}
+    <div class="flex flex-col items-center pt-7" style="width: 28px;">
+        <div class="flex-1 flex flex-col justify-around">
+            {% for _ in col.matches %}
+            <div class="text-white/15 text-sm">←</div>
+            {% else %}
+            <div class="text-white/10 text-sm">←</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Columna de partidos #}
+    <div class="flex flex-col gap-1.5" style="width: 162px;">
+        {# Label de ronda #}
+        <div class="text-center pb-1 pt-1 shrink-0">
+            <span class="font-display text-[9px] uppercase tracking-[0.15em] text-white/25">{{ right_round_labels[loop.index0] }}</span>
+        </div>
+        <div class="flex flex-col justify-around flex-1 gap-1.5">
+            {% for m in col.matches %}
+            {{ match_card(m, 'right') }}
+            {% endfor %}
+            {% if not col.matches %}
+            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">Por definir</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+</div>
+
+
+{# ── Leyenda ── #}
+<div class="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-display uppercase tracking-wider text-white/30">
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Clasificado / avanza</span>
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-emerald-500/20 border border-emerald-500/30"></span> Pronosticado</span>
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-violet-500/20 border border-violet-500/30"></span> Penales</span>
+    <span class="flex items-center gap-1.5"><span class="italic text-white/30 text-sm">?</span> Por definir</span>
+</div>
+
+{% endblock %}

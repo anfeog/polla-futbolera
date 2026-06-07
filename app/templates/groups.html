@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Fase de Grupos — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-3 inline-block">← Todas las fases</a>
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">FIFA World Cup 26</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🏟️ FASE DE GRUPOS</h1>
+</div>
+
+<!-- Cuadrícula de grupos: 2 columnas en móvil, 3 en sm, 4 en lg -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+{% for g in groups %}
+<a href="/partidos/group-stage/{{ g.slug }}"
+   class="group block relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-sky-400/60 hover:from-white/[0.11] transition-all">
+
+    <!-- Cabecera del grupo -->
+    <div class="flex items-center justify-between px-4 pt-4 pb-2">
+        <h2 class="font-heavy text-2xl tracking-wide">{{ g.label }}</h2>
+        <div class="text-right">
+            <div class="font-display font-bold text-sm {{ 'text-emerald-400' if g.pct == 100 else 'text-white/60' }}">{{ g.pct }}%</div>
+            <div class="text-[10px] font-display uppercase tracking-wider text-white/30">pronosticado</div>
+        </div>
+    </div>
+
+    <!-- Tabla mini de posiciones -->
+    <div class="px-2 pb-1">
+        <table class="w-full">
+            <thead>
+                <tr class="font-display text-[9px] uppercase tracking-wider text-white/25 border-b border-white/[0.06]">
+                    <th class="pb-1 pl-2 text-left w-4">#</th>
+                    <th class="pb-1 px-1 text-left">Equipo</th>
+                    <th class="pb-1 px-1 text-center w-6">PJ</th>
+                    <th class="pb-1 px-1 text-center w-6 text-emerald-400/60">G</th>
+                    <th class="pb-1 px-1 text-center w-6 text-white/30">E</th>
+                    <th class="pb-1 px-1 text-center w-6 text-red-400/60">P</th>
+                    <th class="pb-1 pr-2 text-center w-8 font-bold text-white/50">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if g.standings %}
+                {% for team, s in g.standings %}
+                {% set qualified = loop.index <= 2 %}
+                <tr class="border-b border-white/[0.04] last:border-0 {{ 'bg-sky-500/[0.06]' if qualified else '' }}">
+                    <td class="py-1.5 pl-2 font-display text-[10px] {{ 'text-sky-400 font-bold' if qualified else 'text-white/30' }}">{{ loop.index }}</td>
+                    <td class="py-1.5 px-1">
+                        <div class="flex items-center gap-1.5">
+                            {% set tc = crest(team, s.flag) %}
+                            {% if tc %}<img src="{{ tc }}" class="w-4 h-4 object-contain shrink-0">
+                            {% else %}<span class="w-4 h-4 rounded-full bg-white/10 shrink-0 inline-block"></span>{% endif %}
+                            <span class="font-display text-[10px] uppercase tracking-wide truncate">{{ s.tla or team[:6] }}</span>
+                        </div>
+                    </td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/40">{{ s.P }}</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-emerald-400">{{ s.W }}</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/30">{{ s.D }}</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-red-400">{{ s.L }}</td>
+                    <td class="py-1.5 pr-2 text-center font-heavy text-sm">{{ s.Pts }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <!-- Sin resultados aún: mostrar equipos sin stats -->
+                {% for t in g.teams %}
+                <tr class="border-b border-white/[0.04] last:border-0">
+                    <td class="py-1.5 pl-2 font-display text-[10px] text-white/30">{{ loop.index }}</td>
+                    <td class="py-1.5 px-1 colspan-5">
+                        <div class="flex items-center gap-1.5">
+                            {% set tc = crest(t.name, t.flag) %}
+                            {% if tc %}<img src="{{ tc }}" class="w-4 h-4 object-contain shrink-0">
+                            {% else %}<span class="w-4 h-4 rounded-full bg-white/10 shrink-0 inline-block"></span>{% endif %}
+                            <span class="font-display text-[10px] uppercase tracking-wide text-white/60 truncate">{{ t.tla or t.name[:8] }}</span>
+                        </div>
+                    </td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/20">0</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/20">0</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/20">0</td>
+                    <td class="py-1.5 px-1 text-center text-[10px] text-white/20">0</td>
+                    <td class="py-1.5 pr-2 text-center font-heavy text-sm text-white/20">0</td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Barra de progreso + flecha -->
+    <div class="px-4 pb-4 pt-2">
+        <div class="h-1.5 rounded-full bg-black/40 overflow-hidden mb-1.5">
+            <div class="h-full fifa-strip transition-all" style="width: {{ g.pct if g.pct > 0 else 2 }}%"></div>
+        </div>
+        <div class="flex items-center justify-between">
+            <span class="font-display text-[10px] uppercase tracking-wider text-white/30">
+                {{ g.predicted }}/{{ g.total }} pronosticados
+            </span>
+            <span class="font-display text-[11px] text-sky-300 uppercase tracking-wider group-hover:translate-x-0.5 transition-transform">
+                Ver partidos →
+            </span>
+        </div>
+    </div>
+</a>
+{% endfor %}
+</div>
+
+<!-- Tabla de mejores terceros -->
+{% if third_place %}
+<div>
+    <div class="flex items-center gap-3 mb-4">
+        <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
+        <h2 class="font-display text-sm font-semibold uppercase tracking-[0.2em] text-amber-400">🥉 Mejores Terceros</h2>
+        <span class="h-px flex-1 bg-gradient-to-l from-transparent to-white/15"></span>
+    </div>
+    <p class="text-xs text-white/40 font-display uppercase tracking-wider mb-4 text-center">
+        Los 8 mejores clasifican a dieciseisavos · los 4 siguientes quedan eliminados
+    </p>
+
+    <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="font-display text-[10px] uppercase tracking-wider text-white/30 border-b border-white/10">
+                        <th class="py-2 pl-4 pr-2 text-left w-6">#</th>
+                        <th class="py-2 px-2 text-left">Equipo</th>
+                        <th class="py-2 px-2 text-center">Grupo</th>
+                        <th class="py-2 px-2 text-center">PJ</th>
+                        <th class="py-2 px-2 text-center text-emerald-400/70">G</th>
+                        <th class="py-2 px-2 text-center text-white/40">E</th>
+                        <th class="py-2 px-2 text-center text-red-400/70">P</th>
+                        <th class="py-2 px-2 text-center">DG</th>
+                        <th class="py-2 pl-2 pr-4 text-center font-bold text-white/70">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in third_place %}
+                    {% set classifies = loop.index <= 8 %}
+                    <tr class="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition {{ 'bg-sky-500/[0.05]' if classifies else 'opacity-50' }}">
+                        <td class="py-3 pl-4 pr-2">
+                            <span class="font-display text-xs {{ 'text-sky-400 font-bold' if classifies else 'text-white/30' }}">{{ loop.index }}</span>
+                        </td>
+                        <td class="py-3 px-2">
+                            <div class="flex items-center gap-2">
+                                {% set tc = crest(t.team, t.flag) %}
+                                {% if tc %}<img src="{{ tc }}" class="w-5 h-5 object-contain shrink-0">{% endif %}
+                                <span class="font-display text-xs uppercase tracking-wide">{{ t.team }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-center">
+                            <a href="/partidos/group-stage/{{ t.group_label | lower | replace(' ', '-') }}"
+                               class="font-display text-[10px] uppercase tracking-wider text-white/40 hover:text-sky-300 transition">
+                                {{ t.group_label }}
+                            </a>
+                        </td>
+                        <td class="py-3 px-2 text-center text-white/50 text-xs">{{ t.P }}</td>
+                        <td class="py-3 px-2 text-center text-emerald-400 font-semibold text-xs">{{ t.W }}</td>
+                        <td class="py-3 px-2 text-center text-white/40 text-xs">{{ t.D }}</td>
+                        <td class="py-3 px-2 text-center text-red-400 text-xs">{{ t.L }}</td>
+                        <td class="py-3 px-2 text-center text-xs {{ 'text-emerald-400' if t.GD > 0 else ('text-red-400' if t.GD < 0 else 'text-white/40') }}">
+                            {{ ('+' if t.GD > 0 else '') ~ t.GD }}
+                        </td>
+                        <td class="py-3 pl-2 pr-4 text-center font-heavy text-lg">{{ t.Pts }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-2 border-t border-white/5 flex items-center gap-4 text-[10px] font-display uppercase tracking-wider">
+            <span class="flex items-center gap-1.5 text-white/40">
+                <span class="w-2 h-2 rounded-full bg-sky-500/60 inline-block"></span>Clasifican (top 8)
+            </span>
+            <span class="flex items-center gap-1.5 text-white/20">
+                <span class="w-2 h-2 rounded-full bg-white/20 inline-block"></span>Eliminados
+            </span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

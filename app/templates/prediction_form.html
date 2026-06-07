@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}Predicción — {{ match.home_team }} vs {{ match.away_team }}{% endblock %}
+{% block content %}
+
+<div class="max-w-lg mx-auto">
+    <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-5 inline-block">← Volver al fixture</a>
+
+    <div class="text-center mb-6">
+        <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">{{ match.stage }}</p>
+        <p class="text-white/50 text-sm">{{ match.kickoff[:10] }} · {{ match.kickoff[11:16] }} UTC</p>
+    </div>
+
+    <form method="post" action="/prediccion/{{ match.id }}" class="space-y-5">
+
+        <!-- Marcador estilo scoreboard -->
+        <div class="rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 p-6">
+            <div class="flex items-center justify-center gap-3 sm:gap-5">
+                <!-- Local -->
+                <div class="flex-1 flex flex-col items-center text-center">
+                    {% set hc = crest(match.home_team, match.home_flag) %}
+                    {% if hc %}<img src="{{ hc }}" class="w-12 h-12 object-contain mb-2 drop-shadow">{% endif %}
+                    <div class="font-display font-semibold uppercase tracking-wide text-sm mb-2 leading-tight">{{ match.home_team }}</div>
+                    <input type="number" name="home_score" id="home_score" min="0" max="20"
+                        value="{{ existing.home_score_pred if existing else 0 }}"
+                        class="w-16 text-center text-3xl font-display font-bold bg-black/30 border border-white/10 rounded-xl py-2.5 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition"
+                        oninput="renderScorers()">
+                </div>
+                <div class="font-display text-2xl text-white/20 font-bold pt-10">:</div>
+                <!-- Visitante -->
+                <div class="flex-1 flex flex-col items-center text-center">
+                    {% set ac = crest(match.away_team, match.away_flag) %}
+                    {% if ac %}<img src="{{ ac }}" class="w-12 h-12 object-contain mb-2 drop-shadow">{% endif %}
+                    <div class="font-display font-semibold uppercase tracking-wide text-sm mb-2 leading-tight">{{ match.away_team }}</div>
+                    <input type="number" name="away_score" id="away_score" min="0" max="20"
+                        value="{{ existing.away_score_pred if existing else 0 }}"
+                        class="w-16 text-center text-3xl font-display font-bold bg-black/30 border border-white/10 rounded-xl py-2.5 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition"
+                        oninput="renderScorers()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Penales (solo fase KO, aparece cuando hay empate) -->
+        {% if is_knockout %}
+        <div id="penalties-section" class="hidden rounded-2xl bg-gradient-to-b from-violet-500/[0.08] to-violet-500/[0.02] border border-violet-500/20 p-5 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-lg">🥅</span>
+                <h2 class="font-display text-sm uppercase tracking-wider text-violet-300">Prórroga · Penales</h2>
+                <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">+1 pt quién pasa · +2 pts marcador exacto</span>
+            </div>
+            <p class="text-xs text-white/40 mb-4">Pronóstico de empate detectado — indica quién avanza y el resultado en penales.</p>
+
+            <!-- ¿Quién avanza? -->
+            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">¿Quién avanza?</p>
+            <div class="grid grid-cols-2 gap-2 mb-5">
+                <!-- Local -->
+                <label class="advances-btn cursor-pointer group">
+                    <input type="radio" name="advances_team" value="{{ match.home_team }}"
+                        {% if existing and existing.advances_team == match.home_team %}checked{% endif %}
+                        class="peer hidden" onchange="syncAdvances()">
+                    <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-white/10
+                                bg-white/[0.03] peer-checked:border-emerald-400 peer-checked:bg-emerald-500/10 transition-all">
+                        {% set hc = crest(match.home_team, match.home_flag) %}
+                        <div class="relative">
+                            {% set htla = match.home_tla if match.home_tla and match.home_tla != '???' else match.home_team[:3].upper() %}
+                            {% if hc %}<img src="{{ hc }}" class="w-10 h-10 object-contain drop-shadow">
+                            {% else %}<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-display text-xs font-bold">{{ htla }}</div>{% endif %}
+                            <span class="advances-dot absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-ink items-center justify-center hidden peer-checked:flex">
+                                <svg class="w-2.5 h-2.5 text-ink" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </div>
+                        <span class="font-display text-xs uppercase tracking-wide text-center leading-tight
+                                     peer-checked:text-emerald-300">{{ htla }}</span>
+                    </div>
+                </label>
+                <!-- Visitante -->
+                <label class="advances-btn cursor-pointer group">
+                    <input type="radio" name="advances_team" value="{{ match.away_team }}"
+                        {% if existing and existing.advances_team == match.away_team %}checked{% endif %}
+                        class="peer hidden" onchange="syncAdvances()">
+                    <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-white/10
+                                bg-white/[0.03] peer-checked:border-emerald-400 peer-checked:bg-emerald-500/10 transition-all">
+                        {% set ac = crest(match.away_team, match.away_flag) %}
+                        <div class="relative">
+                            {% set atla = match.away_tla if match.away_tla and match.away_tla != '???' else match.away_team[:3].upper() %}
+                            {% if ac %}<img src="{{ ac }}" class="w-10 h-10 object-contain drop-shadow">
+                            {% else %}<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-display text-xs font-bold">{{ atla }}</div>{% endif %}
+                            <span class="advances-dot absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-ink items-center justify-center hidden peer-checked:flex">
+                                <svg class="w-2.5 h-2.5 text-ink" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </div>
+                        <span class="font-display text-xs uppercase tracking-wide text-center leading-tight
+                                     peer-checked:text-emerald-300">{{ atla }}</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Marcador de penales -->
+            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">Marcador en penales</p>
+            <div class="flex items-center justify-center gap-3">
+                <div class="flex flex-col items-center gap-1">
+                    <span class="font-display text-[10px] uppercase tracking-wider text-white/30" id="pen-home-label">{{ match.home_tla }}</span>
+                    <input type="number" name="penalty_home" id="pen_home" min="0" max="20"
+                        value="{{ existing.penalty_home if existing and existing.penalty_home is not none else 5 }}"
+                        class="w-16 text-center text-3xl font-display font-bold bg-black/30 border border-white/10 rounded-xl py-2 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/50 transition">
+                </div>
+                <span class="font-display text-2xl text-white/20 font-bold">:</span>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="font-display text-[10px] uppercase tracking-wider text-white/30" id="pen-away-label">{{ match.away_tla }}</span>
+                    <input type="number" name="penalty_away" id="pen_away" min="0" max="20"
+                        value="{{ existing.penalty_away if existing and existing.penalty_away is not none else 3 }}"
+                        class="w-16 text-center text-3xl font-display font-bold bg-black/30 border border-white/10 rounded-xl py-2 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/50 transition">
+                </div>
+            </div>
+            <p class="text-[10px] text-white/25 text-center mt-2 font-display">Los penales no pueden empatar entre sí</p>
+        </div>
+        {% endif %}
+
+        <!-- Goleadores ordenados -->
+        <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">
+            <h2 class="font-display text-sm uppercase tracking-wider text-white/70 mb-1">
+                Goleadores <span class="text-white/30 normal-case font-normal tracking-normal">(opcional)</span>
+            </h2>
+            <p class="text-xs text-white/40 mb-4 leading-relaxed">
+                Un casillero por gol, <span class="text-white/70">en orden</span>. Acierta el jugador en la posición correcta = <span class="text-emerald-400 font-semibold">+0.5</span>.
+                Marca <span class="text-amber-400 font-semibold">OG</span> si crees que será autogol = <span class="text-amber-400 font-semibold">+10</span> 🤯
+            </p>
+            <div id="scorer-slots" class="space-y-4"></div>
+            <p id="scorer-hint" class="text-xs text-white/30 mt-3"></p>
+        </div>
+
+        <button type="submit"
+            class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20">
+            Guardar pronóstico
+        </button>
+    </form>
+</div>
+
+<script>
+const homeTeam = {{ match.home_team | tojson }};
+const awayTeam = {{ match.away_team | tojson }};
+const squads = {
+    home: {{ home_squad | tojson }},
+    away: {{ away_squad | tojson }},
+};
+
+// Datos existentes indexados por "home_1", "away_2", etc.
+const saved = {};
+{% if existing_scorers %}
+{% for s in existing_scorers %}
+const _key{{ loop.index }} = ({{ s.team | tojson }} === homeTeam ? "home" : "away") + "_{{ s.position }}";
+saved[_key{{ loop.index }}] = { player: {{ (s.player_name or "") | tojson }}, own: {{ s.is_own_goal }} };
+{% endfor %}
+{% endif %}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function buildOptions(squad, selected) {
+    let opts = `<option value="">— Elegir jugador —</option>`;
+    let found = false;
+    (squad || []).forEach(p => {
+        const sel = (p === selected) ? 'selected' : '';
+        if (sel) found = true;
+        opts += `<option value="${escapeHtml(p)}" ${sel}>${escapeHtml(p)}</option>`;
+    });
+    if (selected && !found && selected !== '') {
+        opts += `<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)} (manual)</option>`;
+    }
+    return opts;
+}
+
+function playerField(key, pos, squad, selected) {
+    const name = `scorer_${key}_${pos}`;
+    const oppKey = key === 'home' ? 'away' : 'home';
+    const oppSquad = squads[oppKey];
+    if ((squad && squad.length) || (oppSquad && oppSquad.length)) {
+        return `<select name="${name}"
+            data-own-squad='${JSON.stringify(squad || [])}'
+            data-opp-squad='${JSON.stringify(oppSquad || [])}'
+            class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
+            ${buildOptions(squad, selected)}
+        </select>`;
+    }
+    // Fallback texto libre
+    return `<input type="text" name="${name}" placeholder="Nombre del jugador" value="${escapeHtml(selected || '')}"
+        class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">`;
+}
+
+function renderScorers() {
+    const home = Math.max(0, parseInt(document.getElementById('home_score').value) || 0);
+    const away = Math.max(0, parseInt(document.getElementById('away_score').value) || 0);
+    const container = document.getElementById('scorer-slots');
+    const hint = document.getElementById('scorer-hint');
+    container.innerHTML = '';
+
+    if (home + away === 0) {
+        hint.textContent = 'Pon al menos un gol para añadir goleadores.';
+        return;
+    }
+    hint.textContent = '';
+
+    const sections = [
+        { key: 'home', team: homeTeam, count: home },
+        { key: 'away', team: awayTeam, count: away },
+    ];
+
+    sections.forEach(({ key, team, count }) => {
+        if (count === 0) return;
+
+        const section = document.createElement('div');
+        section.innerHTML = `<p class="font-display text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">${escapeHtml(team)}</p>`;
+
+        for (let pos = 1; pos <= count; pos++) {
+            const fieldKey = `${key}_${pos}`;
+            const sv = saved[fieldKey] || {};
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 mb-2';
+            row.innerHTML = `
+                <span class="font-display text-[11px] text-white/40 w-12 text-right shrink-0 uppercase tracking-wider">Gol ${pos}</span>
+                ${playerField(key, pos, squads[key], sv.player)}
+                <label class="flex items-center gap-1.5 text-xs text-white/50 whitespace-nowrap cursor-pointer shrink-0 font-display uppercase tracking-wider"
+                       title="Autogol +20 pts 🤯">
+                    <input type="checkbox" name="scorer_${key}_${pos}_own" value="1"
+                        ${sv.own ? 'checked' : ''}
+                        class="accent-amber-400 w-4 h-4"
+                        onchange="toggleOg(this)"> OG
+                </label>
+            `;
+            section.appendChild(row);
+        }
+        container.appendChild(section);
+    });
+}
+
+function toggleOg(checkbox) {
+    // El checkbox está dentro de <label class="flex"> que está dentro de <div class="flex"> (row)
+    // Hay que subir hasta el div row que contiene el <select>
+    const row = checkbox.closest('label').parentElement;
+    const sel = row.querySelector('select');
+    if (!sel) return; // fallback texto libre, no hacer nada
+    const ownSquad = JSON.parse(sel.dataset.ownSquad || '[]');
+    const oppSquad = JSON.parse(sel.dataset.oppSquad || '[]');
+    const current = sel.value;
+    if (checkbox.checked) {
+        // OG marcado → mostrar plantilla del equipo CONTRARIO
+        sel.innerHTML = buildOptions(oppSquad, '');
+        sel.style.borderColor = 'rgb(251,191,36)'; // amber
+        sel.style.setProperty('--tw-ring-color', 'rgb(251,191,36,0.5)');
+    } else {
+        // OG desmarcado → volver al equipo propio
+        sel.innerHTML = buildOptions(ownSquad, '');
+        sel.style.borderColor = '';
+    }
+}
+
+renderScorers();
+
+// ── Lógica penales ────────────────────────────────────────────
+{% if is_knockout %}
+const penaltiesSection = document.getElementById('penalties-section');
+const homeInput = document.getElementById('home_score');
+const awayInput = document.getElementById('away_score');
+
+function checkPenalties() {
+    if (!penaltiesSection) return;
+    const h = parseInt(homeInput.value) || 0;
+    const a = parseInt(awayInput.value) || 0;
+    if (h === a) {
+        penaltiesSection.classList.remove('hidden');
+    } else {
+        penaltiesSection.classList.add('hidden');
+    }
+}
+
+// Actualizar labels con TLA de cada equipo
+const _htla = {{ match.home_tla | tojson }};
+const _atla = {{ match.away_tla | tojson }};
+document.getElementById('pen-home-label').textContent = (_htla && _htla !== '???') ? _htla : {{ match.home_team[:3].upper() | tojson }};
+document.getElementById('pen-away-label').textContent = (_atla && _atla !== '???') ? _atla : {{ match.away_team[:3].upper() | tojson }};
+
+// Sincronizar punto verde: cuando cambias penalty_home/away, auto-selecciona quien gana
+function syncAdvances() {
+    // Solo si el usuario ya había cambiado los scores de penales
+    const ph = parseInt(document.getElementById('pen_home').value) || 0;
+    const pa = parseInt(document.getElementById('pen_away').value) || 0;
+    if (ph === pa) return;
+    const winner = ph > pa ? {{ match.home_team | tojson }} : {{ match.away_team | tojson }};
+    document.querySelectorAll('input[name="advances_team"]').forEach(r => {
+        r.checked = r.value === winner;
+    });
+}
+
+document.getElementById('pen_home').addEventListener('input', syncAdvances);
+document.getElementById('pen_away').addEventListener('input', syncAdvances);
+
+homeInput.addEventListener('input', checkPenalties);
+awayInput.addEventListener('input', checkPenalties);
+
+// Estado inicial
+checkPenalties();
+{% endif %}
+</script>
+
+{% endblock %}

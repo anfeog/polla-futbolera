@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Resultados — Admin{% endblock %}
+{% block content %}
+
+<div class="mb-6 flex items-center gap-4 flex-wrap">
+    <div>
+        <a href="/admin" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-2 inline-block">← Admin</a>
+        <h1 class="font-display font-bold text-3xl tracking-wide">⚙️ Resultados manuales</h1>
+    </div>
+</div>
+
+{% if ok %}
+<div class="bg-emerald-900/40 border border-emerald-700/60 text-emerald-200 px-4 py-3 rounded-xl mb-4 text-sm">
+    ✅ Resultado del partido #{{ ok }} guardado y puntos recalculados.
+</div>
+{% endif %}
+
+<!-- Tabs por fase -->
+<div class="flex gap-1 flex-wrap mb-6">
+{% for s in stages %}
+<a href="/admin/resultados?stage={{ s | urlencode }}"
+   class="font-display text-xs uppercase tracking-wider px-3 py-1.5 rounded-lg transition
+   {{ 'bg-amber-400 text-ink font-bold' if s == active_stage else 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10' }}">
+    {{ s }}
+</a>
+{% endfor %}
+</div>
+
+<!-- Tabla de partidos -->
+<div class="space-y-2">
+{% for m in matches %}
+{% set is_ko = m.stage in ko_stages %}
+{% set has_result = m.home_score is not none %}
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border
+    {{ 'border-emerald-500/30' if has_result else 'border-white/10' }} overflow-hidden">
+
+    <form method="post" action="/admin/resultado/{{ m.id }}">
+        <input type="hidden" name="stage" value="{{ active_stage }}">
+
+        <div class="px-4 py-3 flex items-center gap-3 flex-wrap">
+
+            <!-- Fecha + kickoff -->
+            <span class="font-display text-[10px] uppercase tracking-wider text-white/30 shrink-0">
+                {{ m.kickoff[:10] }} {{ m.kickoff[11:16] }}
+            </span>
+
+            <!-- Local -->
+            <div class="flex items-center gap-1.5 flex-1 min-w-[100px]">
+                {% set hc = crest(m.home_team, m.home_flag) %}
+                {% if hc %}<img src="{{ hc }}" class="w-5 h-5 object-contain shrink-0">{% endif %}
+                <input name="home_team" value="{{ m.home_team }}"
+                    class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs font-display uppercase tracking-wide focus:outline-none focus:border-amber-400 transition">
+            </div>
+
+            <!-- Marcador -->
+            <div class="flex items-center gap-1 shrink-0">
+                <input type="number" name="home_score" min="0" max="30"
+                    value="{{ m.home_score if m.home_score is not none else '' }}"
+                    placeholder="–"
+                    class="w-10 text-center text-lg font-heavy bg-black/40 border border-white/10 rounded-lg py-1 focus:outline-none focus:border-amber-400 transition">
+                <span class="text-white/30 font-bold">:</span>
+                <input type="number" name="away_score" min="0" max="30"
+                    value="{{ m.away_score if m.away_score is not none else '' }}"
+                    placeholder="–"
+                    class="w-10 text-center text-lg font-heavy bg-black/40 border border-white/10 rounded-lg py-1 focus:outline-none focus:border-amber-400 transition">
+            </div>
+
+            <!-- Visitante -->
+            <div class="flex items-center gap-1.5 flex-1 min-w-[100px]">
+                <input name="away_team" value="{{ m.away_team }}"
+                    class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs font-display uppercase tracking-wide focus:outline-none focus:border-amber-400 transition">
+                {% set ac = crest(m.away_team, m.away_flag) %}
+                {% if ac %}<img src="{{ ac }}" class="w-5 h-5 object-contain shrink-0">{% endif %}
+            </div>
+
+            <!-- Penales (solo KO) -->
+            {% if is_ko %}
+            <div class="flex items-center gap-1.5 shrink-0">
+                <span class="font-display text-[10px] uppercase tracking-wider text-violet-400/70">p</span>
+                <input type="number" name="penalty_home" min="0" max="20"
+                    value="{{ m.penalty_home if m.penalty_home is not none else '' }}"
+                    placeholder="–"
+                    class="w-9 text-center text-base font-heavy bg-violet-900/20 border border-violet-500/20 rounded-lg py-1 focus:outline-none focus:border-violet-400 transition">
+                <span class="text-violet-400/30 font-bold text-sm">:</span>
+                <input type="number" name="penalty_away" min="0" max="20"
+                    value="{{ m.penalty_away if m.penalty_away is not none else '' }}"
+                    placeholder="–"
+                    class="w-9 text-center text-base font-heavy bg-violet-900/20 border border-violet-500/20 rounded-lg py-1 focus:outline-none focus:border-violet-400 transition">
+            </div>
+            {% endif %}
+
+            <!-- Guardar -->
+            <button type="submit"
+                class="font-display text-xs uppercase tracking-wider px-4 py-1.5 rounded-xl
+                       bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30 transition shrink-0">
+                Guardar
+            </button>
+
+            <!-- Estado actual -->
+            {% if has_result %}
+            <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-display uppercase tracking-wider text-emerald-400">✓ {{ m.home_score }}–{{ m.away_score }}</span>
+                {% if m.penalty_home is not none %}
+                <span class="text-[10px] font-display uppercase tracking-wider text-violet-400">({{ m.penalty_home }}–{{ m.penalty_away }}p · {{ m.advances_team[:8] if m.advances_team else '?' }})</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endfor %}
+
+{% if not matches %}
+<div class="text-center py-12 text-white/30 font-display uppercase tracking-wider">No hay partidos en esta fase</div>
+{% endif %}
+</div>
+
+{% endblock %}

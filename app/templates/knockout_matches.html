@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}{{ phase_label }} — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-3 inline-block">← Todas las fases</a>
+    <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+            <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">Eliminatorias · FIFA World Cup 26</p>
+            <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">
+                {{ phase_icon }} {{ phase_label | upper }}
+            </h1>
+        </div>
+        <a href="/cuadro" class="font-display uppercase tracking-wider text-xs px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 transition">
+            Ver cuadro →
+        </a>
+    </div>
+</div>
+
+{% if not matches %}
+<div class="text-center py-20 text-white/40">
+    <div class="text-6xl mb-4">🎲</div>
+    <p class="font-display uppercase tracking-wider">Los equipos se definen al avanzar la fase anterior</p>
+</div>
+{% else %}
+
+<!-- Stats rápidas -->
+{% set total = matches | length %}
+{% set predicted_count = matches | selectattr('id', 'in', user_predictions.keys()) | list | length %}
+{% set pending = [] %}
+{% for m in matches %}{% if not user_predictions[m.id] and not locked[m.id] and m.home_team != 'Por definir' %}{% set _ = pending.append(1) %}{% endif %}{% endfor %}
+
+{% if pending | length > 0 %}
+<div class="flex items-center gap-3 bg-amber-400/10 border border-amber-400/20 rounded-xl px-4 py-3 mb-6">
+    <span class="text-amber-400 text-lg">⚠️</span>
+    <div>
+        <p class="font-display text-sm font-semibold uppercase tracking-wide text-amber-300">
+            {{ pending | length }} partido{{ 's' if pending | length > 1 else '' }} pendiente{{ 's' if pending | length > 1 else '' }} de pronóstico
+        </p>
+        <p class="text-xs text-amber-400/60 mt-0.5">Recuerda que el plazo cierra 1 hora antes de cada partido</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Grid de cuadritos -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+{% for m in matches %}
+{% set pred    = user_predictions[m.id] %}
+{% set closed  = locked[m.id] %}
+{% set live    = m.status in ['IN_PLAY', 'PAUSED'] %}
+{% set finished = m.status == 'FINISHED' %}
+{% set tbd     = m.home_team == 'Por definir' %}
+{% set home_win = not tbd and m.home_score is not none and m.home_score > m.away_score %}
+{% set away_win = not tbd and m.away_score is not none and m.away_score > m.home_score %}
+{% set has_penalties = m.penalty_home is not none and m.penalty_away is not none %}
+{% set pen_home_win = has_penalties and m.penalty_home > m.penalty_away %}
+{% set pen_away_win = has_penalties and m.penalty_away > m.penalty_home %}
+{% set home_advances = home_win or pen_home_win %}
+{% set away_advances = away_win or pen_away_win %}
+
+<div class="relative overflow-hidden rounded-2xl border transition-all
+    {{ 'border-red-500/50 bg-red-500/5' if live
+       else ('border-emerald-500/25 bg-gradient-to-b from-emerald-500/5 to-emerald-500/[0.02]' if pred
+       else ('border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02]' if tbd
+       else ('border-amber-400/30 bg-gradient-to-b from-amber-400/5 to-white/[0.02]' if (not closed)
+       else 'border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent'))) }}">
+
+    <!-- Indicador lateral -->
+    <div class="absolute left-0 top-0 bottom-0 w-1
+        {{ 'bg-red-500 animate-livepulse' if live
+           else ('brand-bar' if pred
+           else ('bg-amber-400/60' if (not closed and not tbd)
+           else 'bg-white/10')) }}"></div>
+
+    <div class="pl-4 pr-4 pt-4 pb-3">
+
+        <!-- Fecha + hora -->
+        <div class="flex items-center justify-between mb-3">
+            <span class="font-display text-[10px] uppercase tracking-wider text-white/40">
+                {{ m.kickoff[:10] | date_fmt }}
+            </span>
+            <span class="font-display text-[11px] font-semibold text-white/60">
+                {% if live %}
+                    <span class="text-red-400 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-livepulse inline-block"></span>EN VIVO
+                    </span>
+                {% elif finished %}
+                    <span class="text-white/40">Final</span>
+                {% else %}
+                    {{ m.kickoff[11:16] }} UTC
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Equipos -->
+        {% if tbd %}
+        <!-- Por definir -->
+        <div class="flex items-center justify-center gap-4 py-2 mb-3">
+            <div class="flex flex-col items-center gap-1.5 flex-1 text-center">
+                <div class="w-10 h-10 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                    <span class="text-white/30 text-lg font-display">?</span>
+                </div>
+                <span class="font-display text-xs uppercase tracking-wide text-white/30">Por definir</span>
+            </div>
+            <span class="font-display font-bold text-white/20 shrink-0">vs</span>
+            <div class="flex flex-col items-center gap-1.5 flex-1 text-center">
+                <div class="w-10 h-10 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                    <span class="text-white/30 text-lg font-display">?</span>
+                </div>
+                <span class="font-display text-xs uppercase tracking-wide text-white/30">Por definir</span>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Equipos definidos -->
+        <div class="flex items-center justify-center gap-3 mb-3">
+            <!-- Local -->
+            <div class="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
+                {% set hc = crest(m.home_team, m.home_flag) %}
+                <div class="relative inline-block">
+                    {% if hc %}
+                        <img src="{{ hc }}" class="w-10 h-10 object-contain drop-shadow {{ 'opacity-35' if away_advances else '' }}">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-display text-sm">
+                            {{ m.home_tla[:2] if m.home_tla else '?' }}
+                        </div>
+                    {% endif %}
+                    {% if home_advances %}
+                    <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-ink flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-ink" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    {% endif %}
+                </div>
+                <span class="font-display text-[11px] uppercase tracking-wide leading-tight truncate w-full
+                    {{ 'font-bold text-emerald-300' if home_advances else 'text-white/80' }}">
+                    {{ m.home_tla or m.home_team[:6] }}
+                </span>
+            </div>
+
+            <!-- Resultado o VS -->
+            <div class="shrink-0 text-center min-w-[52px]">
+                {% if m.home_score is not none %}
+                    <div class="font-heavy text-2xl leading-none flex items-center justify-center gap-1.5">
+                        <span class="{{ 'text-emerald-300' if home_advances else 'text-white/70' }}">{{ m.home_score }}</span>
+                        <span class="text-white/25 text-lg">:</span>
+                        <span class="{{ 'text-emerald-300' if away_advances else 'text-white/70' }}">{{ m.away_score }}</span>
+                    </div>
+                    {% if has_penalties %}
+                    <div class="mt-0.5 text-[10px] font-display text-violet-400/80 tracking-wider">
+                        <span class="{{ 'font-bold text-violet-300' if pen_home_win else '' }}">{{ m.penalty_home }}</span>
+                        <span class="text-violet-400/40">–</span>
+                        <span class="{{ 'font-bold text-violet-300' if pen_away_win else '' }}">{{ m.penalty_away }}</span>
+                        <span class="text-violet-400/50 ml-0.5">p</span>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <span class="font-display font-bold text-white/25 text-base">vs</span>
+                {% endif %}
+            </div>
+
+            <!-- Visitante -->
+            <div class="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
+                {% set ac = crest(m.away_team, m.away_flag) %}
+                <div class="relative inline-block">
+                    {% if ac %}
+                        <img src="{{ ac }}" class="w-10 h-10 object-contain drop-shadow {{ 'opacity-35' if home_advances else '' }}">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-display text-sm">
+                            {{ m.away_tla[:2] if m.away_tla else '?' }}
+                        </div>
+                    {% endif %}
+                    {% if away_advances %}
+                    <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-ink flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-ink" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    {% endif %}
+                </div>
+                <span class="font-display text-[11px] uppercase tracking-wide leading-tight truncate w-full
+                    {{ 'font-bold text-emerald-300' if away_advances else 'text-white/80' }}">
+                    {{ m.away_tla or m.away_team[:6] }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Acción -->
+        <div class="border-t border-white/[0.06] pt-2.5 flex items-center justify-center">
+            {% if pred %}
+                <div class="flex items-center flex-wrap gap-2 text-xs justify-center">
+                    <span class="font-display uppercase tracking-wider text-white/40">Tu pronóstico</span>
+                    <span class="font-display font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md">
+                        {{ pred.home_score_pred }}–{{ pred.away_score_pred }}
+                    </span>
+                    {% if pred.advances_team %}
+                        <span class="font-display text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-md">
+                            {% if pred.penalty_home is not none and pred.penalty_away is not none %}
+                                {{ pred.penalty_home }}–{{ pred.penalty_away }}p
+                            {% endif %}
+                            · pasa {{ pred.advances_team[:8] }}
+                        </span>
+                    {% endif %}
+                    {% if finished %}
+                        <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">
+                            +{{ "%.1f"|format(pred.points) }} pts
+                        </span>
+                    {% elif not closed %}
+                        <a href="/prediccion/{{ m.id }}" class="text-white/40 hover:text-white underline underline-offset-2">editar</a>
+                    {% endif %}
+                </div>
+            {% elif not closed %}
+                <a href="/prediccion/{{ m.id }}"
+                   class="w-full font-display uppercase tracking-wider text-xs font-semibold px-4 py-2 rounded-xl brand-bar text-ink hover:opacity-90 transition text-center shadow-lg shadow-sky-500/20">
+                    {% if tbd %}Pronosticar (equipos TBD){% else %}Pronosticar{% endif %}
+                </a>
+            {% else %}
+                <span class="font-display uppercase tracking-wider text-[11px] text-white/25">🔒 Cerrado</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% endif %}
+
+{% endblock %}

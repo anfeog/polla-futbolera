@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ group_label_str }} — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <div class="flex items-center gap-2 mb-3 text-xs font-display uppercase tracking-wider text-white/40">
+        <a href="/partidos" class="hover:text-white transition">Fases</a>
+        <span>/</span>
+        <a href="/partidos/group-stage" class="hover:text-white transition">Fase de Grupos</a>
+        <span>/</span>
+        <span class="text-white/70">{{ group_label_str }}</span>
+    </div>
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">Fase de Grupos · FIFA World Cup 26</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🏟️ {{ group_label_str | upper }}</h1>
+</div>
+
+<!-- Tabla de posiciones -->
+{% if standings %}
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+        <span class="text-sm">📊</span>
+        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/70">Tabla de posiciones</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="font-display text-[10px] uppercase tracking-wider text-white/30 border-b border-white/10">
+                    <th class="py-2 pl-4 pr-2 text-left w-6">#</th>
+                    <th class="py-2 px-2 text-left">Equipo</th>
+                    <th class="py-2 px-2 text-center" title="Partidos jugados">PJ</th>
+                    <th class="py-2 px-2 text-center text-emerald-400/70">G</th>
+                    <th class="py-2 px-2 text-center text-white/40">E</th>
+                    <th class="py-2 px-2 text-center text-red-400/70">P</th>
+                    <th class="py-2 px-2 text-center">DG</th>
+                    <th class="py-2 pl-2 pr-4 text-center font-bold text-white/70">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team, s in standings %}
+                {% set qualified = loop.index <= 2 %}
+                <tr class="border-b border-white/5 last:border-0 {{ 'bg-sky-500/[0.08]' if qualified else '' }} hover:bg-white/[0.03] transition">
+                    <td class="py-3 pl-4 pr-2">
+                        <span class="font-display text-xs {{ 'text-sky-400 font-bold' if qualified else 'text-white/40' }}">{{ loop.index }}</span>
+                    </td>
+                    <td class="py-3 px-2">
+                        <div class="flex items-center gap-2">
+                            {% set tc = crest(team, s.flag) %}
+                            {% if tc %}<img src="{{ tc }}" class="w-5 h-5 object-contain shrink-0">{% endif %}
+                            <span class="font-display text-xs uppercase tracking-wide">{{ team }}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-2 text-center text-white/50 text-xs">{{ s.P }}</td>
+                    <td class="py-3 px-2 text-center text-emerald-400 font-semibold text-xs">{{ s.W }}</td>
+                    <td class="py-3 px-2 text-center text-white/40 text-xs">{{ s.D }}</td>
+                    <td class="py-3 px-2 text-center text-red-400 text-xs">{{ s.L }}</td>
+                    <td class="py-3 px-2 text-center text-xs {{ 'text-emerald-400' if s.GD > 0 else ('text-red-400' if s.GD < 0 else 'text-white/40') }}">
+                        {{ ('+' if s.GD > 0 else '') ~ s.GD }}
+                    </td>
+                    <td class="py-3 pl-2 pr-4 text-center font-heavy text-lg">{{ s.Pts }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="px-4 py-2 border-t border-white/5 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-sky-500/60 inline-block"></span>
+        <span class="text-[10px] font-display uppercase tracking-wider text-white/30">Clasifican a dieciseisavos</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Partidos agrupados por fecha -->
+{% for date, day_matches in calendar %}
+{% set is_today = date == today %}
+{% set day_pending = [] %}
+{% for m in day_matches %}{% if not user_predictions[m.id] and not locked[m.id] %}{% set _ = day_pending.append(1) %}{% endif %}{% endfor %}
+
+<div class="mb-6">
+    <div class="flex items-center gap-3 mb-3">
+        <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
+        <div class="flex items-center gap-2">
+            {% if is_today %}<span class="w-2 h-2 rounded-full bg-lime-400 animate-livepulse"></span>{% endif %}
+            <h2 class="font-display text-sm font-semibold uppercase tracking-[0.2em] {{ 'text-lime-400' if is_today else 'text-white/60' }}">
+                {{ date | date_fmt }}
+            </h2>
+            {% if day_pending | length > 0 %}
+            <span class="text-[10px] font-display uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
+                {{ day_pending | length }} pendiente{{ 's' if day_pending | length > 1 else '' }}
+            </span>
+            {% endif %}
+        </div>
+        <span class="h-px flex-1 bg-gradient-to-l from-transparent to-white/15"></span>
+    </div>
+
+    <div class="space-y-3">
+    {% for m in day_matches %}
+    {% set pred    = user_predictions[m.id] %}
+    {% set live    = m.status in ['IN_PLAY', 'PAUSED'] %}
+    {% set finished = m.status == 'FINISHED' %}
+    {% set closed  = locked[m.id] %}
+
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 hover:border-white/20 transition">
+        <div class="absolute left-0 top-0 bottom-0 w-1 {{ 'bg-red-500 animate-livepulse' if live else ('brand-bar' if pred else 'bg-white/10') }}"></div>
+
+        <div class="pl-5 pr-4 py-4 flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
+                <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate text-right">{{ m.home_team }}</span>
+                {% set hc = crest(m.home_team, m.home_flag) %}
+                {% if hc %}<img src="{{ hc }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
+            </div>
+            <div class="shrink-0 text-center min-w-[88px]">
+                {% if m.home_score is not none %}
+                    <div class="font-display font-bold text-2xl sm:text-3xl leading-none flex items-center justify-center gap-2">
+                        <span>{{ m.home_score }}</span><span class="text-white/30">:</span><span>{{ m.away_score }}</span>
+                    </div>
+                    <div class="mt-1 text-[10px] font-display uppercase tracking-[0.2em] {{ 'text-red-400' if live else 'text-white/40' }}">
+                        {{ 'En vivo' if live else 'Final' }}
+                    </div>
+                {% else %}
+                    <div class="font-display font-bold text-lg leading-none text-white/80">{{ m.kickoff[11:16] }}</div>
+                    <div class="mt-1 text-[10px] uppercase tracking-wider text-white/40">UTC</div>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                {% set ac = crest(m.away_team, m.away_flag) %}
+                {% if ac %}<img src="{{ ac }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
+                <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate">{{ m.away_team }}</span>
+            </div>
+        </div>
+        <div class="px-5 pb-3 -mt-1 flex items-center justify-center">
+            {% if pred %}
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="font-display uppercase tracking-wider text-white/40">Tu pronóstico</span>
+                    <span class="font-display font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md">{{ pred.home_score_pred }}–{{ pred.away_score_pred }}</span>
+                    {% if finished %}
+                        <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(pred.points) }} pts</span>
+                    {% elif not closed %}
+                        <a href="/prediccion/{{ m.id }}" class="text-white/40 hover:text-white underline underline-offset-2">editar</a>
+                    {% else %}
+                        <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 cerrado</span>
+                    {% endif %}
+                </div>
+            {% elif not closed %}
+                <a href="/prediccion/{{ m.id }}"
+                   class="font-display uppercase tracking-wider text-xs font-semibold px-5 py-2 rounded-xl brand-bar text-ink hover:opacity-90 transition shadow-lg shadow-sky-500/20">
+                    Pronosticar
+                </a>
+            {% else %}
+                <span class="font-display uppercase tracking-wider text-[10px] text-white/30">🔒 Pronóstico cerrado</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

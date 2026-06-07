@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">Tu identidad</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">MI PERFIL</h1>
+</div>
+
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 p-6 mb-6 flex items-center gap-4">
+    <div class="text-6xl">{{ user.avatar }}</div>
+    <div>
+        <div class="font-display font-bold text-2xl uppercase tracking-wide">{{ user.username }}</div>
+        <p class="text-white/40 text-sm">Así te ven los demás en la tabla.</p>
+    </div>
+</div>
+
+<form method="post" action="/perfil">
+    <h2 class="font-display text-sm uppercase tracking-wider text-white/60 mb-3">Elige tu avatar</h2>
+    <div class="grid grid-cols-6 sm:grid-cols-8 gap-2 mb-6">
+        {% for a in avatars %}
+        <button type="submit" name="avatar" value="{{ a }}"
+            class="aspect-square text-3xl rounded-xl border transition flex items-center justify-center
+            {{ 'border-sky-400 bg-sky-500/20 ring-1 ring-sky-400/50' if a == user.avatar else 'border-white/10 bg-white/[0.03] hover:bg-white/10 hover:border-white/30' }}">
+            {{ a }}
+        </button>
+        {% endfor %}
+    </div>
+    <p class="text-white/40 text-xs">Toca un emoji para guardarlo al instante.</p>
+</form>
+
+{% endblock %}

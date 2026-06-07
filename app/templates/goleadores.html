@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Goleadores — Mundial 2026{% endblock %}
+{% block content %}
+
+<!-- Encabezado -->
+<div class="mb-8">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">FIFA World Cup 26</p>
+    <div class="flex items-end justify-between gap-4 flex-wrap">
+        <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">⚽ GOLEADORES</h1>
+        <div class="flex items-center gap-4 text-right">
+            <div>
+                <div class="font-heavy text-2xl text-amber-300">{{ total_goals }}</div>
+                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">goles totales</div>
+            </div>
+            {% if total_matches > 0 %}
+            <div>
+                <div class="font-heavy text-2xl text-white/60">{{ "%.2f"|format(total_goals / total_matches) }}</div>
+                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">por partido</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if not scorers %}
+<!-- Sin datos aún -->
+<div class="text-center py-20">
+    <div class="text-7xl mb-5">⚽</div>
+    <p class="font-display text-xl uppercase tracking-widest text-white/40 mb-2">El torneo aún no ha comenzado</p>
+    <p class="text-sm text-white/25">Los goleadores aparecerán aquí una vez se disputen los primeros partidos</p>
+</div>
+
+{% else %}
+
+<!-- Podio top-3 -->
+{% if scorers | length >= 1 %}
+<div class="flex items-end justify-center gap-3 mb-8">
+
+    {% for s in scorers[:3] %}
+    {% set medals = ['🥇', '🥈', '🥉'] %}
+    {% set medal = medals[loop.index0] %}
+    {% set heights = ['h-36', 'h-28', 'h-24'] %}
+    {% set podium_h = heights[loop.index0] %}
+    {% set colors = [
+        'from-amber-400/20 to-amber-400/5 border-amber-400/40',
+        'from-white/10 to-white/[0.03] border-white/20',
+        'from-amber-700/20 to-amber-700/[0.05] border-amber-700/30'
+    ] %}
+    {% set text_colors = ['text-amber-300', 'text-white/70', 'text-amber-600/80'] %}
+    {% set order = [2, 1, 3] %}
+
+    <div class="flex-1 max-w-[160px] text-center order-{{ order[loop.index0] }} sm:order-none
+        {{ 'translate-y-0' if loop.index == 1 else 'translate-y-4' }}">
+
+        <!-- Escudo + nombre -->
+        <div class="mb-3 flex flex-col items-center gap-2">
+            {% set tc = crest(s.team, s.flag) %}
+            {% if tc %}
+                <img src="{{ tc }}" class="w-12 h-12 object-contain drop-shadow-lg">
+            {% else %}
+                <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center font-display font-bold text-sm">
+                    {{ s.tla[:3] if s.tla else s.team[:3] }}
+                </div>
+            {% endif %}
+            <div>
+                <p class="font-display font-semibold text-xs uppercase tracking-wide leading-tight text-center line-clamp-2">
+                    {{ s.player_name }}
+                </p>
+                <p class="font-display text-[10px] uppercase tracking-wider text-white/35 text-center mt-0.5">
+                    {{ s.tla or s.team[:6] }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Bloque del podio -->
+        <div class="rounded-t-xl bg-gradient-to-b {{ colors[loop.index0] }} border border-b-0 {{ podium_h }} flex flex-col items-center justify-start pt-3 gap-1">
+            <span class="text-2xl">{{ medal }}</span>
+            <span class="font-heavy text-4xl {{ text_colors[loop.index0] }}">{{ s.goals }}</span>
+            <span class="font-display text-[9px] uppercase tracking-widest text-white/35">
+                {{ s.pj }} PJ
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+{% endif %}
+
+<!-- Tabla completa -->
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/70">Clasificación completa</h2>
+        <p class="font-display text-[10px] uppercase tracking-wider text-white/30">
+            Empate → menos partidos jugados
+        </p>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="font-display text-[10px] uppercase tracking-wider text-white/30 border-b border-white/[0.08]">
+                    <th class="py-2 pl-4 pr-2 text-left w-8">#</th>
+                    <th class="py-2 px-2 text-left">Jugador</th>
+                    <th class="py-2 px-2 text-left hidden sm:table-cell">Selección</th>
+                    <th class="py-2 px-2 text-center w-16 text-amber-400/80">Goles</th>
+                    <th class="py-2 pl-2 pr-4 text-center w-14">PJ</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in scorers %}
+            {% set medals = ['🥇', '🥈', '🥉'] %}
+            {% set is_top3 = loop.index <= 3 %}
+            {% set is_leader = loop.index == 1 %}
+            <!-- Línea divisoria si hay empate en goles con el anterior -->
+            {% if not loop.first and s.goals == scorers[loop.index0 - 1].goals and s.pj > scorers[loop.index0 - 1].pj %}
+            <tr><td colspan="5" class="py-0"><div class="h-px bg-amber-400/10 mx-4"></div></td></tr>
+            {% endif %}
+            <tr class="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition
+                {{ 'bg-amber-400/[0.04]' if is_top3 else '' }}">
+
+                <!-- Posición -->
+                <td class="py-3 pl-4 pr-2">
+                    {% if loop.index <= 3 %}
+                        <span class="text-base">{{ medals[loop.index0] }}</span>
+                    {% else %}
+                        <span class="font-display text-xs text-white/30">{{ loop.index }}</span>
+                    {% endif %}
+                </td>
+
+                <!-- Nombre -->
+                <td class="py-3 px-2">
+                    <p class="font-display font-semibold text-sm leading-tight">{{ s.player_name }}</p>
+                    <p class="font-display text-[10px] uppercase tracking-wider text-white/35 sm:hidden mt-0.5">
+                        {% set tc = crest(s.team, s.flag) %}
+                        {% if tc %}<img src="{{ tc }}" class="w-3 h-3 object-contain inline mr-1">{% endif %}
+                        {{ s.tla or s.team }}
+                    </p>
+                </td>
+
+                <!-- Selección (solo desktop) -->
+                <td class="py-3 px-2 hidden sm:table-cell">
+                    <div class="flex items-center gap-2">
+                        {% set tc = crest(s.team, s.flag) %}
+                        {% if tc %}
+                            <img src="{{ tc }}" class="w-5 h-5 object-contain shrink-0">
+                        {% else %}
+                            <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center font-display text-[9px]">
+                                {{ s.tla[:2] if s.tla else '?' }}
+                            </div>
+                        {% endif %}
+                        <span class="font-display text-xs uppercase tracking-wide text-white/60 truncate">
+                            {{ s.tla or s.team[:10] }}
+                        </span>
+                    </div>
+                </td>
+
+                <!-- Goles -->
+                <td class="py-3 px-2 text-center">
+                    <span class="font-heavy text-{{ '3xl text-amber-300' if is_leader else ('2xl text-white/90' if is_top3 else 'xl text-white/60') }}">
+                        {{ s.goals }}
+                    </span>
+                </td>
+
+                <!-- PJ -->
+                <td class="py-3 pl-2 pr-4 text-center">
+                    <span class="font-display text-xs text-white/40">{{ s.pj }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="px-4 py-2.5 border-t border-white/5">
+        <p class="font-display text-[10px] uppercase tracking-wider text-white/25">
+            <span class="text-amber-400/60">⚡ Desempate:</span>
+            a igual número de goles, va primero quien los marcó en menos partidos
+        </p>
+    </div>
+</div>
+
+<!-- Autogoles -->
+{% if own_goals %}
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.07] overflow-hidden">
+    <div class="px-4 py-3 border-b border-white/[0.07] flex items-center gap-2">
+        <span class="text-white/30 text-base">😬</span>
+        <h2 class="font-display text-xs font-semibold uppercase tracking-wider text-white/30">Autogoles</h2>
+    </div>
+    <table class="w-full">
+        <tbody>
+        {% for og in own_goals %}
+        <tr class="border-b border-white/[0.04] last:border-0">
+            <td class="py-2.5 pl-4 pr-2 w-8">
+                <span class="font-display text-[10px] text-white/25">{{ loop.index }}</span>
+            </td>
+            <td class="py-2.5 px-2">
+                <p class="font-display text-xs text-white/50">{{ og.player_name }}</p>
+            </td>
+            <td class="py-2.5 px-2">
+                <div class="flex items-center gap-1.5">
+                    {% set tc = crest(og.team, og.flag) %}
+                    {% if tc %}<img src="{{ tc }}" class="w-4 h-4 object-contain opacity-50">{% endif %}
+                    <span class="font-display text-[10px] uppercase tracking-wide text-white/30">
+                        {{ og.tla or og.team[:6] }}
+                    </span>
+                </div>
+            </td>
+            <td class="py-2.5 pl-2 pr-4 text-right">
+                <span class="font-display text-xs text-white/30">{{ og.own_goals }} AG</span>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
