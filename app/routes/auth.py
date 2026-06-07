@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     if get_current_user(request):
-        return RedirectResponse("/partidos")
+        return RedirectResponse("/inicio")
     return templates.TemplateResponse("login.html", {"request": request, "error": None})
 
 
@@ -27,7 +27,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 
     token = create_session_token(user["id"])
     # Primera vez que entra: mostrar tutorial
-    dest = "/como-jugar" if not user["tutorial_seen"] else "/partidos"
+    dest = "/como-jugar" if not user["tutorial_seen"] else "/inicio"
     response = RedirectResponse(dest, status_code=303)
     response.set_cookie("session", token, httponly=True, max_age=60 * 60 * 24 * 7)
     return response

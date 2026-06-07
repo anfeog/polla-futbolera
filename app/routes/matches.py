@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.timeutils import is_locked
+from app.timeutils import is_locked, lock_time, is_past
 from app.crests import slugify
 
 router = APIRouter()
@@ -101,6 +101,40 @@ def _today():
 def calendario_redirect(request: Request, user=Depends(require_login)):
     """El calendario fue integrado en las fases — redirigir a partidos."""
     return RedirectResponse("/partidos", status_code=302)
+
+
+# ──────────────────────────────────────────────────────────────
+# INICIO (landing: próximos partidos + contador de cierre)
+# ──────────────────────────────────────────────────────────────
+@router.get("/inicio", response_class=HTMLResponse)
+def inicio(request: Request, user=Depends(require_login)):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT * FROM matches
+        WHERE home_team != 'Por definir' AND away_team != 'Por definir'
+        ORDER BY kickoff ASC
+    """).fetchall()
+
+    upcoming = []
+    for m in rows:
+        if is_past(m["kickoff"]):
+            continue
+        predicted = conn.execute(
+            "SELECT 1 FROM predictions WHERE user_id=? AND match_id=?",
+            (user["id"], m["id"])
+        ).fetchone() is not None
+        d = dict(m)
+        d["predicted"] = predicted
+        d["locked"]    = is_locked(m["kickoff"])
+        d["lock_iso"]  = lock_time(m["kickoff"]).isoformat()
+        upcoming.append(d)
+        if len(upcoming) >= 5:
+            break
+
+    conn.close()
+    return templates.TemplateResponse("inicio.html", {
+        "request": request, "user": user, "matches": upcoming,
+    })
 
 
 # ──────────────────────────────────────────────────────────────

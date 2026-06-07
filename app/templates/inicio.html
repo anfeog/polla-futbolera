@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Inicio — Polla Mundial 2026{% endblock %}
+{% block content %}
+
+<!-- Bienvenida + Tutorial -->
+<div class="rounded-2xl bg-gradient-to-br from-sky-500/[0.12] via-violet-500/[0.06] to-transparent border border-white/10 p-6 sm:p-8 mb-8 text-center">
+    <img src="/static/wc26.avif" alt="FIFA World Cup 2026" class="h-24 sm:h-28 mx-auto mb-4 drop-shadow-2xl object-contain">
+    <h1 class="font-heavy text-3xl sm:text-4xl mb-2 brand-gradient">¡HOLA, {{ user.username | upper }}! {{ user.avatar }}</h1>
+    <p class="text-white/50 text-sm max-w-md mx-auto mb-5">
+        Bienvenido a la Polla Futbolera del Mundial 2026. Predice los marcadores, adivina los goleadores y compite con tus amigos.
+    </p>
+    <div class="flex flex-wrap items-center justify-center gap-3">
+        <a href="/como-jugar"
+           class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-display font-semibold uppercase tracking-wider px-5 py-3 rounded-xl transition text-sm">
+            📖 Ver tutorial
+        </a>
+        <a href="/partidos"
+           class="inline-flex items-center gap-2 brand-bar text-ink font-display font-bold uppercase tracking-wider px-5 py-3 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20 text-sm">
+            ⚽ Todos los partidos
+        </a>
+    </div>
+</div>
+
+<!-- Próximos partidos -->
+<div class="flex items-center gap-2 mb-4">
+    <span class="text-lg">⏰</span>
+    <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">Próximos partidos</h2>
+    <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">Cierre 1h antes del pitido</span>
+</div>
+
+{% if not matches %}
+<div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-10 text-center">
+    <p class="text-3xl mb-2">🏟️</p>
+    <p class="text-white/40 text-sm font-display">No hay partidos próximos cargados todavía.</p>
+</div>
+{% else %}
+<div class="space-y-3">
+{% for m in matches %}
+    {% set hc = crest(m.home_team, m.home_flag) %}
+    {% set ac = crest(m.away_team, m.away_flag) %}
+    {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
+    {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
+
+    <a href="{% if not m.locked %}/prediccion/{{ m.id }}{% else %}/partidos{% endif %}"
+       class="block rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 hover:border-white/25 hover:bg-white/[0.04] transition p-4 group">
+
+        <!-- Fila superior: fase + fecha/hora local -->
+        <div class="flex items-center justify-between mb-3">
+            <span class="font-display text-[10px] uppercase tracking-[0.2em] text-sky-400">{{ m.stage }}</span>
+            <span class="match-datetime font-display text-[11px] uppercase tracking-wider text-white/50" data-kickoff="{{ m.kickoff }}">{{ m.kickoff[:10] }} · {{ m.kickoff[11:16] }}</span>
+        </div>
+
+        <!-- Equipos + marcador placeholder -->
+        <div class="flex items-center justify-center gap-3 sm:gap-5 mb-3">
+            <!-- Local -->
+            <div class="flex-1 flex items-center justify-end gap-2.5 min-w-0">
+                <span class="font-display font-semibold uppercase tracking-wide text-sm truncate text-right">{{ m.home_team }}</span>
+                {% if hc %}<img src="{{ hc }}" class="w-9 h-9 object-contain drop-shadow shrink-0">
+                {% else %}<div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold shrink-0">{{ htla }}</div>{% endif %}
+            </div>
+            <span class="font-display text-white/20 font-bold text-sm shrink-0">VS</span>
+            <!-- Visitante -->
+            <div class="flex-1 flex items-center gap-2.5 min-w-0">
+                {% if ac %}<img src="{{ ac }}" class="w-9 h-9 object-contain drop-shadow shrink-0">
+                {% else %}<div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold shrink-0">{{ atla }}</div>{% endif %}
+                <span class="font-display font-semibold uppercase tracking-wide text-sm truncate">{{ m.away_team }}</span>
+            </div>
+        </div>
+
+        <!-- Fila inferior: contador + estado predicción -->
+        <div class="flex items-center justify-between gap-2 pt-3 border-t border-white/5">
+            <!-- Contador -->
+            {% if m.locked %}
+            <span class="font-display text-[11px] uppercase tracking-wider text-red-400/80">🔒 Pronósticos cerrados</span>
+            {% else %}
+            <span class="countdown font-display text-[11px] uppercase tracking-wider text-amber-300" data-lock="{{ m.lock_iso }}">
+                Cierra en …
+            </span>
+            {% endif %}
+
+            <!-- Estado -->
+            {% if m.predicted %}
+            <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+                ✓ Pronosticado
+            </span>
+            {% elif not m.locked %}
+            <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-ink bg-sky-400 rounded-full px-2.5 py-1 group-hover:bg-sky-300 transition">
+                Pronosticar →
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-white/30 bg-white/5 border border-white/10 rounded-full px-2.5 py-1">
+                Sin pronóstico
+            </span>
+            {% endif %}
+        </div>
+    </a>
+{% endfor %}
+</div>
+{% endif %}
+
+<script>
+// ── Fecha y hora en horario local del usuario ──────────────────
+const DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+document.querySelectorAll('.match-datetime').forEach(el => {
+    const d = new Date(el.dataset.kickoff);   // 'Z' o '+00:00' → local
+    if (isNaN(d)) return;
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    el.textContent = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} · ${hh}:${mm}`;
+});
+
+// ── Contador hasta el cierre de pronósticos ────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function tick() {
+    const now = Date.now();
+    document.querySelectorAll('.countdown').forEach(el => {
+        const lock = new Date(el.dataset.lock);
+        const diff = lock.getTime() - now;
+
+        if (diff <= 0) {
+            el.textContent = '🔒 Pronósticos cerrados';
+            el.classList.remove('text-amber-300');
+            el.classList.add('text-red-400/80');
+            return;
+        }
+
+        const days = Math.floor(diff / 86400000);
+        const hrs  = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+
+        let txt;
+        if (days > 0)      txt = `Cierra en ${days}d ${pad(hrs)}h ${pad(mins)}m`;
+        else if (hrs > 0)  txt = `Cierra en ${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+        else               txt = `⚠️ Cierra en ${pad(mins)}:${pad(secs)}`;
+
+        el.textContent = txt;
+        // Urgente: menos de 1 hora
+        if (days === 0 && hrs === 0) {
+            el.classList.remove('text-amber-300');
+            el.classList.add('text-red-400', 'animate-livepulse');
+        }
+    });
+}
+tick();
+setInterval(tick, 1000);
+</script>
+
+{% endblock %}

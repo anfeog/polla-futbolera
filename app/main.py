@@ -63,5 +63,5 @@ def _create_admin_if_missing():
 def root(request: Request):
     user = get_current_user(request)
     if user:
-        return RedirectResponse("/partidos")
+        return RedirectResponse("/inicio")
     return RedirectResponse("/login")
