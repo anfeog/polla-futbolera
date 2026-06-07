@@ -33,6 +33,27 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
             (existing["id"],)
         ).fetchall()
 
+    # Predicciones de los otros usuarios para este partido
+    others = conn.execute("""
+        SELECT u.username, u.avatar,
+               p.id as pred_id, p.home_score_pred, p.away_score_pred,
+               p.advances_team, p.penalty_home, p.penalty_away
+        FROM predictions p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.match_id = ? AND p.user_id != ?
+        ORDER BY u.username
+    """, (match_id, user["id"])).fetchall()
+
+    others_scorers = {}
+    for pred in others:
+        scorers = conn.execute("""
+            SELECT team, position, player_name, is_own_goal
+            FROM goalscorer_predictions
+            WHERE prediction_id = ?
+            ORDER BY position
+        """, (pred["pred_id"],)).fetchall()
+        others_scorers[pred["pred_id"]] = scorers
+
     conn.close()
 
     # Plantillas para los desplegables (solo nombres)
@@ -49,6 +70,8 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "home_squad": home_squad,
         "away_squad": away_squad,
         "is_knockout": match["stage"] in KO_STAGES,
+        "others": others,
+        "others_scorers": others_scorers,
     })
 
 

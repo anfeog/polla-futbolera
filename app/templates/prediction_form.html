@@ -2,7 +2,7 @@
 {% block title %}Predicción — {{ match.home_team }} vs {{ match.away_team }}{% endblock %}
 {% block content %}
 
-<div class="max-w-lg mx-auto">
+<div class="max-w-5xl mx-auto">
     <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-5 inline-block">← Volver al fixture</a>
 
     <div class="text-center mb-6">
@@ -10,6 +10,10 @@
         <p class="text-white/50 text-sm">{{ match.kickoff[:10] }} · {{ match.kickoff[11:16] }} UTC</p>
     </div>
 
+    <div class="flex flex-col lg:flex-row gap-6 items-start">
+
+    <!-- ══ COLUMNA IZQUIERDA: Formulario ══ -->
+    <div class="w-full lg:max-w-lg lg:shrink-0">
     <form method="post" action="/prediccion/{{ match.id }}" class="space-y-5">
 
         <!-- Marcador estilo scoreboard -->
@@ -133,6 +137,108 @@
             Guardar pronóstico
         </button>
     </form>
+    </div><!-- /columna form -->
+
+    <!-- ══ COLUMNA DERECHA: Pronósticos de los demás ══ -->
+    <div class="w-full lg:flex-1 lg:sticky lg:top-6">
+        <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden">
+            <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                <span class="text-base">👀</span>
+                <h2 class="font-display text-xs uppercase tracking-wider text-white/60 font-semibold">Lo que pronostican los demás</h2>
+                {% if others %}
+                <span class="ml-auto font-display text-[10px] text-white/30">{{ others | length }} pronóstico{{ 's' if others | length != 1 }}</span>
+                {% endif %}
+            </div>
+
+            {% if not others %}
+            <div class="px-4 py-8 text-center">
+                <p class="text-2xl mb-2">🦗</p>
+                <p class="text-white/30 text-sm font-display">Sé el primero en pronosticar</p>
+            </div>
+            {% else %}
+            <div class="divide-y divide-white/5">
+            {% for pred in others %}
+                {% set scorers = others_scorers[pred.pred_id] %}
+                {% set home_scorers = scorers | selectattr("team", "equalto", match.home_team) | list %}
+                {% set away_scorers = scorers | selectattr("team", "equalto", match.away_team) | list %}
+                {% set pred_draw = pred.home_score_pred == pred.away_score_pred %}
+
+                <div class="px-4 py-3">
+                    <!-- Cabecera: avatar + nombre + marcador -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-base shrink-0 select-none">{{ pred.avatar or '⚽' }}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-display text-xs font-semibold uppercase tracking-wide text-white/80 truncate">{{ pred.username }}</p>
+                        </div>
+                        <!-- Marcador grande -->
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="font-heavy text-xl text-white leading-none">{{ pred.home_score_pred }}</span>
+                            <span class="text-white/20 font-bold text-sm">–</span>
+                            <span class="font-heavy text-xl text-white leading-none">{{ pred.away_score_pred }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Penales (KO + empate) -->
+                    {% if pred_draw and pred.penalty_home is not none and pred.penalty_away is not none %}
+                    <div class="mt-2 flex items-center gap-2 flex-wrap">
+                        <span class="font-display text-[10px] uppercase tracking-wider text-violet-400/70 bg-violet-500/10 border border-violet-500/20 rounded-full px-2 py-0.5">
+                            Penales {{ pred.penalty_home }}–{{ pred.penalty_away }}
+                        </span>
+                        {% if pred.advances_team %}
+                        <span class="font-display text-[10px] uppercase tracking-wider text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                            Pasa {{ pred.advances_team[:10] }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Goleadores -->
+                    {% if scorers %}
+                    <div class="mt-2.5 flex gap-4">
+                        <!-- Goles local -->
+                        {% if home_scorers %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-display text-[9px] uppercase tracking-wider text-white/25 mb-1 truncate">{{ match.home_team[:12] }}</p>
+                            {% for s in home_scorers | sort(attribute='position') %}
+                            <div class="flex items-center gap-1 mb-0.5">
+                                <span class="text-[10px] text-white/20 shrink-0 font-display w-4">{{ loop.index }}.</span>
+                                {% if s.is_own_goal %}
+                                    <span class="text-[11px] text-amber-400 font-display truncate" title="Autogol">🔁 {{ s.player_name or '?' }}</span>
+                                {% else %}
+                                    <span class="text-[11px] text-white/60 font-display truncate">{{ s.player_name or '—' }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <!-- Goles visitante -->
+                        {% if away_scorers %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-display text-[9px] uppercase tracking-wider text-white/25 mb-1 truncate">{{ match.away_team[:12] }}</p>
+                            {% for s in away_scorers | sort(attribute='position') %}
+                            <div class="flex items-center gap-1 mb-0.5">
+                                <span class="text-[10px] text-white/20 shrink-0 font-display w-4">{{ loop.index }}.</span>
+                                {% if s.is_own_goal %}
+                                    <span class="text-[11px] text-amber-400 font-display truncate" title="Autogol">🔁 {{ s.player_name or '?' }}</span>
+                                {% else %}
+                                    <span class="text-[11px] text-white/60 font-display truncate">{{ s.player_name or '—' }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="mt-1.5 font-display text-[10px] text-white/20 uppercase tracking-wider">Sin goleadores</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div><!-- /columna derecha -->
+
+    </div><!-- /flex wrapper -->
 </div>
 
 <script>
