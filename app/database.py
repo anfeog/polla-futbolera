@@ -1,14 +1,25 @@
 import sqlite3
 import os
 
-# En producción (Fly.io) usamos /data/polla.db (volumen persistente)
-# En desarrollo usamos polla.db en la raíz del proyecto
+# Turso (producción) o SQLite local (desarrollo)
+TURSO_URL   = os.getenv("TURSO_URL", "")
+TURSO_TOKEN = os.getenv("TURSO_TOKEN", "")
 _default_db = os.path.join(os.path.dirname(__file__), "..", "polla.db")
-DB_PATH = os.getenv("DATABASE_PATH", _default_db)
+DB_PATH     = os.getenv("DATABASE_PATH", _default_db)
+
+if TURSO_URL:
+    import libsql_experimental as libsql
+    _USE_TURSO = True
+else:
+    _USE_TURSO = False
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    if _USE_TURSO:
+        conn = libsql.connect(DB_PATH, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
+        conn.sync()
+    else:
+        conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
