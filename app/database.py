@@ -27,7 +27,8 @@ def _to_arg(v):
     if isinstance(v, int):
         return {"type": "integer", "value": str(v)}
     if isinstance(v, float):
-        return {"type": "float", "value": str(v)}
+        # La API de Turso espera el float como número JSON, no como texto
+        return {"type": "float", "value": v}
     return {"type": "text", "value": str(v)}
 
 
