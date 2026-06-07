@@ -1,33 +1,179 @@
 import sqlite3
 import os
+import httpx
 
-# Turso (producción) o SQLite local (desarrollo)
-TURSO_URL   = os.getenv("TURSO_URL", "")
+# ── Configuración ────────────────────────────────────────────────────────────
+TURSO_URL   = os.getenv("TURSO_URL", "")          # libsql://xxx.turso.io
 TURSO_TOKEN = os.getenv("TURSO_TOKEN", "")
+_USE_TURSO  = bool(TURSO_URL and TURSO_TOKEN)
+
 _default_db = os.path.join(os.path.dirname(__file__), "..", "polla.db")
 DB_PATH     = os.getenv("DATABASE_PATH", _default_db)
 
-if TURSO_URL:
-    import libsql_experimental as libsql
-    _USE_TURSO = True
-else:
-    _USE_TURSO = False
 
+# ── Helpers Turso HTTP API ───────────────────────────────────────────────────
+
+def _http_url():
+    """libsql:// → https:// para la HTTP API de Turso."""
+    return TURSO_URL.replace("libsql://", "https://")
+
+
+def _to_arg(v):
+    """Convierte un valor Python al formato de argumento de Turso."""
+    if v is None:
+        return {"type": "null"}
+    if isinstance(v, bool):
+        return {"type": "integer", "value": "1" if v else "0"}
+    if isinstance(v, int):
+        return {"type": "integer", "value": str(v)}
+    if isinstance(v, float):
+        return {"type": "float", "value": str(v)}
+    return {"type": "text", "value": str(v)}
+
+
+def _from_val(val):
+    """Convierte un valor de Turso a Python."""
+    if val["type"] == "null":
+        return None
+    if val["type"] == "integer":
+        return int(val["value"])
+    if val["type"] == "float":
+        return float(val["value"])
+    return val["value"]
+
+
+# ── Capa de compatibilidad Turso ─────────────────────────────────────────────
+
+class TursoRow:
+    """
+    Imita sqlite3.Row: acceso por nombre de columna (row["col"])
+    y por índice (row[0]).
+    """
+    def __init__(self, columns, values):
+        self._cols = list(columns)
+        self._vals = list(values)
+        self._dict = dict(zip(columns, values))
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._vals[key]
+        return self._dict[key]
+
+    def __iter__(self):
+        return iter(self._vals)
+
+    def __len__(self):
+        return len(self._vals)
+
+    def keys(self):
+        return self._cols
+
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
+
+class TursoResult:
+    """Cursor-like con fetchone / fetchall / iteración."""
+    def __init__(self, rows, lastrowid, rowcount, description):
+        self._rows = rows
+        self.lastrowid = lastrowid
+        self.rowcount  = rowcount
+        self.description = description
+        self._idx = 0
+
+    def fetchone(self):
+        if self._idx < len(self._rows):
+            r = self._rows[self._idx]
+            self._idx += 1
+            return r
+        return None
+
+    def fetchall(self):
+        r = self._rows[self._idx:]
+        self._idx = len(self._rows)
+        return r
+
+    def __iter__(self):
+        return iter(self._rows)
+
+
+class TursoConnection:
+    """
+    Conexión a Turso via HTTP API.
+    Misma interfaz que sqlite3.Connection para que el resto del código
+    no necesite cambios.
+    """
+    def __init__(self, url, token):
+        self._url   = url    # https://xxx.turso.io
+        self._token = token
+        self.row_factory = None   # interfaz compat, no usado
+
+    # --- ejecución interna ---------------------------------------------------
+
+    def _call(self, sql, params=()):
+        stmt = {"sql": sql, "args": [_to_arg(p) for p in params]}
+        resp = httpx.post(
+            f"{self._url}/v2/pipeline",
+            headers={
+                "Authorization": f"Bearer {self._token}",
+                "Content-Type":  "application/json",
+            },
+            json={"requests": [
+                {"type": "execute", "stmt": stmt},
+                {"type": "close"},
+            ]},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        results = resp.json()["results"]
+        r = results[0]
+        if r["type"] == "error":
+            raise Exception(r["error"]["message"])
+        return r["response"]["result"]
+
+    # --- interfaz pública ----------------------------------------------------
+
+    def execute(self, sql, params=()):
+        result   = self._call(sql, params)
+        cols     = [c["name"] for c in result.get("cols", [])]
+        rows     = [
+            TursoRow(cols, [_from_val(v) for v in row])
+            for row in result.get("rows", [])
+        ]
+        lastrowid = result.get("last_insert_rowid")
+        if lastrowid is not None:
+            lastrowid = int(lastrowid)
+        rowcount  = result.get("rows_affected", -1)
+        desc      = [(c,) for c in cols] if cols else None
+        return TursoResult(rows, lastrowid, rowcount, desc)
+
+    def commit(self):
+        pass   # Turso auto-confirma cada sentencia
+
+    def close(self):
+        pass
+
+    def cursor(self):
+        return self   # simplificado
+
+
+# ── get_db() ─────────────────────────────────────────────────────────────────
 
 def get_db():
     if _USE_TURSO:
-        conn = libsql.connect(DB_PATH, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
-        conn.sync()
-    else:
-        conn = sqlite3.connect(DB_PATH)
+        return TursoConnection(_http_url(), TURSO_TOKEN)
+    # Desarrollo local: SQLite normal
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
+# ── Inicialización y migraciones ─────────────────────────────────────────────
+
 def init_db():
     conn = get_db()
-    c = conn.cursor()
+    c = conn
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -60,8 +206,6 @@ def init_db():
         )
     """)
 
-    # home_score_pred / away_score_pred guardan la predicción del marcador
-    # hit_exact / hit_winner / scorers_hit = desglose para estadísticas de la tabla
     c.execute("""
         CREATE TABLE IF NOT EXISTS predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,8 +221,6 @@ def init_db():
         )
     """)
 
-    # Goleadores predichos por el usuario: un registro por gol, en orden
-    # position = 1er gol de ese equipo, 2do gol de ese equipo, etc.
     c.execute("""
         CREATE TABLE IF NOT EXISTS goalscorer_predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,7 +232,6 @@ def init_db():
         )
     """)
 
-    # Goleadores reales del partido (alimentado por la API)
     c.execute("""
         CREATE TABLE IF NOT EXISTS match_goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,7 +243,6 @@ def init_db():
         )
     """)
 
-    # Plantillas de jugadores por selección (alimentado desde la API)
     c.execute("""
         CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +253,6 @@ def init_db():
         )
     """)
 
-    # Predicciones de premios del Mundial (una fila por usuario)
     c.execute("""
         CREATE TABLE IF NOT EXISTS award_predictions (
             user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -123,7 +262,6 @@ def init_db():
         )
     """)
 
-    # Ganadores reales de los premios (fila única id=1, la define el admin)
     c.execute("""
         CREATE TABLE IF NOT EXISTS tournament_awards (
             id INTEGER PRIMARY KEY CHECK (id = 1),
