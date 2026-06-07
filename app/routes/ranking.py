@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Depends, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
@@ -177,8 +177,10 @@ def ranking(request: Request, user=Depends(require_login)):
         results_hit = r["exact_hits"] + r["winner_hits"]
         pct = round(results_hit / played * 100) if played else 0
         ranking.append({
+            "id": r["id"],
             "username": r["username"],
             "avatar": r["avatar"] or "⚽",
+            "status_msg": r["status_msg"],
             "total_points": r["match_points"] + award_pts,
             "award_points": award_pts,
             "exact_hits": r["exact_hits"],
@@ -190,7 +192,40 @@ def ranking(request: Request, user=Depends(require_login)):
 
     ranking.sort(key=lambda x: (-x["total_points"], -x["exact_hits"]))
 
+    # IDs del podio (top 3): solo ellos pueden poner viñeta
+    podium_ids = [row["id"] for row in ranking[:3]]
+
     conn.close()
     return templates.TemplateResponse("ranking.html", {
         "request": request, "user": user, "ranking": ranking,
+        "podium_ids": podium_ids,
     })
+
+
+@router.post("/estado")
+def set_estado(request: Request, msg: str = Form(""), user=Depends(require_login)):
+    """Guarda la viñeta de cómic. Solo permitido si el usuario está en el podio."""
+    conn = get_db()
+
+    # Recalcular el ranking para validar que el usuario está en el top 3
+    rows = conn.execute("""
+        SELECT u.id, COALESCE(SUM(p.points), 0) AS match_points,
+               COALESCE(SUM(p.hit_exact), 0)    AS exact_hits
+        FROM users u
+        LEFT JOIN predictions p ON p.user_id = u.id
+        WHERE u.is_admin = 0
+        GROUP BY u.id
+    """).fetchall()
+    standings = []
+    for r in rows:
+        standings.append((r["id"], r["match_points"] + award_points_for_user(r["id"], conn), r["exact_hits"]))
+    standings.sort(key=lambda x: (-x[1], -x[2]))
+    podium_ids = [s[0] for s in standings[:3]]
+
+    if user["id"] in podium_ids:
+        clean = (msg or "").strip()[:60] or None   # máx 60 caracteres
+        conn.execute("UPDATE users SET status_msg=? WHERE id=?", (clean, user["id"]))
+        conn.commit()
+
+    conn.close()
+    return RedirectResponse("/ranking", status_code=303)

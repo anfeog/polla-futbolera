@@ -287,6 +287,8 @@ def _migrate(conn):
         conn.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT '⚽'")
     if "tutorial_seen" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN tutorial_seen INTEGER DEFAULT 0")
+    if "status_msg" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN status_msg TEXT")
 
     pred_cols = cols("predictions")
     for col in ("hit_exact", "hit_winner", "scorers_hit"):
