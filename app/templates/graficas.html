@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Gráficas — Mundial 2026{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="text-center mb-8">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-2">Evolución</p>
+    <h1 class="font-heavy text-4xl sm:text-5xl mb-2 brand-gradient">GRÁFICAS</h1>
+    <p class="text-white/50 text-sm max-w-md mx-auto">Puntos acumulados de cada jugador a lo largo del Mundial.</p>
+</div>
+
+{% if not has_data %}
+<div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-12 text-center">
+    <p class="text-4xl mb-3">📈</p>
+    <p class="font-display text-base uppercase tracking-wide text-white/60 mb-1">Aún no hay datos</p>
+    <p class="text-white/40 text-sm">La gráfica se irá dibujando a medida que terminen los partidos y se sumen puntos.</p>
+</div>
+{% else %}
+
+<!-- Gráfica -->
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-6 mb-6">
+    <div class="relative" style="height: 360px;">
+        <canvas id="pointsChart"></canvas>
+    </div>
+</div>
+
+<!-- Leyenda con totales -->
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.05] to-transparent border border-white/10 overflow-hidden">
+    <div class="px-5 py-3 border-b border-white/10">
+        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/60">Total actual</h2>
+    </div>
+    <div class="divide-y divide-white/5">
+    {% for d in datasets %}
+        <div class="flex items-center gap-3 px-5 py-3">
+            <span class="w-3 h-3 rounded-full shrink-0" style="background: {{ d.color }};"></span>
+            <span class="text-lg leading-none">{{ d.avatar }}</span>
+            <span class="flex-1 font-display text-sm uppercase tracking-wide text-white/80 truncate">{{ d.label }}</span>
+            <span class="font-heavy text-xl" style="color: {{ d.color }};">{{ d.total }}</span>
+            <span class="font-display text-[10px] uppercase tracking-wider text-white/30">pts</span>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const LABELS = {{ labels | tojson }};
+const SERIES = {{ datasets | tojson }};
+
+const ctx = document.getElementById('pointsChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: LABELS,
+        datasets: SERIES.map(s => ({
+            label: s.label,
+            data: s.data,
+            borderColor: s.color,
+            backgroundColor: s.color,
+            pointBackgroundColor: s.color,
+            pointBorderColor: s.color,
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            tension: 0.25,
+        })),
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: {
+                labels: {
+                    color: 'rgba(255,255,255,0.7)',
+                    font: { family: 'Oswald, sans-serif', size: 12 },
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 14,
+                },
+            },
+            tooltip: {
+                backgroundColor: 'rgba(7,11,22,0.95)',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                titleColor: '#fff',
+                bodyColor: 'rgba(255,255,255,0.8)',
+                titleFont: { family: 'Oswald, sans-serif' },
+                bodyFont: { family: 'Inter, sans-serif' },
+                padding: 10,
+                callbacks: {
+                    label: (c) => ` ${c.dataset.label}: ${c.parsed.y} pts`,
+                },
+            },
+        },
+        scales: {
+            x: {
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                ticks: { color: 'rgba(255,255,255,0.45)', font: { family: 'Oswald, sans-serif', size: 11 } },
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                ticks: { color: 'rgba(255,255,255,0.45)', font: { family: 'Oswald, sans-serif', size: 11 }, precision: 0 },
+                title: { display: true, text: 'Puntos', color: 'rgba(255,255,255,0.4)', font: { family: 'Oswald, sans-serif' } },
+            },
+        },
+    },
+});
+</script>
+{% endif %}
+
+{% endblock %}

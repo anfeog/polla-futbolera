@@ -75,6 +75,72 @@ def goleadores(request: Request, user=Depends(require_login)):
     })
 
 
+@router.get("/graficas", response_class=HTMLResponse)
+def graficas(request: Request, user=Depends(require_login)):
+    conn = get_db()
+
+    # Puntos por usuario y día (de partidos ya finalizados)
+    rows = conn.execute("""
+        SELECT u.id, u.username, u.avatar,
+               substr(m.kickoff, 1, 10) AS day,
+               SUM(p.points)            AS pts
+        FROM users u
+        JOIN predictions p ON p.user_id = u.id
+        JOIN matches m     ON m.id = p.match_id
+        WHERE u.is_admin = 0 AND m.status = 'FINISHED'
+        GROUP BY u.id, day
+    """).fetchall()
+
+    users = conn.execute(
+        "SELECT id, username, avatar FROM users WHERE is_admin = 0 ORDER BY username"
+    ).fetchall()
+    conn.close()
+
+    # Días distintos con partidos jugados, ordenados
+    days = sorted({r["day"] for r in rows})
+    pts_map = {(r["id"], r["day"]): (r["pts"] or 0) for r in rows}
+
+    # Etiquetas de eje X: '2026-06-11' → '11 Jun'
+    MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+              "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    def fmt_day(d):
+        try:
+            y, m, dd = d.split("-")
+            return f"{int(dd)} {MONTHS[int(m) - 1]}"
+        except Exception:
+            return d
+    labels = [fmt_day(d) for d in days]
+
+    # Paleta de colores fija por jugador
+    PALETTE = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7",
+               "#ec4899", "#14b8a6", "#eab308", "#8b5cf6", "#06b6d4",
+               "#f97316", "#84cc16", "#e11d48", "#0ea5e9", "#d946ef"]
+
+    datasets = []
+    for i, u in enumerate(users):
+        cum = 0.0
+        data = []
+        for d in days:
+            cum += pts_map.get((u["id"], d), 0) or 0
+            data.append(round(cum, 1))
+        datasets.append({
+            "label": u["username"],
+            "avatar": u["avatar"] or "⚽",
+            "data": data,
+            "color": PALETTE[i % len(PALETTE)],
+            "total": data[-1] if data else 0,
+        })
+
+    # Ordenar leyenda por total de puntos (desc)
+    datasets.sort(key=lambda d: -d["total"])
+
+    return templates.TemplateResponse("graficas.html", {
+        "request": request, "user": user,
+        "labels": labels, "datasets": datasets,
+        "has_data": bool(days),
+    })
+
+
 @router.get("/como-jugar", response_class=HTMLResponse)
 def como_jugar(request: Request, user=Depends(require_login)):
     conn = get_db()
