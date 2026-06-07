@@ -52,8 +52,17 @@
             </div>
         </div>
 
-        <!-- Slide 3: Bola de cristal rota (peores) -->
+        <!-- Slide 3: Francotiradores (marcadores exactos) -->
         <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="2">
+            <div class="h-full rounded-2xl bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.01] border border-emerald-500/20 p-4 sm:p-5 flex flex-col">
+                <p class="font-display text-sm uppercase tracking-wide text-emerald-300 mb-0.5">🎯 Francotiradores</p>
+                <p class="text-white/40 text-xs mb-3">Quién clava más marcadores exactos (+3)</p>
+                <div class="relative flex-1 min-h-0"><canvas id="chartSharp"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Bola de cristal rota (peores) -->
+        <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="3">
             <div class="h-full rounded-2xl bg-gradient-to-b from-red-500/[0.08] to-white/[0.01] border border-red-500/20 p-4 sm:p-5 flex flex-col">
                 <p class="font-display text-sm uppercase tracking-wide text-red-300 mb-0.5">🔮💥 Bola de Cristal Rota</p>
                 <p class="text-white/40 text-xs mb-3">Los que peor predicen — menos puntos pese a jugar</p>
@@ -67,6 +76,7 @@
         <button class="dot w-2.5 h-2.5 rounded-full bg-sky-400 transition" data-go="0" aria-label="Gráfica 1"></button>
         <button class="dot w-2.5 h-2.5 rounded-full bg-white/20 transition" data-go="1" aria-label="Gráfica 2"></button>
         <button class="dot w-2.5 h-2.5 rounded-full bg-white/20 transition" data-go="2" aria-label="Gráfica 3"></button>
+        <button class="dot w-2.5 h-2.5 rounded-full bg-white/20 transition" data-go="3" aria-label="Gráfica 4"></button>
     </div>
 </div>
 
@@ -80,6 +90,10 @@ const BAR_SEGS    = {{ bar_segments | tojson }};
 const WORST_LABELS  = {{ worst_labels | tojson }};
 const WORST_AVATARS = {{ worst_avatars | tojson }};
 const WORST_PTS     = {{ worst_pts | tojson }};
+const SHARP_LABELS  = {{ sharp_labels | tojson }};
+const SHARP_AVATARS = {{ sharp_avatars | tojson }};
+const SHARP_COUNTS  = {{ sharp_counts | tojson }};
+const SHARP_PCT     = {{ sharp_pct | tojson }};
 
 const GRID  = 'rgba(255,255,255,0.06)';
 const TICK  = 'rgba(255,255,255,0.45)';
@@ -139,7 +153,33 @@ new Chart(document.getElementById('chartBars'), {
     },
 });
 
-// ── 3) Bola de cristal rota (barras horizontales) ──────────────
+// ── 3) Francotiradores (marcadores exactos, barras horizontales) ───
+new Chart(document.getElementById('chartSharp'), {
+    type: 'bar',
+    data: {
+        labels: SHARP_LABELS.map((n, i) => `${SHARP_AVATARS[i]}  ${n}`),
+        datasets: [{
+            label: 'Exactos', data: SHARP_COUNTS,
+            backgroundColor: '#22c55e', borderRadius: 6, borderSkipped: false,
+        }],
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { ...baseTooltip, callbacks: {
+                label: (c) => ` ${c.parsed.x} exactos · ${SHARP_PCT[c.dataIndex]}% de acierto`,
+            } },
+        },
+        scales: {
+            x: { beginAtZero: true, grid: { color: GRID }, ticks: { color: TICK, font: OSWALD, precision: 0 } },
+            y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.75)', font: { family: 'Oswald, sans-serif', size: 13 } } },
+        },
+    },
+});
+
+// ── 4) Bola de cristal rota (barras horizontales) ──────────────
 new Chart(document.getElementById('chartWorst'), {
     type: 'bar',
     data: {

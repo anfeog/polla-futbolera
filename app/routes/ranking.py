@@ -164,6 +164,7 @@ def graficas(request: Request, user=Depends(require_login)):
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "exacto": exacto, "ganador": ganador, "goleador": round(goleador, 1),
             "penales": penales, "premios": award,
+            "exact_count": r["ex"] or 0,
             "total": total, "played": r["played"] or 0,
         })
     conn2.close()
@@ -191,6 +192,16 @@ def graficas(request: Request, user=Depends(require_login)):
     worst_pts     = [b["total"] for b in worst]
     has_worst = len(worst) > 0
 
+    # ── 4) Francotiradores 🎯 — marcadores exactos ────────────────────────────
+    sharp = sorted(played_users,
+                   key=lambda b: (-b["exact_count"],
+                                  -(b["exact_count"] / b["played"] if b["played"] else 0)))[:5]
+    sharp_labels  = [b["username"] for b in sharp]
+    sharp_avatars = [b["avatar"] for b in sharp]
+    sharp_counts  = [b["exact_count"] for b in sharp]
+    sharp_pct     = [round(b["exact_count"] / b["played"] * 100) if b["played"] else 0 for b in sharp]
+    has_sharp = any(b["exact_count"] > 0 for b in sharp)
+
     return templates.TemplateResponse("graficas.html", {
         "request": request, "user": user,
         "labels": labels, "datasets": datasets,
@@ -198,6 +209,8 @@ def graficas(request: Request, user=Depends(require_login)):
         "bar_labels": bar_labels, "bar_segments": bar_segments, "has_bars": has_bars,
         "worst_labels": worst_labels, "worst_avatars": worst_avatars,
         "worst_pct": worst_pct, "worst_pts": worst_pts, "has_worst": has_worst,
+        "sharp_labels": sharp_labels, "sharp_avatars": sharp_avatars,
+        "sharp_counts": sharp_counts, "sharp_pct": sharp_pct, "has_sharp": has_sharp,
     })
 
 
