@@ -29,4 +29,43 @@
     <p class="text-white/40 text-xs">Toca un emoji para guardarlo al instante.</p>
 </form>
 
+<!-- Cambiar contraseña -->
+<div class="mt-10 rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">
+    <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">🔒</span>
+        <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">Cambiar contraseña</h2>
+    </div>
+    <p class="text-white/40 text-xs mb-4">Si quieres, cambia la clave que te dieron por una tuya. Es privada, nadie más la ve.</p>
+
+    {% if pw_msg %}
+    <div class="mb-4 px-4 py-3 rounded-xl text-sm font-display
+        {{ 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300' if pw_msg[1] == 'ok'
+           else 'bg-red-500/10 border border-red-500/30 text-red-300' }}">
+        {{ pw_msg[0] }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/perfil/clave" class="space-y-3">
+        <div>
+            <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">Contraseña actual</label>
+            <input type="password" name="current_password" required autocomplete="current-password"
+                class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
+        </div>
+        <div>
+            <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">Nueva contraseña</label>
+            <input type="password" name="new_password" required minlength="4" autocomplete="new-password"
+                class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
+        </div>
+        <div>
+            <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">Repite la nueva contraseña</label>
+            <input type="password" name="confirm_password" required minlength="4" autocomplete="new-password"
+                class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
+        </div>
+        <button type="submit"
+            class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20">
+            Actualizar contraseña
+        </button>
+    </form>
+</div>
+
 {% endblock %}
