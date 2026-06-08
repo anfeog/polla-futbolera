@@ -23,6 +23,8 @@ POINTS_AWARD = 10
 POINTS_ADVANCES = 1   # aciertas quién pasa en penales
 POINTS_PENALTY = 2    # aciertas el marcador exacto de penales
 POINTS_SOLO = 3       # eres el ÚNICO que clava el marcador exacto de un partido
+POINTS_TOTAL_EXACT = 20   # clavas el total de goles del Mundial
+POINTS_TOTAL_CLOSE = 5    # nadie lo clava: el más cercano se lleva esto
 
 # Puntos por cada pregunta bonus (la "verdad" la fija el admin)
 AWARD_POINTS = {
@@ -158,6 +160,55 @@ def award_points_for_user(user_id: int, conn=None) -> int:
     if own:
         conn.close()
     return pts
+
+
+def tournament_finished(conn) -> bool:
+    """True si la Final ya se jugó (el torneo terminó)."""
+    row = conn.execute(
+        "SELECT COUNT(*) c FROM matches WHERE stage='Final' AND status='FINISHED'"
+    ).fetchone()
+    return (row["c"] or 0) > 0
+
+
+def real_total_goals(conn) -> int:
+    """Suma de todos los goles de partidos ya finalizados."""
+    row = conn.execute(
+        "SELECT COALESCE(SUM(home_score + away_score), 0) g "
+        "FROM matches WHERE status='FINISHED' AND home_score IS NOT NULL"
+    ).fetchone()
+    return int(row["g"] or 0)
+
+
+def total_goals_bonus(conn) -> dict:
+    """
+    Bonus por predecir el total de goles del Mundial.
+    Solo se reparte cuando el torneo terminó (Final jugada).
+    Devuelve {user_id: puntos}: +20 a quien lo clave; si nadie acierta,
+    +5 a el/los más cercano(s).
+    """
+    if not tournament_finished(conn):
+        return {}
+    real = real_total_goals(conn)
+    preds = conn.execute("""
+        SELECT ap.user_id, ap.total_goals
+        FROM award_predictions ap
+        JOIN users u ON u.id = ap.user_id
+        WHERE u.is_admin = 0 AND ap.total_goals IS NOT NULL
+    """).fetchall()
+    if not preds:
+        return {}
+
+    out = {}
+    exact = [p for p in preds if p["total_goals"] == real]
+    if exact:
+        for p in exact:
+            out[p["user_id"]] = POINTS_TOTAL_EXACT
+    else:
+        best = min(abs(p["total_goals"] - real) for p in preds)
+        for p in preds:
+            if abs(p["total_goals"] - real) == best:
+                out[p["user_id"]] = POINTS_TOTAL_CLOSE
+    return out
 
 
 def recalculate_all_for_match(match_id: int):

@@ -110,6 +110,28 @@
         </div>
     </div>
 
+    <!-- Total de goles del Mundial -->
+    <div class="rounded-2xl bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.02] border border-emerald-500/15 p-5">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">⚽ Total de goles del Mundial <span class="text-emerald-400 text-sm">+20</span></h2>
+                <p class="text-white/40 text-xs">¿Cuántos goles se marcarán en todo el torneo? Exacto <span class="text-emerald-300">+20</span> · si nadie acierta, el más cercano <span class="text-emerald-300">+5</span></p>
+            </div>
+            {% if real_total is not none %}
+            <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
+                {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred['total_goals'] == real_total else 'bg-white/10 text-white/50' }}">
+                Fueron: {{ real_total }}
+            </span>
+            {% endif %}
+        </div>
+        <input type="number" name="total_goals" min="0" max="500" inputmode="numeric"
+            value="{{ pred['total_goals'] if pred and pred['total_goals'] is not none else '' }}"
+            placeholder="Ej: 172"
+            {{ 'disabled' if locked else '' }}
+            class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl font-heavy focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 transition disabled:opacity-50">
+        <p class="text-[10px] text-white/30 text-center mt-2 font-display uppercase tracking-wider">Dato: en Qatar 2022 se marcaron 172 goles</p>
+    </div>
+
     <datalist id="players-list">
         {% for p in all_players %}<option value="{{ p }}">{% endfor %}
     </datalist>

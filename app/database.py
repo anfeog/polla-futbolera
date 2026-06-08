@@ -328,6 +328,8 @@ def _migrate(conn):
     for col in ("champion", "runner_up", "final_penalties"):
         if col not in aw_cols:
             conn.execute(f"ALTER TABLE award_predictions ADD COLUMN {col} TEXT")
+    if "total_goals" not in aw_cols:
+        conn.execute("ALTER TABLE award_predictions ADD COLUMN total_goals INTEGER")
     ta_cols = cols("tournament_awards")
     for col in ("champion", "runner_up", "final_penalties"):
         if col not in ta_cols:

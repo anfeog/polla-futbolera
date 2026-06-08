@@ -165,10 +165,14 @@
           <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 py-3"><div class="text-2xl">🏆</div><p class="text-[9px] text-amber-300 font-display uppercase mt-1">Balón Oro</p><p class="font-heavy text-amber-400">+10</p></div>
           <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 py-3"><div class="text-2xl">🧤</div><p class="text-[9px] text-amber-300 font-display uppercase mt-1">Guante Oro</p><p class="font-heavy text-amber-400">+10</p></div>
         </div>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-3 gap-2 mb-3">
           <div class="text-center rounded-xl bg-sky-500/10 border border-sky-500/20 py-3"><div class="text-xl">🏆</div><p class="text-[9px] text-sky-300 font-display uppercase mt-1">Campeón</p><p class="font-heavy text-sky-400">+15</p></div>
           <div class="text-center rounded-xl bg-sky-500/10 border border-sky-500/20 py-3"><div class="text-xl">🥈</div><p class="text-[9px] text-sky-300 font-display uppercase mt-1">Subcampeón</p><p class="font-heavy text-sky-400">+10</p></div>
           <div class="text-center rounded-xl bg-violet-500/10 border border-violet-500/20 py-3"><div class="text-xl">🥅</div><p class="text-[9px] text-violet-300 font-display uppercase mt-1">¿Final a penales?</p><p class="font-heavy text-violet-400">+5</p></div>
+        </div>
+        <div class="flex items-center gap-3 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 px-4 py-3">
+          <span class="font-heavy text-2xl text-emerald-400 shrink-0">+20</span>
+          <div><p class="font-display text-sm uppercase tracking-wide text-emerald-300">⚽ Total de goles del Mundial</p><p class="text-[11px] text-white/40">Clava el total exacto. Si nadie acierta, el más cercano se lleva <span class="text-emerald-300">+5</span></p></div>
         </div>
       </div>
     </section>
@@ -192,6 +196,8 @@
               ('🏆 Campeón','+15','text-sky-300'),
               ('🥈 Subcampeón','+10','text-sky-300'),
               ('🥅 ¿Final a penales?','+5','text-violet-300'),
+              ('⚽ Total de goles (exacto)','+20','text-emerald-400'),
+              ('⚽ Total de goles (más cercano)','+5','text-emerald-300'),
             ] %}
             {% for label, pts, color in rows %}
             <tr class="border-b border-white/5 last:border-0">

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.scoring import award_points_for_user, POINTS_SOLO
+from app.scoring import award_points_for_user, total_goals_bonus, POINTS_SOLO
 
 router = APIRouter()
 
@@ -153,12 +153,14 @@ def _chart_context() -> dict:
         GROUP BY u.id
     """).fetchall()
 
+    tg_bonus = total_goals_bonus(conn2)   # total de goles (al terminar el Mundial)
+
     breakdown = []
     for r in agg:
         exacto  = (r["ex"] or 0) * 3
         ganador = (r["wi"] or 0) * 1
         penales = (r["adv"] or 0) * 1 + (r["pen"] or 0) * 2
-        award   = award_points_for_user(r["id"], conn2)
+        award   = award_points_for_user(r["id"], conn2) + tg_bonus.get(r["id"], 0)
         comodin = r["joker_bonus"] or 0
         solo    = (r["solo_hits"] or 0) * POINTS_SOLO
         # Lo que queda son goleadores/autogoles
@@ -257,9 +259,11 @@ def ranking(request: Request, user=Depends(require_login)):
         GROUP BY u.id
     """).fetchall()
 
+    tg_bonus = total_goals_bonus(conn)   # {user_id: pts} del total de goles (al terminar)
+
     ranking = []
     for r in rows:
-        award_pts = award_points_for_user(r["id"], conn)
+        award_pts = award_points_for_user(r["id"], conn) + tg_bonus.get(r["id"], 0)
         played = r["played"] or 0
         results_hit = r["exact_hits"] + r["winner_hits"]
         pct = round(results_hit / played * 100) if played else 0

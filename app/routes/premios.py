@@ -4,6 +4,7 @@ from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
 from app.timeutils import is_past
+from app.scoring import tournament_finished, real_total_goals
 
 router = APIRouter()
 
@@ -35,11 +36,14 @@ def awards_form(request: Request, user=Depends(require_login)):
         UNION SELECT DISTINCT away_team AS t FROM matches WHERE away_team != 'Por definir'
         ORDER BY t
     """).fetchall()]
+    # Total de goles real: solo se muestra cuando el Mundial terminó
+    real_total = real_total_goals(conn) if tournament_finished(conn) else None
     conn.close()
     return templates.TemplateResponse("premios.html", {
         "request": request, "user": user,
         "pred": pred, "real": real, "locked": locked,
         "all_players": all_players, "keepers": keepers, "teams": teams,
+        "real_total": real_total,
     })
 
 
@@ -52,6 +56,7 @@ def save_awards(
     champion: str = Form(""),
     runner_up: str = Form(""),
     final_penalties: str = Form(""),
+    total_goals: str = Form(""),
     user=Depends(require_login),
 ):
     conn = get_db()
@@ -59,19 +64,27 @@ def save_awards(
         conn.close()
         return RedirectResponse("/premios", status_code=303)
 
+    try:
+        tg = int(total_goals) if total_goals.strip() else None
+        if tg is not None and tg < 0:
+            tg = None
+    except ValueError:
+        tg = None
+
     conn.execute("""
         INSERT INTO award_predictions
-            (user_id, top_scorer, best_player, best_keeper, champion, runner_up, final_penalties)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+            (user_id, top_scorer, best_player, best_keeper, champion, runner_up, final_penalties, total_goals)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
             top_scorer=excluded.top_scorer,
             best_player=excluded.best_player,
             best_keeper=excluded.best_keeper,
             champion=excluded.champion,
             runner_up=excluded.runner_up,
-            final_penalties=excluded.final_penalties
+            final_penalties=excluded.final_penalties,
+            total_goals=excluded.total_goals
     """, (user["id"], top_scorer.strip(), best_player.strip(), best_keeper.strip(),
-          champion.strip(), runner_up.strip(), final_penalties.strip()))
+          champion.strip(), runner_up.strip(), final_penalties.strip(), tg))
     conn.commit()
     conn.close()
     return RedirectResponse("/premios", status_code=303)
