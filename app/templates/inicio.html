@@ -21,6 +21,31 @@
     </div>
 </div>
 
+<!-- Recordatorios -->
+{% if premios_pending or comodin_stages %}
+<div class="space-y-3 mb-6">
+    {% if premios_pending %}
+    <a href="/premios" class="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500/[0.12] to-transparent border border-amber-500/25 px-4 py-3 hover:border-amber-400/50 transition group">
+        <span class="text-2xl shrink-0">🏅</span>
+        <div class="flex-1 min-w-0">
+            <p class="font-display text-sm uppercase tracking-wide text-amber-200">Te faltan los premios</p>
+            <p class="text-[11px] text-white/45">Bota de Oro, campeón, total de goles… ciérralos antes de que empiece el Mundial.</p>
+        </div>
+        <span class="font-display text-[10px] uppercase tracking-wider text-ink bg-amber-400 rounded-full px-2.5 py-1 shrink-0 group-hover:bg-amber-300 transition">Predecir →</span>
+    </a>
+    {% endif %}
+    {% if comodin_stages %}
+    <div class="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500/[0.12] to-transparent border border-cyan-500/25 px-4 py-3">
+        <span class="text-2xl shrink-0">🃏</span>
+        <div class="flex-1 min-w-0">
+            <p class="font-display text-sm uppercase tracking-wide text-cyan-200">Aún tienes tu comodín x2</p>
+            <p class="text-[11px] text-white/45">Sin usar en: <span class="text-cyan-300">{{ comodin_stages | join(', ') }}</span>. Actívalo al pronosticar un partido para duplicar sus puntos.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Próximos partidos por pronosticar -->
 <div class="flex items-center gap-2 mb-4">
     <span class="text-lg">⏰</span>

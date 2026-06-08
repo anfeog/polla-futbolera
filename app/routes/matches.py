@@ -137,10 +137,35 @@ def inicio(request: Request, user=Depends(require_login)):
         if len(upcoming) >= 5:
             break
 
+    # ── Recordatorio: premios sin predecir (mientras sigan abiertos) ──────────
+    first_k = conn.execute(
+        "SELECT MIN(kickoff) k FROM matches WHERE home_team != 'Por definir'"
+    ).fetchone()["k"]
+    premios_open = (not is_past(first_k)) if first_k else True
+    award_row = conn.execute(
+        "SELECT top_scorer FROM award_predictions WHERE user_id=?", (user["id"],)
+    ).fetchone()
+    premios_pending = premios_open and not (award_row and award_row["top_scorer"])
+
+    # ── Recordatorio: comodín x2 sin usar en fases aún abiertas ───────────────
+    stage_open = {}   # fase -> tiene algún partido aún pronosticable
+    for m in rows:
+        if not is_locked(m["kickoff"]):
+            stage_open.setdefault(m["stage"], True)
+    used = conn.execute("""
+        SELECT DISTINCT m.stage AS stage
+        FROM predictions p JOIN matches m ON m.id = p.match_id
+        WHERE p.user_id = ? AND p.is_joker = 1
+    """, (user["id"],)).fetchall()
+    joker_stages = {r["stage"] for r in used}
+    comodin_stages = [STAGE_LABELS.get(s, s) for s in stage_open if s not in joker_stages]
+
     conn.close()
     return templates.TemplateResponse("inicio.html", {
         "request": request, "user": user, "matches": upcoming,
         "any_upcoming": any_upcoming,
+        "premios_pending": premios_pending,
+        "comodin_stages": comodin_stages,
     })
 
 
