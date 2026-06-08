@@ -124,9 +124,10 @@
             <div class="flex items-center gap-3">
                 <input type="checkbox" name="use_joker" value="1" {% if is_joker %}checked{% endif %}
                        class="peer sr-only">
-                <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 peer-checked:bg-cyan-500/60 transition shrink-0">
-                    <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
-                </div>
+                <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 transition-colors shrink-0
+                            peer-checked:bg-cyan-500/60
+                            after:content-[''] after:absolute after:top-1 after:left-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-300
+                            peer-checked:after:translate-x-5"></div>
                 <div class="flex-1 min-w-0">
                     <p class="font-display text-sm uppercase tracking-wide text-cyan-200">🃏 Usar comodín <span class="text-cyan-400">(x2 puntos)</span></p>
                     <p class="text-xs text-white/45 mt-0.5">Duplica todos tus puntos de este partido. Solo <span class="text-white/70">uno por fase</span>.</p>

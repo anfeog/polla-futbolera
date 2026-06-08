@@ -122,9 +122,10 @@
         <p class="text-white/50 text-sm mb-4">Marca <span class="text-cyan-300 font-semibold">1 partido por fase</span> como comodín y esos puntos se <span class="text-cyan-300 font-semibold">duplican</span>. ¡Pruébalo! 👇</p>
         <label class="flex items-center gap-4 rounded-xl bg-black/30 border border-cyan-500/20 p-4 cursor-pointer">
           <input type="checkbox" class="peer sr-only">
-          <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 peer-checked:bg-cyan-500/60 transition shrink-0">
-            <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
-          </div>
+          <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 transition-colors shrink-0
+                      peer-checked:bg-cyan-500/60
+                      after:content-[''] after:absolute after:top-1 after:left-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-300
+                      peer-checked:after:translate-x-5"></div>
           <div class="flex-1">
             <p class="font-display text-sm uppercase tracking-wide text-cyan-200">Usar comodín</p>
             <p class="text-[11px] text-white/40">Tus puntos del partido → <span class="text-cyan-300 font-bold">x2</span></p>
