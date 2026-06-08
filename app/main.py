@@ -4,7 +4,7 @@ load_dotenv()
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse, PlainTextResponse
+from fastapi.responses import RedirectResponse, PlainTextResponse, FileResponse
 from app.database import init_db
 from app.auth import get_current_user
 import os, bcrypt
@@ -66,6 +66,24 @@ def _create_admin_if_missing():
 def health():
     """Endpoint de salud para monitores (UptimeRobot). Responde 200 a GET y HEAD."""
     return PlainTextResponse("ok")
+
+
+# ── PWA: servir SW y manifest desde la raíz (alcance "/") ────────────────────
+@app.get("/sw.js")
+def service_worker():
+    return FileResponse(
+        os.path.join(BASE_DIR, "static", "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/manifest.webmanifest")
+def manifest():
+    return FileResponse(
+        os.path.join(BASE_DIR, "static", "manifest.webmanifest"),
+        media_type="application/manifest+json",
+    )
 
 
 @app.get("/")
