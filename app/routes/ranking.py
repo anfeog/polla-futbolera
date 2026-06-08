@@ -75,8 +75,8 @@ def goleadores(request: Request, user=Depends(require_login)):
     })
 
 
-@router.get("/graficas", response_class=HTMLResponse)
-def graficas(request: Request, user=Depends(require_login)):
+def _chart_context() -> dict:
+    """Calcula todos los datos para las 4 gráficas. Reutilizable en /ranking."""
     conn = get_db()
 
     # Puntos por usuario y día (de partidos ya finalizados)
@@ -202,8 +202,7 @@ def graficas(request: Request, user=Depends(require_login)):
     sharp_pct     = [round(b["exact_count"] / b["played"] * 100) if b["played"] else 0 for b in sharp]
     has_sharp = any(b["exact_count"] > 0 for b in sharp)
 
-    return templates.TemplateResponse("graficas.html", {
-        "request": request, "user": user,
+    return {
         "labels": labels, "datasets": datasets,
         "has_data": bool(days),
         "bar_labels": bar_labels, "bar_segments": bar_segments, "has_bars": has_bars,
@@ -211,6 +210,13 @@ def graficas(request: Request, user=Depends(require_login)):
         "worst_pct": worst_pct, "worst_pts": worst_pts, "has_worst": has_worst,
         "sharp_labels": sharp_labels, "sharp_avatars": sharp_avatars,
         "sharp_counts": sharp_counts, "sharp_pct": sharp_pct, "has_sharp": has_sharp,
+    }
+
+
+@router.get("/graficas", response_class=HTMLResponse)
+def graficas(request: Request, user=Depends(require_login)):
+    return templates.TemplateResponse("graficas.html", {
+        "request": request, "user": user, **_chart_context(),
     })
 
 
@@ -272,6 +278,7 @@ def ranking(request: Request, user=Depends(require_login)):
     return templates.TemplateResponse("ranking.html", {
         "request": request, "user": user, "ranking": ranking,
         "podium_ids": podium_ids,
+        **_chart_context(),
     })
 
 

@@ -3,15 +3,8 @@
 {% block content %}
 
 <div class="mb-8">
-    <div class="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-            <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">Clasificación general</p>
-            <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">TABLA</h1>
-        </div>
-        <a href="/graficas" class="font-display uppercase tracking-wider text-sm px-4 py-2 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 hover:bg-sky-500/25 transition">
-            📈 Ver gráfica
-        </a>
-    </div>
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">Clasificación general</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">TABLA</h1>
 </div>
 
 {% if not ranking %}
@@ -97,6 +90,13 @@ estInput.addEventListener('input', () => { estCount.textContent = estInput.value
 estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEstado(); });
 </script>
 {% endif %}
+{% endif %}
+
+<!-- Carrusel de gráficas (entre el podio y la tabla) -->
+{% if has_data %}
+<div class="mb-8">
+    {% include "_charts_carousel.html" %}
+</div>
 {% endif %}
 
 <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden overflow-x-auto">
