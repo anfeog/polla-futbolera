@@ -318,5 +318,19 @@ def _migrate(conn):
     for col in ("advances_hit", "penalty_score_hit"):
         if col not in pred_cols:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
+    # Comodín (x2) y "Solo tú lo predijiste"
+    for col in ("is_joker", "solo_hit"):
+        if col not in pred_cols:
+            conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
+
+    # Preguntas bonus extra (campeón, subcampeón, final a penales)
+    aw_cols = cols("award_predictions")
+    for col in ("champion", "runner_up", "final_penalties"):
+        if col not in aw_cols:
+            conn.execute(f"ALTER TABLE award_predictions ADD COLUMN {col} TEXT")
+    ta_cols = cols("tournament_awards")
+    for col in ("champion", "runner_up", "final_penalties"):
+        if col not in ta_cols:
+            conn.execute(f"ALTER TABLE tournament_awards ADD COLUMN {col} TEXT")
 
     conn.commit()

@@ -52,11 +52,72 @@
     </div>
     {% endfor %}
 
+    <!-- ── Preguntas bonus ─────────────────────────────────── -->
+    <div class="pt-2">
+        <p class="font-display text-xs uppercase tracking-[0.25em] text-sky-400 mb-3 px-1">❓ Preguntas bonus</p>
+    </div>
+
+    {% set bonus_teams = [
+        ('champion', '🏆 Campeón del Mundial', '¿Quién levanta la copa?', '+15'),
+        ('runner_up', '🥈 Subcampeón', 'El finalista que pierde', '+10'),
+    ] %}
+    {% for key, title, desc, pts in bonus_teams %}
+    <div class="rounded-2xl bg-gradient-to-b from-sky-500/[0.07] to-white/[0.02] border border-sky-500/15 p-5">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ title }} <span class="text-sky-400 text-sm">{{ pts }}</span></h2>
+                <p class="text-white/40 text-xs">{{ desc }}</p>
+            </div>
+            {% if real and real[key] %}
+            <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
+                {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred[key] and pred[key]|lower == real[key]|lower else 'bg-white/10 text-white/50' }}">
+                Fue: {{ real[key] }}
+            </span>
+            {% endif %}
+        </div>
+        <input type="text" name="{{ key }}" list="teams-list"
+            value="{{ pred[key] if pred and pred[key] else '' }}"
+            placeholder="Nombre de la selección" autocomplete="off"
+            {{ 'disabled' if locked else '' }}
+            class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition disabled:opacity-50">
+    </div>
+    {% endfor %}
+
+    <!-- ¿Final a penales? -->
+    <div class="rounded-2xl bg-gradient-to-b from-violet-500/[0.07] to-white/[0.02] border border-violet-500/15 p-5">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">🥅 ¿La final se decide por penales? <span class="text-violet-300 text-sm">+5</span></h2>
+                <p class="text-white/40 text-xs">Arriésgate con un sí o un no</p>
+            </div>
+            {% if real and real['final_penalties'] %}
+            <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
+                {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred['final_penalties'] and pred['final_penalties']|lower == real['final_penalties']|lower else 'bg-white/10 text-white/50' }}">
+                Fue: {{ real['final_penalties'] }}
+            </span>
+            {% endif %}
+        </div>
+        {% set fp = pred['final_penalties'] if pred and pred['final_penalties'] else '' %}
+        <div class="grid grid-cols-2 gap-2">
+            <label class="cursor-pointer">
+                <input type="radio" name="final_penalties" value="Sí" class="peer sr-only" {{ 'checked' if fp|lower in ['sí','si'] }} {{ 'disabled' if locked else '' }}>
+                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">Sí 🎯</div>
+            </label>
+            <label class="cursor-pointer">
+                <input type="radio" name="final_penalties" value="No" class="peer sr-only" {{ 'checked' if fp|lower == 'no' }} {{ 'disabled' if locked else '' }}>
+                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">No 🛡️</div>
+            </label>
+        </div>
+    </div>
+
     <datalist id="players-list">
         {% for p in all_players %}<option value="{{ p }}">{% endfor %}
     </datalist>
     <datalist id="keepers-list">
         {% for k in keepers %}<option value="{{ k }}">{% endfor %}
+    </datalist>
+    <datalist id="teams-list">
+        {% for t in teams %}<option value="{{ t }}">{% endfor %}
     </datalist>
 
     {% if not locked %}

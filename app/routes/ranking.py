@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.scoring import award_points_for_user
+from app.scoring import award_points_for_user, POINTS_SOLO
 
 router = APIRouter()
 
@@ -139,6 +139,8 @@ def _chart_context() -> dict:
     agg = conn2.execute("""
         SELECT u.id, u.username, u.avatar,
                COALESCE(SUM(p.points), 0)            AS pts,
+               COALESCE(SUM(p.points * p.is_joker), 0) AS joker_bonus,
+               COALESCE(SUM(p.solo_hit), 0)          AS solo_hits,
                COALESCE(SUM(p.hit_exact), 0)         AS ex,
                COALESCE(SUM(p.hit_winner), 0)        AS wi,
                COALESCE(SUM(p.advances_hit), 0)      AS adv,
@@ -157,13 +159,15 @@ def _chart_context() -> dict:
         ganador = (r["wi"] or 0) * 1
         penales = (r["adv"] or 0) * 1 + (r["pen"] or 0) * 2
         award   = award_points_for_user(r["id"], conn2)
+        comodin = r["joker_bonus"] or 0
+        solo    = (r["solo_hits"] or 0) * POINTS_SOLO
         # Lo que queda son goleadores/autogoles
         goleador = max(0, (r["pts"] or 0) - exacto - ganador - penales)
-        total = (r["pts"] or 0) + award
+        total = (r["pts"] or 0) + comodin + solo + award
         breakdown.append({
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "exacto": exacto, "ganador": ganador, "goleador": round(goleador, 1),
-            "penales": penales, "premios": award,
+            "penales": penales, "premios": award, "comodin": comodin, "solo": solo,
             "exact_count": r["ex"] or 0,
             "total": total, "played": r["played"] or 0,
         })
@@ -176,6 +180,8 @@ def _chart_context() -> dict:
         {"label": "Ganador",         "color": "#3b82f6", "data": [b["ganador"]  for b in top5]},
         {"label": "Goleadores",      "color": "#f59e0b", "data": [b["goleador"] for b in top5]},
         {"label": "Penales",         "color": "#a855f7", "data": [b["penales"]  for b in top5]},
+        {"label": "Comodín x2",      "color": "#06b6d4", "data": [b["comodin"]  for b in top5]},
+        {"label": "Solo tú",         "color": "#facc15", "data": [b["solo"]     for b in top5]},
         {"label": "Premios",         "color": "#ec4899", "data": [b["premios"]  for b in top5]},
     ]
     has_bars = any(b["total"] > 0 for b in top5)
@@ -237,10 +243,12 @@ def ranking(request: Request, user=Depends(require_login)):
 
     rows = conn.execute("""
         SELECT u.id, u.username, u.avatar, u.status_msg,
-               COALESCE(SUM(p.points), 0)        AS match_points,
-               COALESCE(SUM(p.hit_exact), 0)     AS exact_hits,
-               COALESCE(SUM(p.hit_winner), 0)    AS winner_hits,
-               COALESCE(SUM(p.scorers_hit), 0)   AS scorers_hit,
+               COALESCE(SUM(p.points), 0)            AS match_points,
+               COALESCE(SUM(p.points * p.is_joker), 0) AS joker_bonus,
+               COALESCE(SUM(p.solo_hit), 0)          AS solo_hits,
+               COALESCE(SUM(p.hit_exact), 0)         AS exact_hits,
+               COALESCE(SUM(p.hit_winner), 0)        AS winner_hits,
+               COALESCE(SUM(p.scorers_hit), 0)       AS scorers_hit,
                SUM(CASE WHEN m.status='FINISHED' THEN 1 ELSE 0 END) AS played
         FROM users u
         LEFT JOIN predictions p ON p.user_id = u.id
@@ -255,13 +263,18 @@ def ranking(request: Request, user=Depends(require_login)):
         played = r["played"] or 0
         results_hit = r["exact_hits"] + r["winner_hits"]
         pct = round(results_hit / played * 100) if played else 0
+        solo_pts = (r["solo_hits"] or 0) * POINTS_SOLO
+        joker_bonus = r["joker_bonus"] or 0
+        total = r["match_points"] + joker_bonus + solo_pts + award_pts
         ranking.append({
             "id": r["id"],
             "username": r["username"],
             "avatar": r["avatar"] or "⚽",
             "status_msg": r["status_msg"],
-            "total_points": r["match_points"] + award_pts,
+            "total_points": total,
             "award_points": award_pts,
+            "joker_bonus": joker_bonus,
+            "solo_hits": r["solo_hits"] or 0,
             "exact_hits": r["exact_hits"],
             "winner_hits": r["winner_hits"],
             "scorers_hit": r["scorers_hit"],

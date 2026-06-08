@@ -62,14 +62,19 @@ def set_award_winners(
     top_scorer: str = Form(""),
     best_player: str = Form(""),
     best_keeper: str = Form(""),
+    champion: str = Form(""),
+    runner_up: str = Form(""),
+    final_penalties: str = Form(""),
     user=Depends(require_admin),
 ):
     conn = get_db()
     conn.execute("""
         UPDATE tournament_awards
-        SET top_scorer=?, best_player=?, best_keeper=?
+        SET top_scorer=?, best_player=?, best_keeper=?,
+            champion=?, runner_up=?, final_penalties=?
         WHERE id=1
-    """, (top_scorer.strip(), best_player.strip(), best_keeper.strip()))
+    """, (top_scorer.strip(), best_player.strip(), best_keeper.strip(),
+          champion.strip(), runner_up.strip(), final_penalties.strip()))
     conn.commit()
     conn.close()
     return RedirectResponse("/admin", status_code=303)

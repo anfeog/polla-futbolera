@@ -54,6 +54,14 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         """, (pred["pred_id"],)).fetchall()
         others_scorers[pred["pred_id"]] = scorers
 
+    # Comodín: ¿ya tiene uno en otro partido de esta fase?
+    joker_other = conn.execute("""
+        SELECT m.home_team, m.away_team
+        FROM predictions p JOIN matches m ON m.id = p.match_id
+        WHERE p.user_id = ? AND p.is_joker = 1 AND m.stage = ? AND m.id != ?
+        LIMIT 1
+    """, (user["id"], match["stage"], match_id)).fetchone()
+
     conn.close()
 
     # Plantillas para los desplegables (solo nombres)
@@ -72,6 +80,8 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "is_knockout": match["stage"] in KO_STAGES,
         "others": others,
         "others_scorers": others_scorers,
+        "is_joker": bool(existing and existing["is_joker"]),
+        "joker_other": joker_other,
     })
 
 
@@ -145,6 +155,17 @@ async def save_prediction(match_id: int, request: Request, user=Depends(require_
                 "INSERT INTO goalscorer_predictions (prediction_id, team, position, player_name, is_own_goal) VALUES (?,?,?,?,?)",
                 (pred_id, team_name, pos, player or None, is_own)
             )
+
+    # Comodín (x2): solo uno por fase. Si lo activa aquí, se quita de los demás.
+    want_joker = 1 if form.get("use_joker") else 0
+    if want_joker:
+        conn.execute("""
+            UPDATE predictions SET is_joker = 0
+            WHERE user_id = ? AND match_id IN (SELECT id FROM matches WHERE stage = ?)
+        """, (user["id"], match["stage"]))
+        conn.execute("UPDATE predictions SET is_joker = 1 WHERE id = ?", (pred_id,))
+    else:
+        conn.execute("UPDATE predictions SET is_joker = 0 WHERE id = ?", (pred_id,))
 
     conn.commit()
     conn.close()

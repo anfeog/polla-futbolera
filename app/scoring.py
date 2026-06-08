@@ -22,6 +22,17 @@ POINTS_OWN_GOAL = 20
 POINTS_AWARD = 10
 POINTS_ADVANCES = 1   # aciertas quién pasa en penales
 POINTS_PENALTY = 2    # aciertas el marcador exacto de penales
+POINTS_SOLO = 3       # eres el ÚNICO que clava el marcador exacto de un partido
+
+# Puntos por cada pregunta bonus (la "verdad" la fija el admin)
+AWARD_POINTS = {
+    "top_scorer":      10,   # Bota de Oro
+    "best_player":     10,   # Balón de Oro
+    "best_keeper":     10,   # Guante de Oro
+    "champion":        15,   # Campeón del Mundial
+    "runner_up":       10,   # Subcampeón
+    "final_penalties":  5,   # ¿La final se decide por penales? (si/no)
+}
 
 KO_STAGES = {"Last 32", "Last 16", "Quarter Finals", "Semi Finals", "Third Place", "Final"}
 
@@ -128,7 +139,7 @@ def _norm(s) -> str:
 
 
 def award_points_for_user(user_id: int, conn=None) -> int:
-    """+10 por cada premio del Mundial acertado (Bota/Balón/Guante de Oro)."""
+    """Puntos por cada pregunta bonus acertada (premios + campeón/subcampeón/final)."""
     own = conn is None
     if own:
         conn = get_db()
@@ -138,9 +149,12 @@ def award_points_for_user(user_id: int, conn=None) -> int:
     ).fetchone()
     pts = 0
     if real and pred:
-        for field in ("top_scorer", "best_player", "best_keeper"):
-            if real[field] and _norm(pred[field]) == _norm(real[field]):
-                pts += POINTS_AWARD
+        for field, value in AWARD_POINTS.items():
+            # La columna puede no existir en filas antiguas: usar get con default
+            rv = real[field] if field in real.keys() else None
+            pv = pred[field] if field in pred.keys() else None
+            if rv and _norm(pv) == _norm(rv):
+                pts += value
     if own:
         conn.close()
     return pts
@@ -154,3 +168,19 @@ def recalculate_all_for_match(match_id: int):
     conn.close()
     for p in preds:
         calculate_match_points(p["id"])
+    _mark_solo_hits(match_id)
+
+
+def _mark_solo_hits(match_id: int):
+    """Marca solo_hit=1 si EXACTAMENTE un usuario clavó el marcador del partido."""
+    conn = get_db()
+    exact = conn.execute(
+        "SELECT id FROM predictions WHERE match_id = ? AND hit_exact = 1",
+        (match_id,)
+    ).fetchall()
+    # Reiniciar todos a 0 y marcar solo si hay un único acierto exacto
+    conn.execute("UPDATE predictions SET solo_hit = 0 WHERE match_id = ?", (match_id,))
+    if len(exact) == 1:
+        conn.execute("UPDATE predictions SET solo_hit = 1 WHERE id = ?", (exact[0]["id"],))
+    conn.commit()
+    conn.close()

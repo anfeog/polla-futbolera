@@ -30,11 +30,16 @@ def awards_form(request: Request, user=Depends(require_login)):
     keepers = [r["name"] for r in conn.execute(
         "SELECT DISTINCT name FROM players WHERE position='Goalkeeper' ORDER BY name"
     ).fetchall()]
+    teams = [r["t"] for r in conn.execute("""
+        SELECT DISTINCT home_team AS t FROM matches WHERE home_team != 'Por definir'
+        UNION SELECT DISTINCT away_team AS t FROM matches WHERE away_team != 'Por definir'
+        ORDER BY t
+    """).fetchall()]
     conn.close()
     return templates.TemplateResponse("premios.html", {
         "request": request, "user": user,
         "pred": pred, "real": real, "locked": locked,
-        "all_players": all_players, "keepers": keepers,
+        "all_players": all_players, "keepers": keepers, "teams": teams,
     })
 
 
@@ -44,6 +49,9 @@ def save_awards(
     top_scorer: str = Form(""),
     best_player: str = Form(""),
     best_keeper: str = Form(""),
+    champion: str = Form(""),
+    runner_up: str = Form(""),
+    final_penalties: str = Form(""),
     user=Depends(require_login),
 ):
     conn = get_db()
@@ -52,13 +60,18 @@ def save_awards(
         return RedirectResponse("/premios", status_code=303)
 
     conn.execute("""
-        INSERT INTO award_predictions (user_id, top_scorer, best_player, best_keeper)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO award_predictions
+            (user_id, top_scorer, best_player, best_keeper, champion, runner_up, final_penalties)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
             top_scorer=excluded.top_scorer,
             best_player=excluded.best_player,
-            best_keeper=excluded.best_keeper
-    """, (user["id"], top_scorer.strip(), best_player.strip(), best_keeper.strip()))
+            best_keeper=excluded.best_keeper,
+            champion=excluded.champion,
+            runner_up=excluded.runner_up,
+            final_penalties=excluded.final_penalties
+    """, (user["id"], top_scorer.strip(), best_player.strip(), best_keeper.strip(),
+          champion.strip(), runner_up.strip(), final_penalties.strip()))
     conn.commit()
     conn.close()
     return RedirectResponse("/premios", status_code=303)

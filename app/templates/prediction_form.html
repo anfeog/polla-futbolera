@@ -119,6 +119,26 @@
         </div>
         {% endif %}
 
+        <!-- Comodín x2 -->
+        <label class="block rounded-2xl bg-gradient-to-b from-cyan-500/[0.10] to-cyan-500/[0.02] border border-cyan-500/25 p-5 cursor-pointer hover:border-cyan-400/50 transition">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="use_joker" value="1" {% if is_joker %}checked{% endif %}
+                       class="peer sr-only">
+                <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 peer-checked:bg-cyan-500/60 transition shrink-0">
+                    <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-display text-sm uppercase tracking-wide text-cyan-200">🃏 Usar comodín <span class="text-cyan-400">(x2 puntos)</span></p>
+                    <p class="text-xs text-white/45 mt-0.5">Duplica todos tus puntos de este partido. Solo <span class="text-white/70">uno por fase</span>.</p>
+                </div>
+            </div>
+            {% if joker_other %}
+            <p class="mt-3 text-[11px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 font-display">
+                ⚠️ Ya tienes el comodín en <span class="font-bold">{{ joker_other.home_team[:12] }} vs {{ joker_other.away_team[:12] }}</span>. Activarlo aquí lo moverá a este partido.
+            </p>
+            {% endif %}
+        </label>
+
         <!-- Goleadores ordenados -->
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">
             <h2 class="font-display text-sm uppercase tracking-wider text-white/70 mb-1">
