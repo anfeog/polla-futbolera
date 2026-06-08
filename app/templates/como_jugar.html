@@ -177,6 +177,44 @@
       </div>
     </section>
 
+    <!-- 7b. Instalar como app (SOLO móvil) -->
+    <section class="tut-step hidden" data-step="7b" data-mobile-only="1">
+      <div class="rounded-2xl bg-gradient-to-b from-sky-500/[0.12] to-white/[0.01] border border-sky-500/25 p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-lg">📲</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">Instala la app</h2>
+        </div>
+        <p class="text-white/50 text-sm mb-4">Para no entrar siempre al enlace, añádela a tu pantalla de inicio. Te queda con su ícono y abre a pantalla completa.</p>
+
+        <!-- Android -->
+        <div data-os="android" class="rounded-xl bg-black/30 border border-white/10 p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🤖</span>
+            <p class="font-display text-sm uppercase tracking-wide text-emerald-300">Android (Chrome)</p>
+          </div>
+          <ol class="space-y-2 text-sm text-white/70">
+            <li class="flex gap-2"><span class="text-emerald-400 font-bold">1.</span> Toca el menú <span class="font-bold text-white">⋮</span> arriba a la derecha</li>
+            <li class="flex gap-2"><span class="text-emerald-400 font-bold">2.</span> Pulsa <span class="font-bold text-white">"Instalar app"</span> o <span class="font-bold text-white">"Añadir a pantalla principal"</span></li>
+            <li class="flex gap-2"><span class="text-emerald-400 font-bold">3.</span> Confirma y listo ✅</li>
+          </ol>
+        </div>
+
+        <!-- iOS -->
+        <div data-os="ios" class="hidden rounded-xl bg-black/30 border border-white/10 p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl">🍎</span>
+            <p class="font-display text-sm uppercase tracking-wide text-sky-300">iPhone (Safari)</p>
+          </div>
+          <ol class="space-y-2 text-sm text-white/70">
+            <li class="flex gap-2"><span class="text-sky-400 font-bold">1.</span> Abre esta página en <span class="font-bold text-white">Safari</span> (no Chrome)</li>
+            <li class="flex gap-2"><span class="text-sky-400 font-bold">2.</span> Toca el botón <span class="font-bold text-white">Compartir</span> <span class="inline-block">⬆️</span> abajo</li>
+            <li class="flex gap-2"><span class="text-sky-400 font-bold">3.</span> Baja y pulsa <span class="font-bold text-white">"Añadir a pantalla de inicio"</span></li>
+            <li class="flex gap-2"><span class="text-sky-400 font-bold">4.</span> Confirma <span class="font-bold text-white">"Añadir"</span> ✅</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
     <!-- 8. Resumen + CTA -->
     <section class="tut-step hidden" data-step="7">
       <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-transparent border border-white/10 overflow-hidden mb-5">
@@ -229,6 +267,24 @@
 
 <script>
 (function () {
+  // ── Pasos solo-móvil: detectar dispositivo y SO ──────────────
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  const isMobile = isIOS || isAndroid || /Mobi/i.test(ua);
+  const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  document.querySelectorAll('[data-mobile-only]').forEach(function (el) {
+    if (!isMobile || installed) {
+      el.remove();   // en escritorio o ya instalada: quitar el paso por completo
+    } else {
+      const android = el.querySelector('[data-os="android"]');
+      const ios = el.querySelector('[data-os="ios"]');
+      if (isIOS) { if (android) android.classList.add('hidden'); if (ios) ios.classList.remove('hidden'); }
+      else { if (ios) ios.classList.add('hidden'); if (android) android.classList.remove('hidden'); }
+    }
+  });
+
   const steps = Array.from(document.querySelectorAll('.tut-step'));
   const N = steps.length;
   const bar = document.getElementById('tut-bar');
