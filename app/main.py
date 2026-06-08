@@ -4,7 +4,7 @@ load_dotenv()
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, PlainTextResponse
 from app.database import init_db
 from app.auth import get_current_user
 import os, bcrypt
@@ -57,6 +57,12 @@ def _create_admin_if_missing():
         conn.commit()
         print(f"[startup] Admin '{admin_user}' creado.")
     conn.close()
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health():
+    """Endpoint de salud para monitores (UptimeRobot). Responde 200 a GET y HEAD."""
+    return PlainTextResponse("ok")
 
 
 @app.get("/")
