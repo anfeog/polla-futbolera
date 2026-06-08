@@ -2,228 +2,289 @@
 {% block title %}Cómo jugar — Mundial 2026{% endblock %}
 {% block content %}
 
-<!-- Header -->
-<div class="text-center mb-10">
-    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-2">Polla Futbolera · FIFA World Cup 26</p>
-    <h1 class="font-heavy text-5xl sm:text-6xl mb-3 brand-gradient">CÓMO JUGAR</h1>
-    <p class="text-white/50 text-base max-w-lg mx-auto">
-        Predice los marcadores, adivina los goleadores y compite con tus amigos durante todo el Mundial.
-    </p>
-</div>
+<style>
+  @keyframes tutIn { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform:none; } }
+  .tut-step { animation: tutIn .45s ease both; }
+  @keyframes pop { 0%{transform:scale(.6);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+  .pop { animation: pop .5s ease both; }
+  @keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .floaty { animation: floaty 2.4s ease-in-out infinite; }
+  @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0)} 50%{box-shadow:0 0 24px 4px rgba(250,204,21,.35)} }
+  .glow { animation: glow 1.8s ease-in-out infinite; }
+  .x2flip { transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+  .peer:checked ~ .x2flip { transform: scale(1.25) rotate(-8deg); }
+</style>
 
-<!-- Paso 1: Predecir marcador -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.01] border border-white/10 p-6 mb-4">
-    <div class="flex items-start gap-4">
-        <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0">
-            <span class="font-heavy text-xl text-sky-300">1</span>
+<div class="max-w-xl mx-auto">
+
+  <!-- Cabecera + progreso -->
+  <div class="text-center mb-4">
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">Tutorial interactivo</p>
+    <h1 class="font-heavy text-3xl sm:text-4xl brand-gradient">CÓMO GANAR PUNTOS</h1>
+  </div>
+  <div class="h-1.5 rounded-full bg-white/10 overflow-hidden mb-1">
+    <div id="tut-bar" class="h-full brand-bar transition-all duration-300" style="width:12%"></div>
+  </div>
+  <p class="text-right text-[11px] font-display uppercase tracking-wider text-white/35 mb-5">
+    Paso <span id="tut-cur">1</span> de <span id="tut-tot">8</span>
+  </p>
+
+  <!-- ════════ PASOS ════════ -->
+  <div id="tut-track" class="min-h-[360px]">
+
+    <!-- 1. Bienvenida -->
+    <section class="tut-step" data-step="0">
+      <div class="rounded-2xl bg-gradient-to-br from-sky-500/[0.12] via-violet-500/[0.06] to-transparent border border-white/10 p-8 text-center">
+        <img src="/static/wc26.avif" class="h-24 mx-auto mb-4 floaty drop-shadow-2xl" alt="WC26">
+        <h2 class="font-heavy text-2xl mb-2">¡Bienvenido a la Polla! ⚽</h2>
+        <p class="text-white/55 text-sm leading-relaxed">
+          Predices los partidos del Mundial y sumas puntos según lo bien que aciertes.
+          Te explico <span class="text-sky-300 font-semibold">todas las formas de puntuar</span> en 1 minuto.
+          Usa las flechas para avanzar.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. Marcador -->
+    <section class="tut-step hidden" data-step="1">
+      <div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.01] border border-white/10 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center font-heavy text-emerald-300">1</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">Predice el marcador</h2>
         </div>
-        <div class="flex-1">
-            <h2 class="font-display font-bold text-xl uppercase tracking-wide mb-1">Predice el marcador</h2>
-            <p class="text-white/50 text-sm mb-4">Antes de cada partido, entra y escribe cuántos goles crees que va a marcar cada equipo. El plazo cierra <span class="text-amber-300 font-semibold">1 hora antes del pitido inicial</span>.</p>
-
-            <!-- Ejemplo visual de marcador -->
-            <div class="flex items-center justify-center gap-6 bg-black/30 rounded-xl p-4 max-w-xs mx-auto">
-                <div class="flex flex-col items-center gap-1">
-                    <div class="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center font-display font-bold text-sm">ARG</div>
-                    <span class="font-heavy text-3xl text-white">2</span>
-                </div>
-                <span class="text-white/20 font-bold text-2xl">:</span>
-                <div class="flex flex-col items-center gap-1">
-                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-display font-bold text-sm">FRA</div>
-                    <span class="font-heavy text-3xl text-white">1</span>
-                </div>
-            </div>
+        <div class="flex items-center justify-center gap-6 bg-black/30 rounded-xl p-4 mb-4">
+          <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center font-display font-bold text-xs">ARG</div><span class="font-heavy text-3xl pop">2</span></div>
+          <span class="text-white/20 font-bold text-2xl">:</span>
+          <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-display font-bold text-xs">FRA</div><span class="font-heavy text-3xl pop">1</span></div>
         </div>
-    </div>
-</div>
-
-<!-- Sistema de puntos -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.01] border border-white/10 p-6 mb-4">
-    <div class="flex items-start gap-4 mb-5">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <span class="font-heavy text-xl text-emerald-300">2</span>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 px-4 py-3 text-center">
+            <p class="font-heavy text-3xl text-emerald-400">+3</p>
+            <p class="text-[11px] text-white/50 font-display uppercase tracking-wide mt-1">Marcador exacto</p>
+            <p class="text-[10px] text-white/35 mt-0.5">Clavas el 2–1</p>
+          </div>
+          <div class="rounded-xl bg-sky-500/[0.08] border border-sky-500/20 px-4 py-3 text-center">
+            <p class="font-heavy text-3xl text-sky-400">+1</p>
+            <p class="text-[11px] text-white/50 font-display uppercase tracking-wide mt-1">Acierta el ganador</p>
+            <p class="text-[10px] text-white/35 mt-0.5">Dijiste 2–1, quedó 3–0</p>
+          </div>
         </div>
-        <div>
-            <h2 class="font-display font-bold text-xl uppercase tracking-wide mb-1">Sistema de puntos</h2>
-            <p class="text-white/50 text-sm">Acumulas puntos según lo cerca que estés del resultado real.</p>
+      </div>
+    </section>
+
+    <!-- 3. Goleadores -->
+    <section class="tut-step hidden" data-step="2">
+      <div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.01] border border-white/10 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center font-heavy text-amber-300">2</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">Goleadores en orden</h2>
         </div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-        <!-- +3 Marcador exacto -->
-        <div class="flex items-center gap-3 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-emerald-400 shrink-0">+3</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-emerald-300">Marcador exacto</p>
-                <p class="text-xs text-white/40 mt-0.5">Predices <span class="text-white/70">2–1</span> y queda <span class="text-white/70">2–1</span></p>
-            </div>
+        <p class="text-white/50 text-sm mb-4">Por cada gol que predices puedes decir <span class="text-white/80">quién lo marca y en qué orden</span>.</p>
+        <div class="bg-black/30 rounded-xl p-4 space-y-2 mb-4">
+          <div class="flex items-center gap-2"><span class="text-[10px] text-white/30 w-10 text-right font-display">Gol 1</span><div class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs">Messi</div><span class="text-emerald-400 text-xs font-bold">+2</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-white/30 w-10 text-right font-display">Gol 2</span><div class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs">Di María</div><span class="text-emerald-400 text-xs font-bold">+2</span></div>
         </div>
-
-        <!-- +1 Resultado correcto -->
-        <div class="flex items-center gap-3 rounded-xl bg-sky-500/[0.08] border border-sky-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-sky-400 shrink-0">+1</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-sky-300">Resultado correcto</p>
-                <p class="text-xs text-white/40 mt-0.5">Predices <span class="text-white/70">2–1</span> y queda <span class="text-white/70">3–0</span> (gana local)</p>
-            </div>
-        </div>
-
-        <!-- +2 Goleador -->
-        <div class="flex items-center gap-3 rounded-xl bg-amber-500/[0.08] border border-amber-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-amber-400 shrink-0">+2</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-amber-300">Goleador en posición</p>
-                <p class="text-xs text-white/40 mt-0.5">El jugador que pusiste marcó <span class="text-white/70">ese gol en ese orden</span></p>
-            </div>
-        </div>
-
-        <!-- +20 Autogol -->
         <div class="flex items-center gap-3 rounded-xl bg-red-500/[0.08] border border-red-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-red-400 shrink-0">+20</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-red-300">Autogol 🤯</span></p>
-                <p class="text-xs text-white/40 mt-0.5">Marcas la casilla <span class="text-amber-400 font-semibold">OG</span> y efectivamente es autogol</p>
-            </div>
+          <span class="font-heavy text-3xl text-red-400 shrink-0">+20</span>
+          <div><p class="font-display text-sm uppercase tracking-wide text-red-300">Autogol 🤯</p><p class="text-[11px] text-white/40">Marcas la casilla <span class="text-amber-400 font-semibold">OG</span> y acierta</p></div>
         </div>
+      </div>
+    </section>
 
-    </div>
-</div>
+    <!-- 4. KO: pasa + penales -->
+    <section class="tut-step hidden" data-step="3">
+      <div class="rounded-2xl bg-gradient-to-b from-violet-500/[0.09] to-violet-500/[0.01] border border-violet-500/20 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center font-heavy text-violet-300">3</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">🥅 Eliminatorias y penales</h2>
+        </div>
+        <p class="text-white/50 text-sm mb-4">En fase KO, si predices empate dices <span class="text-white/80">quién pasa</span> y el marcador de los penales.</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl bg-violet-500/10 border border-violet-500/20 px-4 py-3 text-center">
+            <p class="font-heavy text-3xl text-violet-300">+1</p>
+            <p class="text-[11px] text-white/50 font-display uppercase tracking-wide mt-1">Quién avanza</p>
+          </div>
+          <div class="rounded-xl bg-violet-500/10 border border-violet-500/20 px-4 py-3 text-center">
+            <p class="font-heavy text-3xl text-violet-300">+2</p>
+            <p class="text-[11px] text-white/50 font-display uppercase tracking-wide mt-1">Marcador de penales</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<!-- Goleadores en orden -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.01] border border-white/10 p-6 mb-4">
-    <div class="flex items-start gap-4 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center shrink-0">
-            <span class="font-heavy text-xl text-amber-300">3</span>
+    <!-- 5. Comodín x2 -->
+    <section class="tut-step hidden" data-step="4">
+      <div class="rounded-2xl bg-gradient-to-b from-cyan-500/[0.10] to-cyan-500/[0.01] border border-cyan-500/25 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center font-heavy text-cyan-300">4</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">🃏 El Comodín</h2>
         </div>
-        <div>
-            <h2 class="font-display font-bold text-xl uppercase tracking-wide mb-1">Goleadores en orden</h2>
-            <p class="text-white/50 text-sm">Para cada gol que predices, puedes indicar quién lo marca. <span class="text-white/70 font-semibold">El orden importa</span> — si predices 2–1, tienes 2 casillas para el local y 1 para el visitante.</p>
-        </div>
-    </div>
+        <p class="text-white/50 text-sm mb-4">Marca <span class="text-cyan-300 font-semibold">1 partido por fase</span> como comodín y esos puntos se <span class="text-cyan-300 font-semibold">duplican</span>. ¡Pruébalo! 👇</p>
+        <label class="flex items-center gap-4 rounded-xl bg-black/30 border border-cyan-500/20 p-4 cursor-pointer">
+          <input type="checkbox" class="peer sr-only">
+          <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 peer-checked:bg-cyan-500/60 transition shrink-0">
+            <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+          </div>
+          <div class="flex-1">
+            <p class="font-display text-sm uppercase tracking-wide text-cyan-200">Usar comodín</p>
+            <p class="text-[11px] text-white/40">Tus puntos del partido → <span class="text-cyan-300 font-bold">x2</span></p>
+          </div>
+          <span class="x2flip font-heavy text-3xl text-cyan-300">x2</span>
+        </label>
+        <p class="text-center text-[11px] text-white/35 mt-3 font-display">Ej: marcas exacto (+3) con comodín = <span class="text-cyan-300 font-bold">+6</span></p>
+      </div>
+    </section>
 
-    <div class="bg-black/30 rounded-xl p-4 max-w-sm mx-auto space-y-2">
-        <p class="font-display text-[10px] uppercase tracking-wider text-white/30 mb-2">Si predices ARG 2–1 FRA:</p>
-        <div class="flex items-center gap-2">
-            <span class="font-display text-[10px] text-white/30 w-10 text-right shrink-0">Gol 1</span>
-            <div class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-display text-white/60">Messi</div>
-            <span class="text-[10px] text-white/20">= +2 si Messi marcó 1°</span>
+    <!-- 6. Solo tú -->
+    <section class="tut-step hidden" data-step="5">
+      <div class="rounded-2xl bg-gradient-to-b from-yellow-400/[0.10] to-yellow-400/[0.01] border border-yellow-400/25 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center font-heavy text-yellow-300">5</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">🎯 Solo tú lo clavaste</h2>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="font-display text-[10px] text-white/30 w-10 text-right shrink-0">Gol 2</span>
-            <div class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-display text-white/60">Di María</div>
-            <span class="text-[10px] text-white/20">= +2 si Di María marcó 2°</span>
+        <p class="text-white/50 text-sm mb-4">Si eres el <span class="text-yellow-300 font-semibold">único</span> que acierta el marcador exacto de un partido, ganas un bonus de valentía.</p>
+        <div class="space-y-2 mb-4">
+          <div class="flex items-center justify-between rounded-lg bg-yellow-400/10 border border-yellow-400/30 px-4 py-2.5 glow"><span class="font-display text-sm">🦁 Tú · ARG 2–1 FRA</span><span class="font-heavy text-yellow-300">🎯 +3</span></div>
+          <div class="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-4 py-2.5 opacity-60"><span class="font-display text-sm text-white/50">🔥 Otro · 1–1</span><span class="text-white/30 text-xs">falló</span></div>
         </div>
-        <div class="border-t border-white/5 pt-2 flex items-center gap-2">
-            <span class="font-display text-[10px] text-white/30 w-10 text-right shrink-0">FRA 1</span>
-            <div class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-display text-white/60">Mbappé</div>
-            <span class="text-[10px] text-white/20">= +2 si Mbappé marcó</span>
-        </div>
-    </div>
+        <p class="text-center text-[11px] text-white/35 font-display">Nadie más acertó → <span class="text-yellow-300 font-bold">+3 extra</span> para ti</p>
+      </div>
+    </section>
 
-    <p class="text-center text-xs text-white/30 mt-3 font-display">
-        No poner goleador no resta puntos — es totalmente <span class="text-white/50">opcional</span>.
-    </p>
-</div>
+    <!-- 7. Premios y bonus -->
+    <section class="tut-step hidden" data-step="6">
+      <div class="rounded-2xl bg-gradient-to-b from-amber-500/[0.09] to-amber-500/[0.01] border border-amber-500/20 p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center font-heavy text-amber-300">6</span>
+          <h2 class="font-display font-bold text-lg uppercase tracking-wide">🏅 Premios y preguntas bonus</h2>
+        </div>
+        <p class="text-white/50 text-sm mb-4">Antes de que arranque el torneo, predices premios grandes que se resuelven al final.</p>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 py-3"><div class="text-2xl">🥇</div><p class="text-[9px] text-amber-300 font-display uppercase mt-1">Bota Oro</p><p class="font-heavy text-amber-400">+10</p></div>
+          <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 py-3"><div class="text-2xl">🏆</div><p class="text-[9px] text-amber-300 font-display uppercase mt-1">Balón Oro</p><p class="font-heavy text-amber-400">+10</p></div>
+          <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 py-3"><div class="text-2xl">🧤</div><p class="text-[9px] text-amber-300 font-display uppercase mt-1">Guante Oro</p><p class="font-heavy text-amber-400">+10</p></div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="text-center rounded-xl bg-sky-500/10 border border-sky-500/20 py-3"><div class="text-xl">🏆</div><p class="text-[9px] text-sky-300 font-display uppercase mt-1">Campeón</p><p class="font-heavy text-sky-400">+15</p></div>
+          <div class="text-center rounded-xl bg-sky-500/10 border border-sky-500/20 py-3"><div class="text-xl">🥈</div><p class="text-[9px] text-sky-300 font-display uppercase mt-1">Subcampeón</p><p class="font-heavy text-sky-400">+10</p></div>
+          <div class="text-center rounded-xl bg-violet-500/10 border border-violet-500/20 py-3"><div class="text-xl">🥅</div><p class="text-[9px] text-violet-300 font-display uppercase mt-1">¿Final a penales?</p><p class="font-heavy text-violet-400">+5</p></div>
+        </div>
+      </div>
+    </section>
 
-<!-- Fase eliminatoria / penales -->
-<div class="rounded-2xl bg-gradient-to-b from-violet-500/[0.07] to-violet-500/[0.01] border border-violet-500/20 p-6 mb-4">
-    <div class="flex items-start gap-4 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/20 flex items-center justify-center shrink-0">
-            <span class="font-heavy text-xl text-violet-300">4</span>
-        </div>
-        <div>
-            <h2 class="font-display font-bold text-xl uppercase tracking-wide mb-1">🥅 Fase eliminatoria y penales</h2>
-            <p class="text-white/50 text-sm">En los partidos de eliminatoria (Last 32 en adelante), si predices empate puedes indicar quién avanza y el resultado en penales.</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="flex items-center gap-3 rounded-xl bg-violet-500/10 border border-violet-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-violet-400 shrink-0">+1</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-violet-300">Quién avanza</p>
-                <p class="text-xs text-white/40 mt-0.5">Aciertas qué selección pasa de ronda</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 rounded-xl bg-violet-500/10 border border-violet-500/20 px-4 py-3">
-            <span class="font-heavy text-3xl text-violet-400 shrink-0">+2</span>
-            <div>
-                <p class="font-display font-semibold text-sm uppercase tracking-wide text-violet-300">Marcador exacto penales</p>
-                <p class="text-xs text-white/40 mt-0.5">Predices <span class="text-white/70">4–2</span> en penales y es <span class="text-white/70">4–2</span></p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Premios del Mundial -->
-<div class="rounded-2xl bg-gradient-to-b from-amber-500/[0.07] to-amber-500/[0.01] border border-amber-500/20 p-6 mb-4">
-    <div class="flex items-start gap-4 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center shrink-0">
-            <span class="font-heavy text-xl text-amber-300">5</span>
-        </div>
-        <div>
-            <h2 class="font-display font-bold text-xl uppercase tracking-wide mb-1">Premios del Mundial</h2>
-            <p class="text-white/50 text-sm">Antes de que empiece el torneo puedes predecir los tres grandes premios individuales. Se puntúan al final del campeonato.</p>
-        </div>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-4">
-            <div class="text-3xl mb-1">🥇</div>
-            <p class="font-display text-xs uppercase tracking-wider text-amber-300 font-semibold">Bota de Oro</p>
-            <p class="text-[10px] text-white/40 mt-1">Máximo goleador</p>
-            <p class="font-heavy text-2xl text-amber-400 mt-2">+10</p>
-        </div>
-        <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-4">
-            <div class="text-3xl mb-1">🏆</div>
-            <p class="font-display text-xs uppercase tracking-wider text-amber-300 font-semibold">Balón de Oro</p>
-            <p class="text-[10px] text-white/40 mt-1">Mejor jugador</p>
-            <p class="font-heavy text-2xl text-amber-400 mt-2">+10</p>
-        </div>
-        <div class="text-center rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-4">
-            <div class="text-3xl mb-1">🧤</div>
-            <p class="font-display text-xs uppercase tracking-wider text-amber-300 font-semibold">Guante de Oro</p>
-            <p class="text-[10px] text-white/40 mt-1">Mejor portero</p>
-            <p class="font-heavy text-2xl text-amber-400 mt-2">+10</p>
-        </div>
-    </div>
-</div>
-
-<!-- Resumen de puntos -->
-<div class="rounded-2xl bg-gradient-to-b from-white/[0.05] to-transparent border border-white/10 overflow-hidden mb-8">
-    <div class="px-5 py-3 border-b border-white/10">
-        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/60">Resumen de puntuación</h2>
-    </div>
-    <table class="w-full text-sm">
-        <tbody>
+    <!-- 8. Resumen + CTA -->
+    <section class="tut-step hidden" data-step="7">
+      <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-transparent border border-white/10 overflow-hidden mb-5">
+        <div class="px-5 py-3 border-b border-white/10"><h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/70">📋 Resumen de puntos</h2></div>
+        <table class="w-full text-sm">
+          <tbody>
             {% set rows = [
-                ('Marcador exacto', '+3 pts', 'text-emerald-400'),
-                ('Resultado correcto (no exacto)', '+1 pt', 'text-sky-400'),
-                ('Goleador en posición correcta', '+2 pts', 'text-amber-400'),
-                ('Autogol predicho correctamente', '+20 pts', 'text-red-400'),
-                ('Quién avanza en penales', '+1 pt', 'text-violet-400'),
-                ('Marcador exacto de penales', '+2 pts', 'text-violet-400'),
-                ('Premio del Mundial (×3)', '+10 pts c/u', 'text-amber-300'),
+              ('Marcador exacto','+3','text-emerald-400'),
+              ('Acierta el ganador','+1','text-sky-400'),
+              ('Goleador en orden','+2','text-amber-400'),
+              ('Autogol acertado','+20','text-red-400'),
+              ('Quién avanza (KO)','+1','text-violet-400'),
+              ('Marcador de penales','+2','text-violet-400'),
+              ('🃏 Comodín','x2','text-cyan-300'),
+              ('🎯 Solo tú lo clavaste','+3','text-yellow-300'),
+              ('Premios (Bota/Balón/Guante)','+10 c/u','text-amber-300'),
+              ('🏆 Campeón','+15','text-sky-300'),
+              ('🥈 Subcampeón','+10','text-sky-300'),
+              ('🥅 ¿Final a penales?','+5','text-violet-300'),
             ] %}
             {% for label, pts, color in rows %}
-            <tr class="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition">
-                <td class="py-2.5 pl-5 pr-2 text-white/60 text-xs font-display uppercase tracking-wide">{{ label }}</td>
-                <td class="py-2.5 pr-5 text-right font-heavy text-lg {{ color }}">{{ pts }}</td>
+            <tr class="border-b border-white/5 last:border-0">
+              <td class="py-2 pl-5 pr-2 text-white/60 text-xs font-display uppercase tracking-wide">{{ label }}</td>
+              <td class="py-2 pr-5 text-right font-heavy text-base {{ color }}">{{ pts }}</td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+      <a href="/inicio" class="block text-center brand-bar text-ink font-display font-bold uppercase tracking-wider px-8 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-sky-500/20">
+        ¡Listo, a predecir! ⚽
+      </a>
+    </section>
+
+  </div>
+
+  <!-- Controles -->
+  <div class="flex items-center justify-between mt-6">
+    <button id="tut-prev" class="font-display text-sm uppercase tracking-wider px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 transition disabled:opacity-30 disabled:pointer-events-none">‹ Atrás</button>
+    <div id="tut-dots" class="flex items-center gap-1.5"></div>
+    <button id="tut-next" class="font-display text-sm uppercase tracking-wider px-5 py-2.5 rounded-xl brand-bar text-ink font-bold hover:opacity-90 transition">Siguiente ›</button>
+  </div>
+
+  <p class="text-center mt-5">
+    <a href="/inicio" class="text-[11px] font-display uppercase tracking-wider text-white/30 hover:text-white/60 transition">Saltar tutorial →</a>
+  </p>
 </div>
 
-<!-- CTA -->
-<div class="text-center">
-    <a href="/partidos"
-       class="inline-block brand-bar text-ink font-display font-bold uppercase tracking-wider px-8 py-4 rounded-2xl hover:opacity-90 transition shadow-lg shadow-sky-500/20 text-base">
-        ¡A predecir! ⚽
-    </a>
-    <p class="text-white/25 text-xs font-display uppercase tracking-wider mt-4">
-        Puedes volver a esta página desde el menú <span class="text-white/40 font-bold">?</span>
-    </p>
-</div>
+<script>
+(function () {
+  const steps = Array.from(document.querySelectorAll('.tut-step'));
+  const N = steps.length;
+  const bar = document.getElementById('tut-bar');
+  const curEl = document.getElementById('tut-cur');
+  const totEl = document.getElementById('tut-tot');
+  const prev = document.getElementById('tut-prev');
+  const next = document.getElementById('tut-next');
+  const dotsWrap = document.getElementById('tut-dots');
+  let cur = 0;
+  totEl.textContent = N;
+
+  steps.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'w-2 h-2 rounded-full bg-white/20 transition';
+    d.addEventListener('click', () => show(i));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function show(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps.forEach((s, idx) => {
+      if (idx === cur) {
+        s.classList.remove('hidden');
+        s.classList.remove('tut-step');   // re-disparar animación de entrada
+        void s.offsetWidth;
+        s.classList.add('tut-step');
+      } else {
+        s.classList.add('hidden');
+      }
+    });
+    dots.forEach((d, idx) => {
+      d.classList.toggle('bg-sky-400', idx === cur);
+      d.classList.toggle('w-4', idx === cur);
+      d.classList.toggle('bg-white/20', idx !== cur);
+    });
+    bar.style.width = ((cur + 1) / N * 100) + '%';
+    curEl.textContent = cur + 1;
+    prev.disabled = cur === 0;
+    next.textContent = cur === N - 1 ? '¡Terminar! ✓' : 'Siguiente ›';
+  }
+  prev.addEventListener('click', () => show(cur - 1));
+  next.addEventListener('click', () => {
+    if (cur === N - 1) location.href = '/inicio';
+    else show(cur + 1);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { if (cur < N - 1) show(cur + 1); }
+    if (e.key === 'ArrowLeft') show(cur - 1);
+  });
+  let x0 = null;
+  const track = document.getElementById('tut-track');
+  track.addEventListener('touchstart', e => x0 = e.touches[0].clientX, { passive: true });
+  track.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1));
+    x0 = null;
+  }, { passive: true });
+
+  show(0);
+})();
+</script>
 
 {% endblock %}
