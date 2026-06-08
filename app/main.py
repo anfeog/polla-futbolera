@@ -35,10 +35,13 @@ def startup():
 
 def _start_scheduler():
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
-    from app.football_api import update_finished_matches
+    from app.football_api import update_finished_matches, fetch_and_store_matches
     scheduler = AsyncIOScheduler()
-    # Actualiza resultados cada 5 minutos durante el Mundial
+    # Actualiza resultados (marcadores/goles/penales) cada 5 minutos
     scheduler.add_job(update_finished_matches, "interval", minutes=5, id="update_results")
+    # Refresca el cuadro completo cada 2 horas: rellena los equipos de las
+    # fases KO en cuanto la API los define -> desbloquea sus predicciones solo.
+    scheduler.add_job(fetch_and_store_matches, "interval", hours=2, id="refresh_fixture")
     scheduler.start()
 
 

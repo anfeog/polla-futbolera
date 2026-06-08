@@ -87,10 +87,11 @@ async def fetch_and_store_matches() -> int:
                 home_flag=excluded.home_flag,
                 away_flag=excluded.away_flag,
                 kickoff=excluded.kickoff,
-                group_name=excluded.group_name,
-                home_score=excluded.home_score,
-                away_score=excluded.away_score,
-                status=excluded.status
+                group_name=excluded.group_name
+                -- OJO: NO se tocan home_score/away_score/status aquí.
+                -- Los marcadores son responsabilidad de update_finished_matches
+                -- y del admin; así el refresco del cuadro (cada 2h) rellena los
+                -- equipos de las fases KO sin pisar resultados ya puestos.
         """, (api_id, home, away, home_team_api_id, away_team_api_id, home_tla, away_tla, home_crest, away_crest,
               kickoff, stage, group_name, home_score, away_score, status))
         imported += 1
