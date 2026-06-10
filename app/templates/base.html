@@ -115,18 +115,12 @@
             <a href="/premios" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition {{ 'text-sky-400' if path == '/premios' else '' }}">{{ t('Premios') }}</a>
             <a href="/ranking" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition {{ 'text-sky-400' if path == '/ranking' else '' }}">{{ t('Tabla') }}</a>
             <a href="/como-jugar" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition text-white/50" title="{{ t('Cómo jugar') }}">?</a>
-            {% if user.is_admin %}
-            <a href="/admin" class="px-2.5 py-1.5 rounded-lg text-amber-400 hover:bg-amber-400/10 transition">Admin</a>
-            {% endif %}
-            <a href="/perfil" class="ml-1 flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 transition" title="Mi perfil">
-                <span class="text-lg leading-none">{{ user.avatar }}</span>
-                <span class="text-white/70 text-xs uppercase tracking-wider font-display">{{ user.username }}</span>
-            </a>
-            <!-- Selector de idioma -->
+            <!-- Selector de idioma (escritorio) -->
             <div class="relative" id="lang-menu-desktop">
-                <button onclick="toggleLangMenu('desktop')" title="{{ t('Idioma') }}"
-                        class="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition text-base leading-none select-none">
-                    {{ LANG_FLAGS[get_lang()] }}
+                <button onclick="toggleLangMenu('desktop')"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition select-none">
+                    <span class="text-base leading-none">{{ LANG_FLAGS[get_lang()] }}</span>
+                    <span class="text-[10px] font-display uppercase tracking-wider text-white/50">{{ t('Idioma') }}</span>
                 </button>
                 <div id="lang-dropdown-desktop" class="hidden absolute right-0 top-full mt-1.5 bg-[#0d1425] border border-white/15 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[130px]">
                     {% for code, name in LANGS.items() %}
@@ -138,6 +132,13 @@
                     {% endfor %}
                 </div>
             </div>
+            {% if user.is_admin %}
+            <a href="/admin" class="px-2.5 py-1.5 rounded-lg text-amber-400 hover:bg-amber-400/10 transition">Admin</a>
+            {% endif %}
+            <a href="/perfil" class="ml-1 flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 transition" title="Mi perfil">
+                <span class="text-lg leading-none">{{ user.avatar }}</span>
+                <span class="text-white/70 text-xs uppercase tracking-wider font-display">{{ user.username }}</span>
+            </a>
             <a href="/logout" class="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition text-xs">{{ t('Salir') }}</a>
         </div>
 
