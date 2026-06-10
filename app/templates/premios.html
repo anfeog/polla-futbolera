@@ -150,4 +150,53 @@
     {% endif %}
 </form>
 
+{% if others %}
+<!-- ── Lo que predijeron los demás ─────────────────────────── -->
+<div class="mt-10">
+    <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-4 px-1">{{ t('Lo que pronostican los demás') }}</p>
+
+    {% set cols = [
+        ('top_scorer',      '🥇 ' ~ t('Bota de Oro')),
+        ('best_player',     '🏆 ' ~ t('Balón de Oro')),
+        ('best_keeper',     '🧤 ' ~ t('Guante de Oro')),
+        ('champion',        '🏆 ' ~ t('Campeón')),
+        ('runner_up',       '🥈 ' ~ t('Subcampeón')),
+        ('final_penalties', '🥅 ' ~ t('Penales')),
+        ('total_goals',     '⚽ ' ~ t('Total goles')),
+    ] %}
+
+    <div class="space-y-3">
+    {% for o in others %}
+    {% set is_me = o.id == user.id %}
+    <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border {{ 'border-sky-500/30' if is_me else 'border-white/10' }} p-4">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-xl leading-none">{{ o.avatar or '⚽' }}</span>
+            <span class="font-display font-semibold uppercase tracking-wide text-sm {{ 'text-sky-300' if is_me else '' }}">
+                {{ o.username }}{% if is_me %} <span class="text-[10px] text-white/40 normal-case">{{ t('(tú)') }}</span>{% endif %}
+            </span>
+        </div>
+        {% if o.top_scorer or o.champion or o.total_goals is not none %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
+            {% for field, label in cols %}
+            {% set val = o[field] %}
+            {% if val is not none and val != '' %}
+            <div class="flex items-start gap-1.5 min-w-0">
+                <span class="font-display text-[9px] uppercase tracking-wider text-white/30 shrink-0 mt-0.5 w-16 truncate leading-tight">{{ label }}</span>
+                <span class="font-display text-xs truncate leading-tight
+                    {{ 'text-emerald-300' if real and real[field] and val|string|lower == real[field]|string|lower else 'text-white/80' }}">
+                    {{ val }}
+                </span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-white/25 text-xs font-display uppercase tracking-wider">{{ t('Sin pronóstico') }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

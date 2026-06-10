@@ -181,6 +181,15 @@ STRINGS = {
     "Las dos contraseñas nuevas no coinciden.": ("As duas senhas novas não coincidem.", "The new passwords don't match."),
     "Elige el idioma de la app.": ("Escolha o idioma do app.", "Choose the app language."),
 
+    # ── Premios (versiones cortas para la tabla de otros) ────────
+    "Bota de Oro":   ("Chuteira de Ouro", "Golden Boot"),
+    "Balón de Oro":  ("Bola de Ouro",     "Golden Ball"),
+    "Guante de Oro": ("Luva de Ouro",     "Golden Glove"),
+    "Campeón":       ("Campeão",          "Champion"),
+    "Subcampeón":    ("Vice-campeão",     "Runner-up"),
+    "Total goles":   ("Total de gols",    "Total goals"),
+    "Sin pronóstico": ("Sem palpite",     "No prediction"),
+
     # ── Premios ─────────────────────────────────────────────────
     "Predicciones especiales": ("Palpites especiais", "Special predictions"),
     "PREMIOS": ("PRÊMIOS", "AWARDS"),

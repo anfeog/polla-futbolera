@@ -38,12 +38,27 @@ def awards_form(request: Request, user=Depends(require_login)):
     """).fetchall()]
     # Total de goles real: solo se muestra cuando el Mundial terminó
     real_total = real_total_goals(conn) if tournament_finished(conn) else None
+
+    # Predicciones de todos los demás usuarios (solo si ya están cerradas)
+    others = []
+    if locked:
+        rows = conn.execute("""
+            SELECT u.id, u.username, u.avatar,
+                   ap.top_scorer, ap.best_player, ap.best_keeper,
+                   ap.champion, ap.runner_up, ap.final_penalties, ap.total_goals
+            FROM users u
+            LEFT JOIN award_predictions ap ON ap.user_id = u.id
+            WHERE u.is_admin = 0
+            ORDER BY u.username
+        """).fetchall()
+        others = [dict(r) for r in rows]
+
     conn.close()
     return templates.TemplateResponse("premios.html", {
         "request": request, "user": user,
         "pred": pred, "real": real, "locked": locked,
         "all_players": all_players, "keepers": keepers, "teams": teams,
-        "real_total": real_total,
+        "real_total": real_total, "others": others,
     })
 
 
