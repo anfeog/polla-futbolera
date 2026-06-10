@@ -122,6 +122,22 @@
                 <span class="text-lg leading-none">{{ user.avatar }}</span>
                 <span class="text-white/70 text-xs uppercase tracking-wider font-display">{{ user.username }}</span>
             </a>
+            <!-- Selector de idioma -->
+            <div class="relative" id="lang-menu-desktop">
+                <button onclick="toggleLangMenu('desktop')" title="{{ t('Idioma') }}"
+                        class="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition text-base leading-none select-none">
+                    {{ LANG_FLAGS[get_lang()] }}
+                </button>
+                <div id="lang-dropdown-desktop" class="hidden absolute right-0 top-full mt-1.5 bg-[#0d1425] border border-white/15 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[130px]">
+                    {% for code, name in LANGS.items() %}
+                    <a href="/lang/{{ code }}"
+                       class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-display uppercase tracking-wide transition
+                       {{ 'bg-sky-500/15 text-sky-300' if get_lang() == code else 'text-white/60 hover:bg-white/10 hover:text-white' }}">
+                        <span class="text-lg leading-none">{{ LANG_FLAGS[code] }}</span> {{ name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
             <a href="/logout" class="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition text-xs">{{ t('Salir') }}</a>
         </div>
 
@@ -170,6 +186,17 @@
             <span class="text-xl leading-none">{{ user.avatar }}</span>
             <span class="text-white/80 text-sm font-display uppercase tracking-wide">{{ user.username }}</span>
         </a>
+        <!-- Idioma (drawer móvil) -->
+        <div class="flex gap-1.5">
+            {% for code, name in LANGS.items() %}
+            <a href="/lang/{{ code }}"
+               class="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl border transition
+               {{ 'border-sky-400 bg-sky-500/15 text-sky-300' if get_lang() == code else 'border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/10' }}">
+                <span class="text-xl leading-none">{{ LANG_FLAGS[code] }}</span>
+                <span class="font-display text-[9px] uppercase tracking-wider">{{ name }}</span>
+            </a>
+            {% endfor %}
+        </div>
         <a href="/logout" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300 transition text-sm font-display uppercase tracking-wide text-white/60">
             {{ t('Cerrar sesión') }}
         </a>
@@ -211,6 +238,18 @@
 </nav>
 
 <script>
+// ── Dropdown de idioma (escritorio) ───────────────────────────
+function toggleLangMenu(id) {
+    const dd = document.getElementById('lang-dropdown-' + id);
+    dd.classList.toggle('hidden');
+}
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('lang-menu-desktop');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('lang-dropdown-desktop').classList.add('hidden');
+    }
+});
+
 (function () {
     const btn = document.getElementById('menu-btn');
     const drawer = document.getElementById('drawer');

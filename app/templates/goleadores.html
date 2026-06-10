@@ -10,12 +10,12 @@
         <div class="flex items-center gap-4 text-right">
             <div>
                 <div class="font-heavy text-2xl text-amber-300">{{ total_goals }}</div>
-                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">goles totales</div>
+                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">{{ t('goles totales') }}</div>
             </div>
             {% if total_matches > 0 %}
             <div>
                 <div class="font-heavy text-2xl text-white/60">{{ "%.2f"|format(total_goals / total_matches) }}</div>
-                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">por partido</div>
+                <div class="font-display text-[10px] uppercase tracking-wider text-white/30">{{ t('por partido') }}</div>
             </div>
             {% endif %}
         </div>
@@ -26,8 +26,8 @@
 <!-- Sin datos aún -->
 <div class="text-center py-20">
     <div class="text-7xl mb-5">⚽</div>
-    <p class="font-display text-xl uppercase tracking-widest text-white/40 mb-2">El torneo aún no ha comenzado</p>
-    <p class="text-sm text-white/25">Los goleadores aparecerán aquí una vez se disputen los primeros partidos</p>
+    <p class="font-display text-xl uppercase tracking-widest text-white/40 mb-2">{{ t('El torneo aún no ha comenzado') }}</p>
+    <p class="text-sm text-white/25">{{ t('Los goleadores aparecerán aquí una vez se disputen los primeros partidos') }}</p>
 </div>
 
 {% else %}
@@ -89,9 +89,9 @@
 <!-- Tabla completa -->
 <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden mb-8">
     <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/70">Clasificación completa</h2>
+        <h2 class="font-display text-sm font-semibold uppercase tracking-wider text-white/70">{{ t('Clasificación completa') }}</h2>
         <p class="font-display text-[10px] uppercase tracking-wider text-white/30">
-            Empate → menos partidos jugados
+            {{ t('Empate → menos partidos jugados') }}
         </p>
     </div>
 
@@ -100,10 +100,10 @@
             <thead>
                 <tr class="font-display text-[10px] uppercase tracking-wider text-white/30 border-b border-white/[0.08]">
                     <th class="py-2 pl-4 pr-2 text-left w-8">#</th>
-                    <th class="py-2 px-2 text-left">Jugador</th>
-                    <th class="py-2 px-2 text-left hidden sm:table-cell">Selección</th>
-                    <th class="py-2 px-2 text-center w-16 text-amber-400/80">Goles</th>
-                    <th class="py-2 pl-2 pr-4 text-center w-14">PJ</th>
+                    <th class="py-2 px-2 text-left">{{ t('Jugador') }}</th>
+                    <th class="py-2 px-2 text-left hidden sm:table-cell">{{ t('Selección') }}</th>
+                    <th class="py-2 px-2 text-center w-16 text-amber-400/80">{{ t('Goles') }}</th>
+                    <th class="py-2 pl-2 pr-4 text-center w-14">{{ t('PJ') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,8 +173,7 @@
 
     <div class="px-4 py-2.5 border-t border-white/5">
         <p class="font-display text-[10px] uppercase tracking-wider text-white/25">
-            <span class="text-amber-400/60">⚡ Desempate:</span>
-            a igual número de goles, va primero quien los marcó en menos partidos
+            {{ t('⚡ Desempate: a igual número de goles, va primero quien los marcó en menos partidos') }}
         </p>
     </div>
 </div>
@@ -184,7 +183,7 @@
 <div class="rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.07] overflow-hidden">
     <div class="px-4 py-3 border-b border-white/[0.07] flex items-center gap-2">
         <span class="text-white/30 text-base">😬</span>
-        <h2 class="font-display text-xs font-semibold uppercase tracking-wider text-white/30">Autogoles</h2>
+        <h2 class="font-display text-xs font-semibold uppercase tracking-wider text-white/30">{{ t('Autogoles') }}</h2>
     </div>
     <table class="w-full">
         <tbody>

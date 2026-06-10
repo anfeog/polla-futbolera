@@ -5,7 +5,7 @@
 <div class="mb-6">
     <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">FIFA World Cup 26</p>
     <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🎲 CUADRO</h1>
-    <p class="text-white/40 text-sm mt-1">Bracket completo · mitad izquierda y mitad derecha se encuentran en la Final.</p>
+    <p class="text-white/40 text-sm mt-1">{{ t('Bracket completo · mitad izquierda y mitad derecha se encuentran en la Final.') }}</p>
 </div>
 
 {# ── Macro: tarjeta de partido ───────────────────────────────── #}
@@ -115,7 +115,7 @@
 <div class="flex items-stretch gap-0 min-w-max" style="min-height: 800px;">
 
     {# ── MITAD IZQUIERDA ── #}
-    {% set left_round_labels = ['Dieciseisavos', 'Octavos', 'Cuartos', 'Semis'] %}
+    {% set left_round_labels = [t('Dieciseisavos'), t('Octavos'), t('Cuartos'), t('Semis')] %}
     {% for col in left_cols %}
 
     {# Columna de partidos #}
@@ -130,7 +130,7 @@
             {{ match_card(m, 'left') }}
             {% endfor %}
             {% if not col.matches %}
-            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">Por definir</div>
+            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">{{ t('Por definir') }}</div>
             {% endif %}
         </div>
     </div>
@@ -168,14 +168,14 @@
             {% endfor %}
         {% else %}
             <div class="w-full rounded-xl border-2 border-dashed border-amber-400/20 p-4 text-center">
-                <p class="font-display text-[10px] uppercase tracking-wider text-amber-400/40">Por disputar</p>
+                <p class="font-display text-[10px] uppercase tracking-wider text-amber-400/40">{{ t('Por disputar') }}</p>
             </div>
         {% endif %}
 
         {# Tercer puesto #}
         {% if third_matches %}
         <div class="w-full">
-            <p class="font-display text-[10px] uppercase tracking-wider text-amber-700/60 text-center mb-1.5">🥉 3er puesto</p>
+            <p class="font-display text-[10px] uppercase tracking-wider text-amber-700/60 text-center mb-1.5">🥉 {{ t('3er puesto') }}</p>
             {% for m in third_matches %}
             {{ match_card(m, 'center') }}
             {% endfor %}
@@ -185,7 +185,7 @@
     </div>
 
     {# ── MITAD DERECHA (SF→QF→L16→L32 saliendo del centro) ── #}
-    {% set right_round_labels = ['Semis', 'Cuartos', 'Octavos', 'Dieciseisavos'] %}
+    {% set right_round_labels = [t('Semis'), t('Cuartos'), t('Octavos'), t('Dieciseisavos')] %}
     {% for col in right_cols %}
 
     {# Conector ← desde el centro #}
@@ -210,7 +210,7 @@
             {{ match_card(m, 'right') }}
             {% endfor %}
             {% if not col.matches %}
-            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">Por definir</div>
+            <div class="text-center text-white/20 font-display text-[10px] uppercase tracking-wider py-4">{{ t('Por definir') }}</div>
             {% endif %}
         </div>
     </div>

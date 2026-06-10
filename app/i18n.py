@@ -102,6 +102,50 @@ STRINGS = {
     "Guardar": ("Salvar", "Save"),
     "💬 Poner estado": ("💬 Definir status", "💬 Set status"),
 
+    # ── Goleadores ──────────────────────────────────────────────
+    "goles totales": ("gols totais", "total goals"),
+    "por partido": ("por jogo", "per match"),
+    "El torneo aún no ha comenzado": ("O torneio ainda não começou", "The tournament hasn't started yet"),
+    "Los goleadores aparecerán aquí una vez se disputen los primeros partidos":
+        ("Os artilheiros aparecerão aqui assim que os primeiros jogos forem disputados",
+         "Scorers will appear here once the first matches are played"),
+    "Clasificación completa": ("Classificação completa", "Full standings"),
+    "Empate → menos partidos jugados": ("Empate → menos jogos disputados", "Tie → fewest matches played"),
+    "Selección": ("Seleção", "Team"),
+    "Goles": ("Gols", "Goals"),
+    "PJ": ("PJ", "MP"),
+    "⚡ Desempate: a igual número de goles, va primero quien los marcó en menos partidos":
+        ("⚡ Critério de desempate: com gols iguais, vai primeiro quem marcou em menos jogos",
+         "⚡ Tiebreaker: same goals → fewest matches played wins"),
+    "Autogoles": ("Gols contra", "Own goals"),
+    "AG": ("GC", "OG"),
+
+    # ── Partidos (fixture) ────────────────────────────────────────
+    "← Todas las fases": ("← Todas as fases", "← All stages"),
+    "Cuadro →": ("Chaves →", "Bracket →"),
+    "Aún no hay partidos cargados": ("Ainda não há jogos carregados", "No matches loaded yet"),
+    "pendiente": ("pendente", "pending"),
+    "pendientes": ("pendentes", "pending"),
+    "En vivo": ("Ao vivo", "Live"),
+    "Tu pronóstico": ("Seu palpite", "Your prediction"),
+    "editar": ("editar", "edit"),
+    "cerrado": ("encerrado", "closed"),
+    "Pronóstico cerrado": ("Palpite encerrado", "Prediction closed"),
+    "Pronosticar": ("Palpitar", "Predict"),
+    "UTC": ("UTC", "UTC"),
+    "Cuadro": ("Chaves", "Bracket"),
+
+    # ── Cuadro eliminatorio ───────────────────────────────────────
+    "Bracket completo · mitad izquierda y mitad derecha se encuentran en la Final.":
+        ("Chaves completas · metade esquerda e metade direita se encontram na Final.",
+         "Full bracket · left half and right half meet in the Final."),
+    "Por definir": ("A definir", "TBD"),
+    "Por disputar": ("A disputar", "TBD"),
+    "3er puesto": ("3º lugar", "3rd place"),
+    "Octavos": ("Oitavas", "R16"),
+    "Cuartos": ("Quartas", "QF"),
+    "Semis": ("Semis", "SF"),
+
     # ── Gráficas ────────────────────────────────────────────────
     "📈 Evolución de puntos": ("📈 Evolução de pontos", "📈 Points over time"),
     "Puntos acumulados por día": ("Pontos acumulados por dia", "Cumulative points per day"),
