@@ -3,14 +3,14 @@
 {% block content %}
 
 <div class="mb-8">
-    <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">Clasificación general</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">TABLA</h1>
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">{{ t('Clasificación general') }}</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">{{ t('TABLA') }}</h1>
 </div>
 
 {% if not ranking %}
 <div class="text-center py-20 text-white/40">
     <div class="text-6xl mb-4">🏆</div>
-    <p class="font-display uppercase tracking-wider">Aún no hay puntos acumulados</p>
+    <p class="font-display uppercase tracking-wider">{{ t('Aún no hay puntos acumulados') }}</p>
 </div>
 {% else %}
 
@@ -36,7 +36,7 @@
             {% elif is_mine %}
             <button type="button" onclick="openEstado(this)" data-msg=""
                     class="text-[10px] font-display uppercase tracking-wider text-white/40 hover:text-sky-300 border border-dashed border-white/20 hover:border-sky-400/50 rounded-full px-3 py-1 transition">
-                💬 Poner estado
+                {{ t('💬 Poner estado') }}
             </button>
             {% endif %}
         </div>
@@ -45,7 +45,7 @@
         <div class="text-4xl mb-1">{{ row.avatar }}</div>
         <div class="font-display font-semibold uppercase tracking-wide text-sm truncate {{ 'text-amber-300' if loop.index==1 else '' }}">{{ row.username }}</div>
         <div class="font-heavy text-2xl mt-1">{{ "%.1f"|format(row.total_points) }}</div>
-        <div class="text-[10px] uppercase tracking-wider text-white/40">puntos</div>
+        <div class="text-[10px] uppercase tracking-wider text-white/40">{{ t('puntos') }}</div>
     </div>
     {% endfor %}
 </div>
@@ -56,9 +56,9 @@
     <form method="post" action="/estado" class="w-full max-w-sm rounded-2xl bg-gradient-to-b from-[#11192b] to-ink border border-white/15 p-6 shadow-2xl">
         <div class="flex items-center gap-2 mb-1">
             <span class="text-xl">💬</span>
-            <h3 class="font-display text-base uppercase tracking-wide text-white/90">Tu estado del podio</h3>
+            <h3 class="font-display text-base uppercase tracking-wide text-white/90">{{ t('Tu estado del podio') }}</h3>
         </div>
-        <p class="text-white/40 text-xs mb-4">Pica a tus rivales con una frase corta. Aparece en tu viñeta encima del podio.</p>
+        <p class="text-white/40 text-xs mb-4">{{ t('Pica a tus rivales con una frase corta. Aparece en tu viñeta encima del podio.') }}</p>
         <input type="text" name="msg" id="estado-input" maxlength="60" autocomplete="off"
                placeholder="¡Sigan intentándolo! 😎"
                class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition mb-1">
@@ -66,11 +66,11 @@
         <div class="flex gap-2">
             <button type="button" onclick="closeEstado()"
                     class="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition font-display text-sm uppercase tracking-wide text-white/60">
-                Cancelar
+                {{ t('Cancelar') }}
             </button>
             <button type="submit"
                     class="flex-1 py-2.5 rounded-xl brand-bar text-ink font-display font-bold uppercase tracking-wide text-sm hover:opacity-90 transition">
-                Guardar
+                {{ t('Guardar') }}
             </button>
         </div>
     </form>
@@ -104,7 +104,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
         <thead>
             <tr class="font-display text-[11px] uppercase tracking-wider text-white/40 border-b border-white/10">
                 <th class="py-3 px-3 text-left w-10">Pos</th>
-                <th class="py-3 px-3 text-left">Jugador</th>
+                <th class="py-3 px-3 text-left">{{ t('Jugador') }}</th>
                 <th class="py-3 px-2 text-center">Pts</th>
                 <th class="py-3 px-2 text-center" title="Marcador Acertado">MA</th>
                 <th class="py-3 px-2 text-center" title="Ganador acertado">GAN</th>
@@ -120,7 +120,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                     {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
                 </td>
                 <td class="py-3 px-3 font-display font-semibold uppercase tracking-wide {{ 'text-sky-300' if is_me else '' }}">
-                    <span class="text-lg mr-1.5 align-middle">{{ row.avatar }}</span>{{ row.username }}{% if is_me %} <span class="text-[10px] text-white/40 normal-case">(tú)</span>{% endif %}
+                    <span class="text-lg mr-1.5 align-middle">{{ row.avatar }}</span>{{ row.username }}{% if is_me %} <span class="text-[10px] text-white/40 normal-case">{{ t('(tú)') }}</span>{% endif %}
                     {% if row.award_points > 0 %}<span class="ml-1 text-[10px] text-amber-400" title="Puntos de premios">🏅{{ row.award_points }}</span>{% endif %}
                     {% if row.solo_hits > 0 %}<span class="ml-1 text-[10px] text-yellow-300" title="Marcadores que solo tú clavaste">🎯{{ row.solo_hits }}</span>{% endif %}
                     {% if row.joker_bonus > 0 %}<span class="ml-1 text-[10px] text-cyan-300" title="Bonus por comodín x2">🃏</span>{% endif %}
@@ -137,13 +137,13 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
 </div>
 
 <div class="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/40 font-display uppercase tracking-wider">
-    <span>🟢 MA = Marcador exacto +3</span>
-    <span>🔵 GAN = Ganador +1</span>
-    <span>🟣 GOL = Goleador en orden +2</span>
-    <span>🤯 Autogol +20</span>
-    <span>🏅 Premio bonus</span>
-    <span>🃏 Comodín x2</span>
-    <span>🎯 Solo tú lo clavaste +3</span>
+    <span>🟢 {{ t('MA = Marcador exacto +3') }}</span>
+    <span>🔵 {{ t('GAN = Ganador +1') }}</span>
+    <span>🟣 {{ t('GOL = Goleador en orden +2') }}</span>
+    <span>🤯 {{ t('Autogol +20') }}</span>
+    <span>🏅 {{ t('Premio bonus') }}</span>
+    <span>🃏 {{ t('Comodín x2') }}</span>
+    <span>🎯 {{ t('Solo tú lo clavaste +3') }}</span>
 </div>
 {% endif %}
 

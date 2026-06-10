@@ -18,8 +18,8 @@
         <!-- Slide 1: Evolución (líneas) -->
         <div class="chart-slide absolute inset-0 transition-opacity duration-300" data-slide="0">
             <div class="h-full rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-5 flex flex-col">
-                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">📈 Evolución de puntos</p>
-                <p class="text-white/40 text-xs mb-3">Puntos acumulados por día</p>
+                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">{{ t('📈 Evolución de puntos') }}</p>
+                <p class="text-white/40 text-xs mb-3">{{ t('Puntos acumulados por día') }}</p>
                 <div class="relative flex-1 min-h-0"><canvas id="chartLines"></canvas></div>
             </div>
         </div>
@@ -27,8 +27,8 @@
         <!-- Slide 2: Desglose (barras apiladas) -->
         <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="1">
             <div class="h-full rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-4 sm:p-5 flex flex-col">
-                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">🧩 ¿De dónde salen los puntos?</p>
-                <p class="text-white/40 text-xs mb-3">Top 5 · desglose por tipo de acierto</p>
+                <p class="font-display text-sm uppercase tracking-wide text-white/70 mb-0.5">{{ t('🧩 ¿De dónde salen los puntos?') }}</p>
+                <p class="text-white/40 text-xs mb-3">{{ t('Top 5 · desglose por tipo de acierto') }}</p>
                 <div class="relative flex-1 min-h-0"><canvas id="chartBars"></canvas></div>
             </div>
         </div>
@@ -36,8 +36,8 @@
         <!-- Slide 3: Francotiradores (marcadores exactos) -->
         <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="2">
             <div class="h-full rounded-2xl bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.01] border border-emerald-500/20 p-4 sm:p-5 flex flex-col">
-                <p class="font-display text-sm uppercase tracking-wide text-emerald-300 mb-0.5">🎯 Francotiradores</p>
-                <p class="text-white/40 text-xs mb-3">Quién clava más marcadores exactos (+3)</p>
+                <p class="font-display text-sm uppercase tracking-wide text-emerald-300 mb-0.5">{{ t('🎯 Francotiradores') }}</p>
+                <p class="text-white/40 text-xs mb-3">{{ t('Quién clava más marcadores exactos (+3)') }}</p>
                 <div class="relative flex-1 min-h-0"><canvas id="chartSharp"></canvas></div>
             </div>
         </div>
@@ -45,8 +45,8 @@
         <!-- Slide 4: Bola de cristal rota (peores) -->
         <div class="chart-slide absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none" data-slide="3">
             <div class="h-full rounded-2xl bg-gradient-to-b from-red-500/[0.08] to-white/[0.01] border border-red-500/20 p-4 sm:p-5 flex flex-col">
-                <p class="font-display text-sm uppercase tracking-wide text-red-300 mb-0.5">🔮💥 Bola de Cristal Rota</p>
-                <p class="text-white/40 text-xs mb-3">Los que peor predicen — menos puntos pese a jugar</p>
+                <p class="font-display text-sm uppercase tracking-wide text-red-300 mb-0.5">{{ t('🔮💥 Bola de Cristal Rota') }}</p>
+                <p class="text-white/40 text-xs mb-3">{{ t('Los que peor predicen — menos puntos pese a jugar') }}</p>
                 <div class="relative flex-1 min-h-0"><canvas id="chartWorst"></canvas></div>
             </div>
         </div>

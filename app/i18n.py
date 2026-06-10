@@ -1,0 +1,218 @@
+"""
+Sistema de idiomas: español (por defecto), portugués e inglés.
+
+Uso en plantillas:  {{ t('Texto en español') }}
+- La clave ES el texto en español (si falta traducción, se muestra tal cual).
+- El idioma activo viene de la cookie "lang" (middleware en main.py).
+"""
+from contextvars import ContextVar
+
+current_lang: ContextVar[str] = ContextVar("current_lang", default="es")
+
+LANGS = {"es": "Español", "pt": "Português", "en": "English"}
+LANG_FLAGS = {"es": "🇪🇸", "pt": "🇧🇷", "en": "🇬🇧"}
+
+# clave (español) -> (portugués, inglés)
+STRINGS = {
+    # ── Navegación ──────────────────────────────────────────────
+    "Inicio": ("Início", "Home"),
+    "Partidos": ("Jogos", "Matches"),
+    "Cuadro": ("Chaves", "Bracket"),
+    "Goles": ("Gols", "Goals"),
+    "Premios": ("Prêmios", "Awards"),
+    "Tabla": ("Tabela", "Table"),
+    "Goleadores": ("Artilheiros", "Top scorers"),
+    "Cómo jugar": ("Como jogar", "How to play"),
+    "Salir": ("Sair", "Exit"),
+    "Cerrar sesión": ("Encerrar sessão", "Log out"),
+    "Mi perfil": ("Meu perfil", "My profile"),
+    "Perfil": ("Perfil", "Profile"),
+
+    # ── Login ───────────────────────────────────────────────────
+    "Usuario": ("Usuário", "Username"),
+    "Contraseña": ("Senha", "Password"),
+    "Entrar a la cancha": ("Entrar em campo", "Enter the pitch"),
+    "Usuario o contraseña incorrectos": ("Usuário ou senha incorretos", "Incorrect username or password"),
+    "Idioma": ("Idioma", "Language"),
+
+    # ── Inicio ──────────────────────────────────────────────────
+    "¡HOLA,": ("OLÁ,", "HEY,"),
+    "Bienvenido a la Polla Futbolera del Mundial 2026. Predice los marcadores, adivina los goleadores y compite con tus amigos.":
+        ("Bem-vindo ao Bolão da Copa 2026. Preveja os placares, adivinhe os artilheiros e dispute com seus amigos.",
+         "Welcome to the 2026 World Cup pool. Predict scores, guess the scorers and compete with your friends."),
+    "Ver tutorial": ("Ver tutorial", "View tutorial"),
+    "Todos los partidos": ("Todos os jogos", "All matches"),
+    "Te falta pronosticar": ("Falta você palpitar", "Still to predict"),
+    "Cierre 1h antes del pitido": ("Fecha 1h antes do apito", "Closes 1h before kickoff"),
+    "¡Estás al día!": ("Você está em dia!", "You're all caught up!"),
+    "Ya pronosticaste todos los próximos partidos. Vuelve cuando se acerquen nuevos.":
+        ("Você já palpitou em todos os próximos jogos. Volte quando houver novos.",
+         "You've predicted all upcoming matches. Come back when new ones approach."),
+    "Ver la tabla →": ("Ver a tabela →", "See the table →"),
+    "No hay partidos próximos cargados todavía.": ("Ainda não há jogos carregados.", "No upcoming matches loaded yet."),
+    "Pronosticar →": ("Palpitar →", "Predict →"),
+    "Sin pronóstico": ("Sem palpite", "No prediction"),
+    "🔒 Pronósticos cerrados": ("🔒 Palpites encerrados", "🔒 Predictions closed"),
+    "Te faltan los premios": ("Faltam os prêmios", "Awards still pending"),
+    "Bota de Oro, campeón, total de goles… ciérralos antes de que empiece el Mundial.":
+        ("Chuteira de Ouro, campeão, total de gols… feche antes do início da Copa.",
+         "Golden Boot, champion, total goals… lock them in before the World Cup starts."),
+    "Predecir →": ("Palpitar →", "Predict →"),
+    "Aún tienes tu comodín x2": ("Você ainda tem seu coringa x2", "You still have your x2 wildcard"),
+    "Sin usar en:": ("Sem usar em:", "Unused in:"),
+    "Actívalo al pronosticar un partido para duplicar sus puntos.":
+        ("Ative ao palpitar um jogo para dobrar os pontos.",
+         "Activate it when predicting a match to double its points."),
+    "Cierra en": ("Fecha em", "Closes in"),
+    "Dom,Lun,Mar,Mié,Jue,Vie,Sáb": ("Dom,Seg,Ter,Qua,Qui,Sex,Sáb", "Sun,Mon,Tue,Wed,Thu,Fri,Sat"),
+    "Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic":
+        ("Jan,Fev,Mar,Abr,Mai,Jun,Jul,Ago,Set,Out,Nov,Dez",
+         "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec"),
+
+    # ── Fases (labels de STAGE_LABELS) ──────────────────────────
+    "Fase de Grupos": ("Fase de Grupos", "Group Stage"),
+    "Dieciseisavos": ("Dezesseis avos", "Round of 32"),
+    "Octavos de Final": ("Oitavas de final", "Round of 16"),
+    "Cuartos de Final": ("Quartas de final", "Quarter-finals"),
+    "Semifinales": ("Semifinais", "Semi-finals"),
+    "Tercer Puesto": ("Terceiro lugar", "Third place"),
+    "Final": ("Final", "Final"),
+
+    # ── Tabla / ranking ─────────────────────────────────────────
+    "Clasificación general": ("Classificação geral", "Overall ranking"),
+    "TABLA": ("TABELA", "TABLE"),
+    "Aún no hay puntos acumulados": ("Ainda não há pontos acumulados", "No points accumulated yet"),
+    "puntos": ("pontos", "points"),
+    "Jugador": ("Jogador", "Player"),
+    "(tú)": ("(você)", "(you)"),
+    "MA = Marcador exacto +3": ("MA = Placar exato +3", "MA = Exact score +3"),
+    "GAN = Ganador +1": ("GAN = Vencedor +1", "GAN = Winner +1"),
+    "GOL = Goleador en orden +2": ("GOL = Artilheiro na ordem +2", "GOL = Scorer in order +2"),
+    "Autogol +20": ("Gol contra +20", "Own goal +20"),
+    "Premio +10": ("Prêmio +10", "Award +10"),
+    "Premio bonus": ("Prêmio bônus", "Bonus award"),
+    "Comodín x2": ("Coringa x2", "Wildcard x2"),
+    "Solo tú lo clavaste +3": ("Só você cravou +3", "Only you nailed it +3"),
+    "Solo tú": ("Só você", "Only you"),
+    "Tu estado del podio": ("Seu status do pódio", "Your podium status"),
+    "Pica a tus rivales con una frase corta. Aparece en tu viñeta encima del podio.":
+        ("Provoque seus rivais com uma frase curta. Aparece no seu balão sobre o pódio.",
+         "Tease your rivals with a short line. It shows in your bubble above the podium."),
+    "Cancelar": ("Cancelar", "Cancel"),
+    "Guardar": ("Salvar", "Save"),
+    "💬 Poner estado": ("💬 Definir status", "💬 Set status"),
+
+    # ── Gráficas ────────────────────────────────────────────────
+    "📈 Evolución de puntos": ("📈 Evolução de pontos", "📈 Points over time"),
+    "Puntos acumulados por día": ("Pontos acumulados por dia", "Cumulative points per day"),
+    "🧩 ¿De dónde salen los puntos?": ("🧩 De onde vêm os pontos?", "🧩 Where do points come from?"),
+    "Top 5 · desglose por tipo de acierto": ("Top 5 · por tipo de acerto", "Top 5 · breakdown by hit type"),
+    "🎯 Francotiradores": ("🎯 Franco-atiradores", "🎯 Sharpshooters"),
+    "Quién clava más marcadores exactos (+3)": ("Quem crava mais placares exatos (+3)", "Who nails the most exact scores (+3)"),
+    "🔮💥 Bola de Cristal Rota": ("🔮💥 Bola de Cristal Quebrada", "🔮💥 Broken Crystal Ball"),
+    "Los que peor predicen — menos puntos pese a jugar":
+        ("Os piores palpiteiros — menos pontos mesmo jogando",
+         "The worst predictors — fewest points despite playing"),
+    "Marcador exacto": ("Placar exato", "Exact score"),
+    "Ganador": ("Vencedor", "Winner"),
+    "Penales": ("Pênaltis", "Penalties"),
+
+    # ── Perfil ──────────────────────────────────────────────────
+    "Tu identidad": ("Sua identidade", "Your identity"),
+    "MI PERFIL": ("MEU PERFIL", "MY PROFILE"),
+    "Así te ven los demás en la tabla.": ("É assim que os outros te veem na tabela.", "This is how others see you in the table."),
+    "Elige tu avatar": ("Escolha seu avatar", "Choose your avatar"),
+    "Toca un emoji para guardarlo al instante.": ("Toque em um emoji para salvar na hora.", "Tap an emoji to save it instantly."),
+    "Cambiar contraseña": ("Alterar senha", "Change password"),
+    "Si quieres, cambia la clave que te dieron por una tuya. Es privada, nadie más la ve.":
+        ("Se quiser, troque a senha que te deram por uma sua. É privada, ninguém mais a vê.",
+         "If you want, replace the password you were given with your own. It's private, nobody else sees it."),
+    "Contraseña actual": ("Senha atual", "Current password"),
+    "Nueva contraseña": ("Nova senha", "New password"),
+    "Repite la nueva contraseña": ("Repita a nova senha", "Repeat the new password"),
+    "Actualizar contraseña": ("Atualizar senha", "Update password"),
+    "✅ Contraseña actualizada correctamente.": ("✅ Senha atualizada com sucesso.", "✅ Password updated successfully."),
+    "La contraseña actual no es correcta.": ("A senha atual não está correta.", "The current password is incorrect."),
+    "La nueva contraseña debe tener al menos 4 caracteres.": ("A nova senha deve ter pelo menos 4 caracteres.", "The new password must be at least 4 characters long."),
+    "Las dos contraseñas nuevas no coinciden.": ("As duas senhas novas não coincidem.", "The new passwords don't match."),
+    "Elige el idioma de la app.": ("Escolha o idioma do app.", "Choose the app language."),
+
+    # ── Premios ─────────────────────────────────────────────────
+    "Predicciones especiales": ("Palpites especiais", "Special predictions"),
+    "PREMIOS": ("PRÊMIOS", "AWARDS"),
+    "Predice los grandes premios del torneo. Cada acierto vale": ("Preveja os grandes prêmios do torneio. Cada acerto vale", "Predict the tournament's big awards. Each hit is worth"),
+    "+10 puntos": ("+10 pontos", "+10 points"),
+    "Autogol acertado =": ("Gol contra acertado =", "Own goal hit ="),
+    "+20 puntos": ("+20 pontos", "+20 points"),
+    "🔒 Los premios se cerraron al empezar el Mundial.": ("🔒 Os prêmios fecharam quando a Copa começou.", "🔒 Awards locked when the World Cup started."),
+    "🥇 Bota de Oro": ("🥇 Chuteira de Ouro", "🥇 Golden Boot"),
+    "Máximo goleador del torneo": ("Artilheiro do torneio", "Tournament top scorer"),
+    "🏆 Balón de Oro": ("🏆 Bola de Ouro", "🏆 Golden Ball"),
+    "Mejor jugador del Mundial": ("Melhor jogador da Copa", "Best player of the World Cup"),
+    "🧤 Guante de Oro": ("🧤 Luva de Ouro", "🧤 Golden Glove"),
+    "Mejor arquero del torneo": ("Melhor goleiro do torneio", "Best goalkeeper of the tournament"),
+    "Ganó:": ("Ganhou:", "Won:"),
+    "Fue:": ("Foi:", "It was:"),
+    "Fueron:": ("Foram:", "They were:"),
+    "Nombre del jugador": ("Nome do jogador", "Player name"),
+    "Nombre de la selección": ("Nome da seleção", "Team name"),
+    "❓ Preguntas bonus": ("❓ Perguntas bônus", "❓ Bonus questions"),
+    "🏆 Campeón del Mundial": ("🏆 Campeão da Copa", "🏆 World Cup champion"),
+    "¿Quién levanta la copa?": ("Quem levanta a taça?", "Who lifts the trophy?"),
+    "🥈 Subcampeón": ("🥈 Vice-campeão", "🥈 Runner-up"),
+    "El finalista que pierde": ("O finalista que perde", "The losing finalist"),
+    "🥅 ¿La final se decide por penales?": ("🥅 A final vai aos pênaltis?", "🥅 Will the final go to penalties?"),
+    "Arriésgate con un sí o un no": ("Arrisque um sim ou um não", "Take a guess: yes or no"),
+    "Sí 🎯": ("Sim 🎯", "Yes 🎯"),
+    "No 🛡️": ("Não 🛡️", "No 🛡️"),
+    "⚽ Total de goles del Mundial": ("⚽ Total de gols da Copa", "⚽ Total World Cup goals"),
+    "¿Cuántos goles se marcarán en todo el torneo? Exacto": ("Quantos gols serão marcados no torneio todo? Exato", "How many goals in the whole tournament? Exact"),
+    "si nadie acierta, el más cercano": ("se ninguém acertar, o mais próximo", "if nobody hits it, the closest"),
+    "Dato: en Qatar 2022 se marcaron 172 goles": ("Curiosidade: no Catar 2022 foram 172 gols", "Fun fact: Qatar 2022 had 172 goals"),
+    "Guardar premios": ("Salvar prêmios", "Save awards"),
+
+    # ── Formulario de predicción ────────────────────────────────
+    "← Volver al fixture": ("← Voltar aos jogos", "← Back to fixtures"),
+    "Guardar pronóstico": ("Salvar palpite", "Save prediction"),
+    "(opcional)": ("(opcional)", "(optional)"),
+    "Un casillero por gol,": ("Uma casa por gol,", "One slot per goal,"),
+    "en orden": ("em ordem", "in order"),
+    "Pon al menos un gol para añadir goleadores.": ("Coloque pelo menos um gol para adicionar artilheiros.", "Add at least one goal to pick scorers."),
+    "Acierta el jugador en la posición correcta =": ("Acerte o jogador na posição certa =", "Hit the player in the right spot ="),
+    "Marca": ("Marque", "Tick"),
+    "si crees que será autogol =": ("se você acha que será gol contra =", "if you think it'll be an own goal ="),
+    "— Elegir jugador —": ("— Escolher jogador —", "— Pick a player —"),
+    "Gol": ("Gol", "Goal"),
+    "🃏 Usar comodín": ("🃏 Usar coringa", "🃏 Use wildcard"),
+    "(x2 puntos)": ("(x2 pontos)", "(x2 points)"),
+    "Duplica todos tus puntos de este partido. Solo": ("Dobra todos os seus pontos deste jogo. Apenas", "Doubles all your points for this match. Only"),
+    "uno por fase": ("um por fase", "one per stage"),
+    "Prórroga · Penales": ("Prorrogação · Pênaltis", "Extra time · Penalties"),
+    "+1 pt quién pasa · +2 pts marcador exacto": ("+1 pt quem passa · +2 pts placar exato", "+1 pt who advances · +2 pts exact score"),
+    "Pronóstico de empate detectado — indica quién avanza y el resultado en penales.":
+        ("Palpite de empate detectado — indique quem avança e o placar dos pênaltis.",
+         "Draw predicted — pick who advances and the shootout score."),
+    "¿Quién avanza?": ("Quem avança?", "Who advances?"),
+    "Marcador en penales": ("Placar dos pênaltis", "Penalty shootout score"),
+    "Los penales no pueden empatar entre sí": ("Os pênaltis não podem empatar", "Penalties can't end level"),
+    "Lo que pronostican los demás": ("O que os outros palpitaram", "What the others predicted"),
+    "Sé el primero en pronosticar": ("Seja o primeiro a palpitar", "Be the first to predict"),
+    "Sin goleadores": ("Sem artilheiros", "No scorers"),
+    "pronóstico(s)": ("palpite(s)", "prediction(s)"),
+    "Pasa": ("Passa", "Advances"),
+}
+
+
+def t(text: str) -> str:
+    """Traduce el texto según el idioma activo (cookie). Fallback: español."""
+    lang = current_lang.get()
+    if lang == "es":
+        return text
+    pair = STRINGS.get(text)
+    if not pair:
+        return text
+    return pair[0] if lang == "pt" else pair[1]
+
+
+def get_lang() -> str:
+    return current_lang.get()

@@ -3,18 +3,18 @@
 {% block content %}
 
 <div class="mb-8">
-    <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">Predicciones especiales</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🏅 PREMIOS</h1>
+    <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">{{ t('Predicciones especiales') }}</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🏅 {{ t('PREMIOS') }}</h1>
     <p class="text-white/50 text-sm mt-1">
-        Predice los grandes premios del torneo. Cada acierto vale
-        <span class="text-amber-400 font-semibold">+10 puntos</span>.
-        Autogol acertado = <span class="text-amber-400 font-semibold">+20 puntos</span> 🤯
+        {{ t('Predice los grandes premios del torneo. Cada acierto vale') }}
+        <span class="text-amber-400 font-semibold">{{ t('+10 puntos') }}</span>.
+        {{ t('Autogol acertado =') }} <span class="text-amber-400 font-semibold">{{ t('+20 puntos') }}</span> 🤯
     </p>
 </div>
 
 {% if locked %}
 <div class="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-3 rounded-xl mb-6 text-sm font-display uppercase tracking-wider">
-    🔒 Los premios se cerraron al empezar el Mundial.
+    {{ t('🔒 Los premios se cerraron al empezar el Mundial.') }}
 </div>
 {% endif %}
 
@@ -31,21 +31,21 @@
             <div class="flex items-center gap-3">
                 <span class="text-3xl">{{ icon }}</span>
                 <div>
-                    <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ title }}</h2>
-                    <p class="text-white/40 text-xs">{{ desc }}</p>
+                    <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ t(title) }}</h2>
+                    <p class="text-white/40 text-xs">{{ t(desc) }}</p>
                 </div>
             </div>
             {% if real and real[key] %}
             <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
                 {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred[key] and pred[key]|lower == real[key]|lower else 'bg-white/10 text-white/50' }}">
-                Ganó: {{ real[key] }}
+                {{ t('Ganó:') }} {{ real[key] }}
             </span>
             {% endif %}
         </div>
         <input type="text" name="{{ key }}"
             list="{{ 'keepers-list' if key == 'best_keeper' else 'players-list' }}"
             value="{{ pred[key] if pred and pred[key] else '' }}"
-            placeholder="Nombre del jugador"
+            placeholder="{{ t('Nombre del jugador') }}"
             autocomplete="off"
             {{ 'disabled' if locked else '' }}
             class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition disabled:opacity-50">
@@ -54,7 +54,7 @@
 
     <!-- ── Preguntas bonus ─────────────────────────────────── -->
     <div class="pt-2">
-        <p class="font-display text-xs uppercase tracking-[0.25em] text-sky-400 mb-3 px-1">❓ Preguntas bonus</p>
+        <p class="font-display text-xs uppercase tracking-[0.25em] text-sky-400 mb-3 px-1">{{ t('❓ Preguntas bonus') }}</p>
     </div>
 
     {% set bonus_teams = [
@@ -65,19 +65,19 @@
     <div class="rounded-2xl bg-gradient-to-b from-sky-500/[0.07] to-white/[0.02] border border-sky-500/15 p-5">
         <div class="flex items-center justify-between mb-3">
             <div>
-                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ title }} <span class="text-sky-400 text-sm">{{ pts }}</span></h2>
-                <p class="text-white/40 text-xs">{{ desc }}</p>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ t(title) }} <span class="text-sky-400 text-sm">{{ pts }}</span></h2>
+                <p class="text-white/40 text-xs">{{ t(desc) }}</p>
             </div>
             {% if real and real[key] %}
             <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
                 {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred[key] and pred[key]|lower == real[key]|lower else 'bg-white/10 text-white/50' }}">
-                Fue: {{ real[key] }}
+                {{ t('Fue:') }} {{ real[key] }}
             </span>
             {% endif %}
         </div>
         <input type="text" name="{{ key }}" list="teams-list"
             value="{{ pred[key] if pred and pred[key] else '' }}"
-            placeholder="Nombre de la selección" autocomplete="off"
+            placeholder="{{ t('Nombre de la selección') }}" autocomplete="off"
             {{ 'disabled' if locked else '' }}
             class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition disabled:opacity-50">
     </div>
@@ -87,13 +87,13 @@
     <div class="rounded-2xl bg-gradient-to-b from-violet-500/[0.07] to-white/[0.02] border border-violet-500/15 p-5">
         <div class="flex items-center justify-between mb-3">
             <div>
-                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">🥅 ¿La final se decide por penales? <span class="text-violet-300 text-sm">+5</span></h2>
-                <p class="text-white/40 text-xs">Arriésgate con un sí o un no</p>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ t('🥅 ¿La final se decide por penales?') }} <span class="text-violet-300 text-sm">+5</span></h2>
+                <p class="text-white/40 text-xs">{{ t('Arriésgate con un sí o un no') }}</p>
             </div>
             {% if real and real['final_penalties'] %}
             <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
                 {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred['final_penalties'] and pred['final_penalties']|lower == real['final_penalties']|lower else 'bg-white/10 text-white/50' }}">
-                Fue: {{ real['final_penalties'] }}
+                {{ t('Fue:') }} {{ real['final_penalties'] }}
             </span>
             {% endif %}
         </div>
@@ -101,11 +101,11 @@
         <div class="grid grid-cols-2 gap-2">
             <label class="cursor-pointer">
                 <input type="radio" name="final_penalties" value="Sí" class="peer sr-only" {{ 'checked' if fp|lower in ['sí','si'] }} {{ 'disabled' if locked else '' }}>
-                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">Sí 🎯</div>
+                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">{{ t('Sí 🎯') }}</div>
             </label>
             <label class="cursor-pointer">
                 <input type="radio" name="final_penalties" value="No" class="peer sr-only" {{ 'checked' if fp|lower == 'no' }} {{ 'disabled' if locked else '' }}>
-                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">No 🛡️</div>
+                <div class="text-center py-3 rounded-xl border-2 border-white/10 bg-white/[0.03] peer-checked:border-violet-400 peer-checked:bg-violet-500/15 font-display uppercase tracking-wide text-sm transition">{{ t('No 🛡️') }}</div>
             </label>
         </div>
     </div>
@@ -114,13 +114,13 @@
     <div class="rounded-2xl bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.02] border border-emerald-500/15 p-5">
         <div class="flex items-center justify-between mb-3">
             <div>
-                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">⚽ Total de goles del Mundial <span class="text-emerald-400 text-sm">+20</span></h2>
-                <p class="text-white/40 text-xs">¿Cuántos goles se marcarán en todo el torneo? Exacto <span class="text-emerald-300">+20</span> · si nadie acierta, el más cercano <span class="text-emerald-300">+5</span></p>
+                <h2 class="font-display font-bold text-lg uppercase tracking-wide leading-tight">{{ t('⚽ Total de goles del Mundial') }} <span class="text-emerald-400 text-sm">+20</span></h2>
+                <p class="text-white/40 text-xs">{{ t('¿Cuántos goles se marcarán en todo el torneo? Exacto') }} <span class="text-emerald-300">+20</span> · {{ t('si nadie acierta, el más cercano') }} <span class="text-emerald-300">+5</span></p>
             </div>
             {% if real_total is not none %}
             <span class="text-[10px] font-display uppercase tracking-wider px-2 py-1 rounded-md
                 {{ 'bg-emerald-500/20 text-emerald-300' if pred and pred['total_goals'] == real_total else 'bg-white/10 text-white/50' }}">
-                Fueron: {{ real_total }}
+                {{ t('Fueron:') }} {{ real_total }}
             </span>
             {% endif %}
         </div>
@@ -129,7 +129,7 @@
             placeholder="Ej: 172"
             {{ 'disabled' if locked else '' }}
             class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl font-heavy focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 transition disabled:opacity-50">
-        <p class="text-[10px] text-white/30 text-center mt-2 font-display uppercase tracking-wider">Dato: en Qatar 2022 se marcaron 172 goles</p>
+        <p class="text-[10px] text-white/30 text-center mt-2 font-display uppercase tracking-wider">{{ t('Dato: en Qatar 2022 se marcaron 172 goles') }}</p>
     </div>
 
     <datalist id="players-list">
@@ -145,7 +145,7 @@
     {% if not locked %}
     <button type="submit"
         class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-amber-500/20">
-        Guardar premios
+        {{ t('Guardar premios') }}
     </button>
     {% endif %}
 </form>

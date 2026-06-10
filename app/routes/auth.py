@@ -21,8 +21,9 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     conn.close()
 
     if not user or not verify_password(password, user["password_hash"]):
+        from app.i18n import t
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "Usuario o contraseña incorrectos"}
+            "login.html", {"request": request, "error": t("Usuario o contraseña incorrectos")}
         )
 
     token = create_session_token(user["id"])

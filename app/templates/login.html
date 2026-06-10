@@ -3,9 +3,20 @@
 {% block content %}
 <div class="min-h-[85vh] flex items-center justify-center">
     <div class="w-full max-w-sm">
-        <div class="text-center mb-8">
+        <div class="text-center mb-6">
             <img src="/static/wc26.avif" alt="FIFA World Cup 2026" class="h-36 mx-auto mb-4 drop-shadow-2xl object-contain">
             <img src="/static/logoapp.png" alt="Polla Futbolera" class="h-10 mx-auto drop-shadow-lg object-contain">
+        </div>
+
+        <!-- Selector de idioma -->
+        <div class="flex items-center justify-center gap-2 mb-6">
+            {% for code, name in LANGS.items() %}
+            <a href="/lang/{{ code }}"
+               class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-display uppercase tracking-wide transition
+               {{ 'border-sky-400 bg-sky-500/15 text-sky-300' if get_lang() == code else 'border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/10 hover:text-white/80' }}">
+                <span class="text-base leading-none">{{ LANG_FLAGS[code] }}</span> {{ name }}
+            </a>
+            {% endfor %}
         </div>
 
         {% if error %}
@@ -17,18 +28,18 @@
         <form method="post" action="/login"
               class="bg-gradient-to-b from-white/[0.08] to-white/[0.02] rounded-2xl p-6 border border-white/10 space-y-4 backdrop-blur">
             <div>
-                <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">Usuario</label>
+                <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">{{ t('Usuario') }}</label>
                 <input name="username" type="text" required autofocus
                     class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
             </div>
             <div>
-                <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">Contraseña</label>
+                <label class="block font-display text-xs uppercase tracking-wider text-white/50 mb-1.5">{{ t('Contraseña') }}</label>
                 <input name="password" type="password" required
                     class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
             </div>
             <button type="submit"
                 class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20 mt-2">
-                Entrar a la cancha
+                {{ t('Entrar a la cancha') }}
             </button>
         </form>
     </div>

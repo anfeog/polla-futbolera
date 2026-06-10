@@ -5,18 +5,18 @@
 <!-- Bienvenida + Tutorial -->
 <div class="rounded-2xl bg-gradient-to-br from-sky-500/[0.12] via-violet-500/[0.06] to-transparent border border-white/10 p-6 sm:p-8 mb-8 text-center">
     <img src="/static/wc26.avif" alt="FIFA World Cup 2026" class="h-24 sm:h-28 mx-auto mb-4 drop-shadow-2xl object-contain">
-    <h1 class="font-heavy text-3xl sm:text-4xl mb-2 brand-gradient">¡HOLA, {{ user.username | upper }}! {{ user.avatar }}</h1>
+    <h1 class="font-heavy text-3xl sm:text-4xl mb-2 brand-gradient">{{ t('¡HOLA,') }} {{ user.username | upper }}! {{ user.avatar }}</h1>
     <p class="text-white/50 text-sm max-w-md mx-auto mb-5">
-        Bienvenido a la Polla Futbolera del Mundial 2026. Predice los marcadores, adivina los goleadores y compite con tus amigos.
+        {{ t('Bienvenido a la Polla Futbolera del Mundial 2026. Predice los marcadores, adivina los goleadores y compite con tus amigos.') }}
     </p>
     <div class="flex flex-wrap items-center justify-center gap-3">
         <a href="/como-jugar"
            class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-display font-semibold uppercase tracking-wider px-5 py-3 rounded-xl transition text-sm">
-            📖 Ver tutorial
+            📖 {{ t('Ver tutorial') }}
         </a>
         <a href="/partidos"
            class="inline-flex items-center gap-2 brand-bar text-ink font-display font-bold uppercase tracking-wider px-5 py-3 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20 text-sm">
-            ⚽ Todos los partidos
+            ⚽ {{ t('Todos los partidos') }}
         </a>
     </div>
 </div>
@@ -28,18 +28,18 @@
     <a href="/premios" class="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500/[0.12] to-transparent border border-amber-500/25 px-4 py-3 hover:border-amber-400/50 transition group">
         <span class="text-2xl shrink-0">🏅</span>
         <div class="flex-1 min-w-0">
-            <p class="font-display text-sm uppercase tracking-wide text-amber-200">Te faltan los premios</p>
-            <p class="text-[11px] text-white/45">Bota de Oro, campeón, total de goles… ciérralos antes de que empiece el Mundial.</p>
+            <p class="font-display text-sm uppercase tracking-wide text-amber-200">{{ t('Te faltan los premios') }}</p>
+            <p class="text-[11px] text-white/45">{{ t('Bota de Oro, campeón, total de goles… ciérralos antes de que empiece el Mundial.') }}</p>
         </div>
-        <span class="font-display text-[10px] uppercase tracking-wider text-ink bg-amber-400 rounded-full px-2.5 py-1 shrink-0 group-hover:bg-amber-300 transition">Predecir →</span>
+        <span class="font-display text-[10px] uppercase tracking-wider text-ink bg-amber-400 rounded-full px-2.5 py-1 shrink-0 group-hover:bg-amber-300 transition">{{ t('Predecir →') }}</span>
     </a>
     {% endif %}
     {% if comodin_stages %}
     <div class="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500/[0.12] to-transparent border border-cyan-500/25 px-4 py-3">
         <span class="text-2xl shrink-0">🃏</span>
         <div class="flex-1 min-w-0">
-            <p class="font-display text-sm uppercase tracking-wide text-cyan-200">Aún tienes tu comodín x2</p>
-            <p class="text-[11px] text-white/45">Sin usar en: <span class="text-cyan-300">{{ comodin_stages | join(', ') }}</span>. Actívalo al pronosticar un partido para duplicar sus puntos.</p>
+            <p class="font-display text-sm uppercase tracking-wide text-cyan-200">{{ t('Aún tienes tu comodín x2') }}</p>
+            <p class="text-[11px] text-white/45">{{ t('Sin usar en:') }} <span class="text-cyan-300">{% for s in comodin_stages %}{{ t(s) }}{% if not loop.last %}, {% endif %}{% endfor %}</span>. {{ t('Actívalo al pronosticar un partido para duplicar sus puntos.') }}</p>
         </div>
     </div>
     {% endif %}
@@ -49,8 +49,8 @@
 <!-- Próximos partidos por pronosticar -->
 <div class="flex items-center gap-2 mb-4">
     <span class="text-lg">⏰</span>
-    <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">Te falta pronosticar</h2>
-    <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">Cierre 1h antes del pitido</span>
+    <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">{{ t('Te falta pronosticar') }}</h2>
+    <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">{{ t('Cierre 1h antes del pitido') }}</span>
 </div>
 
 {% if not matches %}
@@ -58,15 +58,15 @@
     <!-- Hay partidos próximos pero el usuario ya los pronosticó todos -->
     <div class="rounded-2xl bg-gradient-to-b from-emerald-500/[0.10] to-emerald-500/[0.02] border border-emerald-500/20 px-4 py-10 text-center">
         <p class="text-4xl mb-2">✅</p>
-        <p class="font-display text-base uppercase tracking-wide text-emerald-300 mb-1">¡Estás al día!</p>
-        <p class="text-white/40 text-sm">Ya pronosticaste todos los próximos partidos. Vuelve cuando se acerquen nuevos.</p>
-        <a href="/ranking" class="inline-block mt-4 font-display text-xs uppercase tracking-wider text-emerald-300 hover:text-emerald-200 transition">Ver la tabla →</a>
+        <p class="font-display text-base uppercase tracking-wide text-emerald-300 mb-1">{{ t('¡Estás al día!') }}</p>
+        <p class="text-white/40 text-sm">{{ t('Ya pronosticaste todos los próximos partidos. Vuelve cuando se acerquen nuevos.') }}</p>
+        <a href="/ranking" class="inline-block mt-4 font-display text-xs uppercase tracking-wider text-emerald-300 hover:text-emerald-200 transition">{{ t('Ver la tabla →') }}</a>
     </div>
     {% else %}
     <!-- No hay partidos cargados -->
     <div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-10 text-center">
         <p class="text-3xl mb-2">🏟️</p>
-        <p class="text-white/40 text-sm font-display">No hay partidos próximos cargados todavía.</p>
+        <p class="text-white/40 text-sm font-display">{{ t('No hay partidos próximos cargados todavía.') }}</p>
     </div>
     {% endif %}
 {% else %}
@@ -107,21 +107,21 @@
         <div class="flex items-center justify-between gap-2 pt-3 border-t border-white/5">
             <!-- Contador -->
             {% if m.locked %}
-            <span class="font-display text-[11px] uppercase tracking-wider text-red-400/80">🔒 Pronósticos cerrados</span>
+            <span class="font-display text-[11px] uppercase tracking-wider text-red-400/80">{{ t('🔒 Pronósticos cerrados') }}</span>
             {% else %}
             <span class="countdown font-display text-[11px] uppercase tracking-wider text-amber-300" data-lock="{{ m.lock_iso }}">
-                Cierra en …
+                {{ t('Cierra en') }} …
             </span>
             {% endif %}
 
             <!-- Estado (estos partidos están sin pronosticar por definición) -->
             {% if not m.locked %}
             <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-ink bg-sky-400 rounded-full px-2.5 py-1 group-hover:bg-sky-300 transition">
-                Pronosticar →
+                {{ t('Pronosticar →') }}
             </span>
             {% else %}
             <span class="inline-flex items-center gap-1 font-display text-[10px] uppercase tracking-wider text-white/30 bg-white/5 border border-white/10 rounded-full px-2.5 py-1">
-                Sin pronóstico
+                {{ t('Sin pronóstico') }}
             </span>
             {% endif %}
         </div>
@@ -132,8 +132,10 @@
 
 <script>
 // ── Fecha y hora en horario local del usuario ──────────────────
-const DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DAYS   = {{ t('Dom,Lun,Mar,Mié,Jue,Vie,Sáb') | tojson }}.split(',');
+const MONTHS = {{ t('Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic') | tojson }}.split(',');
+const T_CLOSES = {{ t('Cierra en') | tojson }};
+const T_LOCKED = {{ t('🔒 Pronósticos cerrados') | tojson }};
 
 document.querySelectorAll('.match-datetime').forEach(el => {
     const d = new Date(el.dataset.kickoff);   // 'Z' o '+00:00' → local
@@ -153,7 +155,7 @@ function tick() {
         const diff = lock.getTime() - now;
 
         if (diff <= 0) {
-            el.textContent = '🔒 Pronósticos cerrados';
+            el.textContent = T_LOCKED;
             el.classList.remove('text-amber-300');
             el.classList.add('text-red-400/80');
             return;
@@ -165,9 +167,9 @@ function tick() {
         const secs = Math.floor((diff % 60000) / 1000);
 
         let txt;
-        if (days > 0)      txt = `Cierra en ${days}d ${pad(hrs)}h ${pad(mins)}m`;
-        else if (hrs > 0)  txt = `Cierra en ${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-        else               txt = `⚠️ Cierra en ${pad(mins)}:${pad(secs)}`;
+        if (days > 0)      txt = `${T_CLOSES} ${days}d ${pad(hrs)}h ${pad(mins)}m`;
+        else if (hrs > 0)  txt = `${T_CLOSES} ${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+        else               txt = `⚠️ ${T_CLOSES} ${pad(mins)}:${pad(secs)}`;
 
         el.textContent = txt;
         // Urgente: menos de 1 hora

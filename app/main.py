@@ -11,6 +11,33 @@ import os, bcrypt
 
 app = FastAPI(title="Polla Futbolera Mundial 2026")
 
+
+# ── Idioma: cookie "lang" -> contextvar leída por t() en plantillas ──────────
+from app.i18n import current_lang, LANGS  # noqa: E402
+
+
+@app.middleware("http")
+async def language_middleware(request: Request, call_next):
+    lang = request.cookies.get("lang", "es")
+    if lang not in LANGS:
+        lang = "es"
+    token = current_lang.set(lang)
+    try:
+        response = await call_next(request)
+    finally:
+        current_lang.reset(token)
+    return response
+
+
+@app.get("/lang/{code}")
+def set_language(code: str, request: Request):
+    """Cambia el idioma (cookie 1 año) y vuelve a la página anterior."""
+    dest = request.headers.get("referer") or "/login"
+    response = RedirectResponse(dest, status_code=303)
+    if code in LANGS:
+        response.set_cookie("lang", code, max_age=60 * 60 * 24 * 365)
+    return response
+
 BASE_DIR = os.path.dirname(__file__)
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))

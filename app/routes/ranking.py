@@ -4,6 +4,7 @@ from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
 from app.scoring import award_points_for_user, total_goals_bonus, POINTS_SOLO
+from app.i18n import t
 
 router = APIRouter()
 
@@ -178,13 +179,13 @@ def _chart_context() -> dict:
     top5 = sorted(breakdown, key=lambda b: -b["total"])[:5]
     bar_labels = [b["username"] for b in top5]
     bar_segments = [
-        {"label": "Marcador exacto", "color": "#22c55e", "data": [b["exacto"]   for b in top5]},
-        {"label": "Ganador",         "color": "#3b82f6", "data": [b["ganador"]  for b in top5]},
-        {"label": "Goleadores",      "color": "#f59e0b", "data": [b["goleador"] for b in top5]},
-        {"label": "Penales",         "color": "#a855f7", "data": [b["penales"]  for b in top5]},
-        {"label": "Comodín x2",      "color": "#06b6d4", "data": [b["comodin"]  for b in top5]},
-        {"label": "Solo tú",         "color": "#facc15", "data": [b["solo"]     for b in top5]},
-        {"label": "Premios",         "color": "#ec4899", "data": [b["premios"]  for b in top5]},
+        {"label": t("Marcador exacto"), "color": "#22c55e", "data": [b["exacto"]   for b in top5]},
+        {"label": t("Ganador"),         "color": "#3b82f6", "data": [b["ganador"]  for b in top5]},
+        {"label": t("Goleadores"),      "color": "#f59e0b", "data": [b["goleador"] for b in top5]},
+        {"label": t("Penales"),         "color": "#a855f7", "data": [b["penales"]  for b in top5]},
+        {"label": t("Comodín x2"),      "color": "#06b6d4", "data": [b["comodin"]  for b in top5]},
+        {"label": t("Solo tú"),         "color": "#facc15", "data": [b["solo"]     for b in top5]},
+        {"label": t("Premios"),         "color": "#ec4899", "data": [b["premios"]  for b in top5]},
     ]
     has_bars = any(b["total"] > 0 for b in top5)
 

@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="max-w-5xl mx-auto">
-    <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-5 inline-block">← Volver al fixture</a>
+    <a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-5 inline-block">{{ t('← Volver al fixture') }}</a>
 
     <div class="text-center mb-6">
         <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">{{ match.stage }}</p>
@@ -48,13 +48,13 @@
         <div id="penalties-section" class="hidden rounded-2xl bg-gradient-to-b from-violet-500/[0.08] to-violet-500/[0.02] border border-violet-500/20 p-5 transition-all">
             <div class="flex items-center gap-2 mb-1">
                 <span class="text-lg">🥅</span>
-                <h2 class="font-display text-sm uppercase tracking-wider text-violet-300">Prórroga · Penales</h2>
-                <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">+1 pt quién pasa · +2 pts marcador exacto</span>
+                <h2 class="font-display text-sm uppercase tracking-wider text-violet-300">{{ t('Prórroga · Penales') }}</h2>
+                <span class="ml-auto font-display text-[10px] uppercase tracking-wider text-white/30">{{ t('+1 pt quién pasa · +2 pts marcador exacto') }}</span>
             </div>
-            <p class="text-xs text-white/40 mb-4">Pronóstico de empate detectado — indica quién avanza y el resultado en penales.</p>
+            <p class="text-xs text-white/40 mb-4">{{ t('Pronóstico de empate detectado — indica quién avanza y el resultado en penales.') }}</p>
 
             <!-- ¿Quién avanza? -->
-            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">¿Quién avanza?</p>
+            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">{{ t('¿Quién avanza?') }}</p>
             <div class="grid grid-cols-2 gap-2 mb-5">
                 <!-- Local -->
                 <label class="advances-btn cursor-pointer group">
@@ -99,7 +99,7 @@
             </div>
 
             <!-- Marcador de penales -->
-            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">Marcador en penales</p>
+            <p class="font-display text-xs uppercase tracking-wider text-white/50 mb-2">{{ t('Marcador en penales') }}</p>
             <div class="flex items-center justify-center gap-3">
                 <div class="flex flex-col items-center gap-1">
                     <span class="font-display text-[10px] uppercase tracking-wider text-white/30" id="pen-home-label">{{ match.home_tla }}</span>
@@ -115,7 +115,7 @@
                         class="w-16 text-center text-3xl font-display font-bold bg-black/30 border border-white/10 rounded-xl py-2 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/50 transition">
                 </div>
             </div>
-            <p class="text-[10px] text-white/25 text-center mt-2 font-display">Los penales no pueden empatar entre sí</p>
+            <p class="text-[10px] text-white/25 text-center mt-2 font-display">{{ t('Los penales no pueden empatar entre sí') }}</p>
         </div>
         {% endif %}
 
@@ -129,8 +129,8 @@
                             after:content-[''] after:absolute after:top-1 after:left-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-300
                             peer-checked:after:translate-x-5"></div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-display text-sm uppercase tracking-wide text-cyan-200">🃏 Usar comodín <span class="text-cyan-400">(x2 puntos)</span></p>
-                    <p class="text-xs text-white/45 mt-0.5">Duplica todos tus puntos de este partido. Solo <span class="text-white/70">uno por fase</span>.</p>
+                    <p class="font-display text-sm uppercase tracking-wide text-cyan-200">{{ t('🃏 Usar comodín') }} <span class="text-cyan-400">{{ t('(x2 puntos)') }}</span></p>
+                    <p class="text-xs text-white/45 mt-0.5">{{ t('Duplica todos tus puntos de este partido. Solo') }} <span class="text-white/70">{{ t('uno por fase') }}</span>.</p>
                 </div>
             </div>
             {% if joker_other %}
@@ -143,11 +143,11 @@
         <!-- Goleadores ordenados -->
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">
             <h2 class="font-display text-sm uppercase tracking-wider text-white/70 mb-1">
-                Goleadores <span class="text-white/30 normal-case font-normal tracking-normal">(opcional)</span>
+                {{ t('Goleadores') }} <span class="text-white/30 normal-case font-normal tracking-normal">{{ t('(opcional)') }}</span>
             </h2>
             <p class="text-xs text-white/40 mb-4 leading-relaxed">
-                Un casillero por gol, <span class="text-white/70">en orden</span>. Acierta el jugador en la posición correcta = <span class="text-emerald-400 font-semibold">+0.5</span>.
-                Marca <span class="text-amber-400 font-semibold">OG</span> si crees que será autogol = <span class="text-amber-400 font-semibold">+10</span> 🤯
+                {{ t('Un casillero por gol,') }} <span class="text-white/70">{{ t('en orden') }}</span>. {{ t('Acierta el jugador en la posición correcta =') }} <span class="text-emerald-400 font-semibold">+2</span>.
+                {{ t('Marca') }} <span class="text-amber-400 font-semibold">OG</span> {{ t('si crees que será autogol =') }} <span class="text-amber-400 font-semibold">+20</span> 🤯
             </p>
             <div id="scorer-slots" class="space-y-4"></div>
             <p id="scorer-hint" class="text-xs text-white/30 mt-3"></p>
@@ -155,7 +155,7 @@
 
         <button type="submit"
             class="w-full brand-bar text-ink font-display font-bold uppercase tracking-wider py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-sky-500/20">
-            Guardar pronóstico
+            {{ t('Guardar pronóstico') }}
         </button>
     </form>
     </div><!-- /columna form -->
@@ -165,16 +165,16 @@
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden">
             <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
                 <span class="text-base">👀</span>
-                <h2 class="font-display text-xs uppercase tracking-wider text-white/60 font-semibold">Lo que pronostican los demás</h2>
+                <h2 class="font-display text-xs uppercase tracking-wider text-white/60 font-semibold">{{ t('Lo que pronostican los demás') }}</h2>
                 {% if others %}
-                <span class="ml-auto font-display text-[10px] text-white/30">{{ others | length }} pronóstico{{ 's' if others | length != 1 }}</span>
+                <span class="ml-auto font-display text-[10px] text-white/30">{{ others | length }} {{ t('pronóstico(s)') }}</span>
                 {% endif %}
             </div>
 
             {% if not others %}
             <div class="px-4 py-8 text-center">
                 <p class="text-2xl mb-2">🦗</p>
-                <p class="text-white/30 text-sm font-display">Sé el primero en pronosticar</p>
+                <p class="text-white/30 text-sm font-display">{{ t('Sé el primero en pronosticar') }}</p>
             </div>
             {% else %}
             <div class="divide-y divide-white/5">
@@ -203,11 +203,11 @@
                     {% if pred_draw and pred.penalty_home is not none and pred.penalty_away is not none %}
                     <div class="mt-2 flex items-center gap-2 flex-wrap">
                         <span class="font-display text-[10px] uppercase tracking-wider text-violet-400/70 bg-violet-500/10 border border-violet-500/20 rounded-full px-2 py-0.5">
-                            Penales {{ pred.penalty_home }}–{{ pred.penalty_away }}
+                            {{ t('Penales') }} {{ pred.penalty_home }}–{{ pred.penalty_away }}
                         </span>
                         {% if pred.advances_team %}
                         <span class="font-display text-[10px] uppercase tracking-wider text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-                            Pasa {{ pred.advances_team[:10] }}
+                            {{ t('Pasa') }} {{ pred.advances_team[:10] }}
                         </span>
                         {% endif %}
                     </div>
@@ -250,7 +250,7 @@
                         {% endif %}
                     </div>
                     {% else %}
-                    <p class="mt-1.5 font-display text-[10px] text-white/20 uppercase tracking-wider">Sin goleadores</p>
+                    <p class="mt-1.5 font-display text-[10px] text-white/20 uppercase tracking-wider">{{ t('Sin goleadores') }}</p>
                     {% endif %}
                 </div>
             {% endfor %}
@@ -269,6 +269,12 @@ const squads = {
     home: {{ home_squad | tojson }},
     away: {{ away_squad | tojson }},
 };
+const TR = {
+    pick: {{ t('— Elegir jugador —') | tojson }},
+    playerName: {{ t('Nombre del jugador') | tojson }},
+    atLeast: {{ t('Pon al menos un gol para añadir goleadores.') | tojson }},
+    goal: {{ t('Gol') | tojson }},
+};
 
 // Datos existentes indexados por "home_1", "away_2", etc.
 const saved = {};
@@ -284,7 +290,7 @@ function escapeHtml(s) {
 }
 
 function buildOptions(squad, selected) {
-    let opts = `<option value="">— Elegir jugador —</option>`;
+    let opts = `<option value="">${TR.pick}</option>`;
     let found = false;
     (squad || []).forEach(p => {
         const sel = (p === selected) ? 'selected' : '';
@@ -310,7 +316,7 @@ function playerField(key, pos, squad, selected) {
         </select>`;
     }
     // Fallback texto libre
-    return `<input type="text" name="${name}" placeholder="Nombre del jugador" value="${escapeHtml(selected || '')}"
+    return `<input type="text" name="${name}" placeholder="${TR.playerName}" value="${escapeHtml(selected || '')}"
         class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">`;
 }
 
@@ -322,7 +328,7 @@ function renderScorers() {
     container.innerHTML = '';
 
     if (home + away === 0) {
-        hint.textContent = 'Pon al menos un gol para añadir goleadores.';
+        hint.textContent = TR.atLeast;
         return;
     }
     hint.textContent = '';
@@ -344,7 +350,7 @@ function renderScorers() {
             const row = document.createElement('div');
             row.className = 'flex items-center gap-2 mb-2';
             row.innerHTML = `
-                <span class="font-display text-[11px] text-white/40 w-12 text-right shrink-0 uppercase tracking-wider">Gol ${pos}</span>
+                <span class="font-display text-[11px] text-white/40 w-12 text-right shrink-0 uppercase tracking-wider">${TR.goal} ${pos}</span>
                 ${playerField(key, pos, squads[key], sv.player)}
                 <label class="flex items-center gap-1.5 text-xs text-white/50 whitespace-nowrap cursor-pointer shrink-0 font-display uppercase tracking-wider"
                        title="Autogol +20 pts 🤯">
