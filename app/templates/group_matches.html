@@ -47,6 +47,7 @@
                             {% set tc = crest(team, s.flag) %}
                             {% if tc %}<img src="{{ tc }}" class="w-5 h-5 object-contain shrink-0">{% endif %}
                             <span class="font-display text-xs uppercase tracking-wide">{{ team }}</span>
+                            {% if live_teams and team in live_teams %}<span class="w-2 h-2 rounded-full bg-red-500 animate-livepulse shrink-0 inline-block" title="En vivo"></span>{% endif %}
                         </div>
                     </td>
                     <td class="py-3 px-2 text-center text-white/50 text-xs">{{ s.P }}</td>

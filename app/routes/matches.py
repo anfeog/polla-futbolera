@@ -275,6 +275,10 @@ def group_detail(group_slug: str, request: Request, user=Depends(require_login))
     user_predictions, locked = _pred_locked(conn, matches, user["id"])
     standings = _compute_standings(matches)
     calendar  = _calendar(matches)
+    live_rows = conn.execute(
+        "SELECT home_team, away_team FROM matches WHERE status IN ('IN_PLAY','PAUSED')"
+    ).fetchall()
+    live_teams = {r["home_team"] for r in live_rows} | {r["away_team"] for r in live_rows}
     conn.close()
 
     return templates.TemplateResponse("group_matches.html", {
@@ -287,6 +291,7 @@ def group_detail(group_slug: str, request: Request, user=Depends(require_login))
         "group_label_str": group_label(group_name),
         "standings": standings,
         "today": _today(),
+        "live_teams": live_teams,
     })
 
 
@@ -358,11 +363,18 @@ def phase_detail(slug: str, request: Request, user=Depends(require_login)):
             # Ordenar terceros: pts > DG > GF
             third_place_list.sort(key=lambda x: (-x["Pts"], -x["GD"], -x["GF"]))
 
+            # Equipos con partido en curso ahora mismo
+            live_rows = conn.execute(
+                "SELECT home_team, away_team FROM matches WHERE status IN ('IN_PLAY','PAUSED')"
+            ).fetchall()
+            live_teams = {r["home_team"] for r in live_rows} | {r["away_team"] for r in live_rows}
+
             conn.close()
             return templates.TemplateResponse("groups.html", {
                 "request": request, "user": user,
                 "groups": groups,
                 "third_place": third_place_list,
+                "live_teams": live_teams,
             })
 
     # ── Knockout / fase genérica ──

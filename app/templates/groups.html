@@ -49,6 +49,7 @@
                             {% if tc %}<img src="{{ tc }}" class="w-4 h-4 object-contain shrink-0">
                             {% else %}<span class="w-4 h-4 rounded-full bg-white/10 shrink-0 inline-block"></span>{% endif %}
                             <span class="font-display text-[10px] uppercase tracking-wide truncate">{{ s.tla or team[:6] }}</span>
+                            {% if live_teams and team in live_teams %}<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-livepulse shrink-0 inline-block"></span>{% endif %}
                         </div>
                     </td>
                     <td class="py-1.5 px-1 text-center text-[10px] text-white/40">{{ s.P }}</td>
