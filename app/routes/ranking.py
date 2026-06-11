@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.scoring import award_points_for_user, total_goals_bonus, POINTS_SOLO
+from app.scoring import award_points_for_user, total_goals_bonus, live_provisional_points, POINTS_SOLO
 from app.i18n import t
 
 router = APIRouter()
@@ -260,7 +260,8 @@ def ranking(request: Request, user=Depends(require_login)):
         GROUP BY u.id
     """).fetchall()
 
-    tg_bonus = total_goals_bonus(conn)   # {user_id: pts} del total de goles (al terminar)
+    tg_bonus   = total_goals_bonus(conn)
+    live_bonus = live_provisional_points(conn)   # {user_id: pts} partidos en curso
 
     ranking = []
     for r in rows:
@@ -271,12 +272,14 @@ def ranking(request: Request, user=Depends(require_login)):
         solo_pts = (r["solo_hits"] or 0) * POINTS_SOLO
         joker_bonus = r["joker_bonus"] or 0
         total = r["match_points"] + joker_bonus + solo_pts + award_pts
+        provisional = round(live_bonus.get(r["id"], 0), 1)
         ranking.append({
             "id": r["id"],
             "username": r["username"],
             "avatar": r["avatar"] or "⚽",
             "status_msg": r["status_msg"],
             "total_points": total,
+            "provisional": provisional,   # puntos extra si el marcador actual es el final
             "award_points": award_pts,
             "joker_bonus": joker_bonus,
             "solo_hits": r["solo_hits"] or 0,
@@ -287,7 +290,8 @@ def ranking(request: Request, user=Depends(require_login)):
             "pct": pct,
         })
 
-    ranking.sort(key=lambda x: (-x["total_points"], -x["exact_hits"]))
+    any_live = bool(live_bonus)
+    ranking.sort(key=lambda x: (-(x["total_points"] + x["provisional"]), -x["exact_hits"]))
 
     # IDs del podio (top 3): solo ellos pueden poner viñeta
     podium_ids = [row["id"] for row in ranking[:3]]
@@ -296,6 +300,7 @@ def ranking(request: Request, user=Depends(require_login)):
     return templates.TemplateResponse("ranking.html", {
         "request": request, "user": user, "ranking": ranking,
         "podium_ids": podium_ids,
+        "any_live": any_live,
         **_chart_context(),
     })
 

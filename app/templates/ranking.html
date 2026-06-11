@@ -2,9 +2,17 @@
 {% block title %}Tabla — Mundial 2026{% endblock %}
 {% block content %}
 
-<div class="mb-8">
-    <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">{{ t('Clasificación general') }}</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">{{ t('TABLA') }}</h1>
+<div class="mb-8 flex items-end justify-between flex-wrap gap-3">
+    <div>
+        <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">{{ t('Clasificación general') }}</p>
+        <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">{{ t('TABLA') }}</h1>
+    </div>
+    {% if any_live %}
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/25">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-livepulse shrink-0"></span>
+        <span class="font-display text-xs uppercase tracking-wider text-red-300">{{ t('En vivo') }} · {{ t('puntos provisionales') }}</span>
+    </div>
+    {% endif %}
 </div>
 
 {% if not ranking %}
@@ -44,7 +52,10 @@
         <div class="text-2xl mb-1">{{ medals[loop.index0] }}</div>
         <div class="text-4xl mb-1">{{ row.avatar }}</div>
         <div class="font-display font-semibold uppercase tracking-wide text-sm truncate {{ 'text-amber-300' if loop.index==1 else '' }}">{{ row.username }}</div>
-        <div class="font-heavy text-2xl mt-1">{{ "%.1f"|format(row.total_points) }}</div>
+        <div class="font-heavy text-2xl mt-1">
+            {{ "%.1f"|format(row.total_points) }}
+            {% if row.provisional > 0 %}<span class="text-sm text-red-400 animate-livepulse">+{{ "%.1f"|format(row.provisional) }}</span>{% endif %}
+        </div>
         <div class="text-[10px] uppercase tracking-wider text-white/40">{{ t('puntos') }}</div>
     </div>
     {% endfor %}
@@ -125,7 +136,12 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                     {% if row.solo_hits > 0 %}<span class="ml-1 text-[10px] text-yellow-300" title="Marcadores que solo tú clavaste">🎯{{ row.solo_hits }}</span>{% endif %}
                     {% if row.joker_bonus > 0 %}<span class="ml-1 text-[10px] text-cyan-300" title="Bonus por comodín x2">🃏</span>{% endif %}
                 </td>
-                <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">{{ "%.1f"|format(row.total_points) }}</td>
+                <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">
+                    {{ "%.1f"|format(row.total_points) }}
+                    {% if row.provisional > 0 %}
+                    <span class="text-[11px] font-display text-red-400 animate-livepulse ml-0.5" title="Puntos si el marcador actual es el final">+{{ "%.1f"|format(row.provisional) }}</span>
+                    {% endif %}
+                </td>
                 <td class="py-3 px-2 text-center text-emerald-400 font-semibold">{{ row.exact_hits }}</td>
                 <td class="py-3 px-2 text-center text-sky-400">{{ row.winner_hits }}</td>
                 <td class="py-3 px-2 text-center text-fuchsia-400">{{ row.scorers_hit }}</td>

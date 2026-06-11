@@ -211,6 +211,45 @@ def total_goals_bonus(conn) -> dict:
     return out
 
 
+def live_provisional_points(conn) -> dict:
+    """
+    Puntos provisionales (marcador/ganador) por partidos EN CURSO.
+    No toca la BD — solo calcula en memoria para mostrar en /ranking.
+    Devuelve {user_id: pts_extra_provisionales}.
+    """
+    live = conn.execute(
+        "SELECT id, home_team, away_team, home_score, away_score FROM matches "
+        "WHERE status IN ('IN_PLAY','PAUSED') AND home_score IS NOT NULL"
+    ).fetchall()
+
+    if not live:
+        return {}
+
+    result: dict = {}
+    for m in live:
+        rh, ra = m["home_score"], m["away_score"]
+        preds = conn.execute(
+            "SELECT user_id, home_score_pred, away_score_pred, is_joker, points "
+            "FROM predictions WHERE match_id = ?", (m["id"],)
+        ).fetchall()
+        for p in preds:
+            ph, pa = p["home_score_pred"], p["away_score_pred"]
+            pts = 0.0
+            if ph == rh and pa == ra:
+                pts = POINTS_EXACT
+            elif (ph > pa and rh > ra) or (ph < pa and rh < ra) or (ph == pa and rh == ra):
+                pts = POINTS_WINNER
+            # Aplicar joker si usó comodín (puntos extra = mismos puntos × 1, ya que el ×2 son los mismos que ganarías)
+            if p["is_joker"] and pts > 0:
+                pts += pts  # doble
+            # Solo sumar si aún no están calculados (match no terminó)
+            already = p["points"] or 0
+            if already == 0:
+                result[p["user_id"]] = result.get(p["user_id"], 0.0) + pts
+
+    return result
+
+
 def recalculate_all_for_match(match_id: int):
     conn = get_db()
     preds = conn.execute(

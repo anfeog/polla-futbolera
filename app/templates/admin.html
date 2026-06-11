@@ -139,6 +139,12 @@
     {% endif %}
 
     <div class="flex gap-3 flex-wrap">
+        <form method="post" action="/admin/actualizar-resultados">
+            <button type="submit"
+                class="bg-red-700 hover:bg-red-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                🔴 Forzar resultados ahora
+            </button>
+        </form>
         <form method="post" action="/admin/cargar-partidos">
             <button type="submit"
                 class="bg-green-700 hover:bg-green-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">

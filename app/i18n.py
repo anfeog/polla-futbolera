@@ -83,6 +83,7 @@ STRINGS = {
     "TABLA": ("TABELA", "TABLE"),
     "Aún no hay puntos acumulados": ("Ainda não há pontos acumulados", "No points accumulated yet"),
     "puntos": ("pontos", "points"),
+    "puntos provisionales": ("pontos provisórios", "provisional points"),
     "Jugador": ("Jogador", "Player"),
     "(tú)": ("(você)", "(you)"),
     "MA = Marcador exacto +3": ("MA = Placar exato +3", "MA = Exact score +3"),

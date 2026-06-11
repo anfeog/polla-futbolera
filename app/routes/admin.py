@@ -185,3 +185,11 @@ async def load_matches(request: Request, user=Depends(require_admin)):
             "request": request, "user": user, "users": users,
             "error": f"Error al importar partidos: {e}"
         })
+
+
+@router.post("/actualizar-resultados")
+async def force_update_results(user=Depends(require_admin)):
+    """Fuerza una actualización inmediata de resultados (no espera los 5 min del scheduler)."""
+    from app.football_api import update_finished_matches
+    await update_finished_matches()
+    return RedirectResponse("/admin?updated=1", status_code=303)
