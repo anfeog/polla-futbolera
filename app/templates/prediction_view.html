@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Tu pronóstico — Mundial 2026{% endblock %}
+{% block content %}
+
+<a href="/partidos" class="font-display text-xs uppercase tracking-wider text-white/40 hover:text-white transition mb-4 inline-block">{{ t('← Volver al fixture') }}</a>
+
+{% set hc = crest(match.home_team, match.home_flag) %}
+{% set ac = crest(match.away_team, match.away_flag) %}
+
+<!-- Cabecera del partido -->
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 p-5 mb-5">
+    <div class="flex items-center justify-between mb-3">
+        <span class="font-display text-[10px] uppercase tracking-[0.2em] text-sky-400">{{ match.stage }}</span>
+        {% if finished %}
+        <span class="font-display text-[10px] uppercase tracking-wider text-emerald-400">{{ t('Final') }}</span>
+        {% else %}
+        <span class="font-display text-[10px] uppercase tracking-wider text-amber-400/80">🔒 {{ t('Pronóstico cerrado') }}</span>
+        {% endif %}
+    </div>
+
+    <div class="flex items-center justify-center gap-4">
+        <div class="flex-1 flex items-center justify-end gap-2 min-w-0">
+            <span class="font-display font-semibold uppercase tracking-wide text-sm truncate text-right">{{ match.home_team }}</span>
+            {% if hc %}<img src="{{ hc }}" class="w-10 h-10 object-contain shrink-0">{% endif %}
+        </div>
+        <div class="shrink-0 text-center">
+            {% if finished and match.home_score is not none %}
+            <div class="font-heavy text-3xl leading-none">{{ match.home_score }} <span class="text-white/30">:</span> {{ match.away_score }}</div>
+            <div class="text-[9px] uppercase tracking-wider text-white/40 mt-1">{{ t('Resultado real') }}</div>
+            {% else %}
+            <div class="font-display text-white/30 font-bold">VS</div>
+            {% endif %}
+        </div>
+        <div class="flex-1 flex items-center gap-2 min-w-0">
+            {% if ac %}<img src="{{ ac }}" class="w-10 h-10 object-contain shrink-0">{% endif %}
+            <span class="font-display font-semibold uppercase tracking-wide text-sm truncate">{{ match.away_team }}</span>
+        </div>
+    </div>
+</div>
+
+{% if not pred %}
+<div class="rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-10 text-center">
+    <p class="text-3xl mb-2">🤷</p>
+    <p class="text-white/40 text-sm font-display uppercase tracking-wide">{{ t('No pronosticaste este partido') }}</p>
+</div>
+{% else %}
+
+<!-- Tu marcador -->
+<div class="rounded-2xl border p-5 mb-4
+    {% if result_status == 'exact' %}bg-emerald-500/10 border-emerald-500/30
+    {% elif result_status == 'winner' %}bg-sky-500/10 border-sky-500/25
+    {% elif result_status == 'miss' %}bg-white/[0.03] border-white/10
+    {% else %}bg-gradient-to-b from-white/[0.06] to-white/[0.02] border-white/10{% endif %}">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="font-display text-[10px] uppercase tracking-wider text-white/40 mb-1">{{ t('Tu marcador') }}</p>
+            <p class="font-heavy text-2xl">{{ pred.home_score_pred }} : {{ pred.away_score_pred }}
+                {% if pred.is_joker %}<span class="ml-2 text-sm text-cyan-300 align-middle" title="Comodín x2">🃏 x2</span>{% endif %}
+            </p>
+        </div>
+        {% if finished %}
+        <div class="text-right">
+            {% if result_status == 'exact' %}
+            <span class="font-display text-xs uppercase tracking-wider text-emerald-300">✓ {{ t('Marcador exacto') }} +3</span>
+            {% elif result_status == 'winner' %}
+            <span class="font-display text-xs uppercase tracking-wider text-sky-300">✓ {{ t('Ganador') }} +1</span>
+            {% else %}
+            <span class="font-display text-xs uppercase tracking-wider text-white/40">✗ {{ t('No acertaste el resultado') }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if pred.advances_team %}
+    <div class="mt-3 pt-3 border-t border-white/10 text-xs font-display uppercase tracking-wider text-violet-300">
+        {{ t('Pasa') }}: {{ pred.advances_team }}
+        {% if pred.penalty_home is not none %} · {{ t('Penales') }} {{ pred.penalty_home }}–{{ pred.penalty_away }}{% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tus goleadores -->
+{% if scorer_lines.home or scorer_lines.away %}
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 p-5 mb-4">
+    <p class="font-display text-[10px] uppercase tracking-wider text-white/40 mb-3">⚽ {{ t('Tus goleadores') }}{% if finished %} <span class="text-white/25 normal-case">· {{ t('verde = acertado') }}</span>{% endif %}</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for side, team in [('home', match.home_team), ('away', match.away_team)] %}
+        {% if scorer_lines[side] %}
+        <div>
+            <p class="font-display text-[11px] uppercase tracking-wide text-white/60 mb-2 truncate">{{ team }}</p>
+            <div class="space-y-1.5">
+                {% for s in scorer_lines[side] %}
+                <div class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm
+                    {% if s.hit %}bg-emerald-500/15 border border-emerald-500/30
+                    {% elif finished %}bg-white/[0.03] border border-white/10
+                    {% else %}bg-white/[0.04] border border-white/10{% endif %}">
+                    <span class="font-display text-[10px] text-white/30 w-4 shrink-0">{{ s.pos }}.</span>
+                    <span class="flex-1 min-w-0 truncate {{ 'text-emerald-300 font-semibold' if s.hit else 'text-white/80' }}">{{ s.predicted }}</span>
+                    {% if finished %}
+                        {% if s.hit %}
+                        <span class="text-emerald-400 text-xs shrink-0">✓ +2</span>
+                        {% else %}
+                        <span class="text-[10px] text-white/30 shrink-0 truncate max-w-[45%]" title="Marcó realmente">→ {{ s.real or '—' }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Total del partido -->
+{% if finished %}
+<div class="rounded-2xl bg-gradient-to-r from-amber-500/[0.12] to-transparent border border-amber-500/25 px-5 py-4 flex items-center justify-between">
+    <span class="font-display text-sm uppercase tracking-wider text-amber-200">{{ t('Puntos de este partido') }}</span>
+    <span class="font-heavy text-2xl text-amber-300">{{ "%.1f"|format(pred.points or 0) }}</span>
+</div>
+{% else %}
+<div class="rounded-2xl bg-white/[0.03] border border-white/10 px-5 py-4 text-center">
+    <p class="text-white/40 text-xs font-display uppercase tracking-wider">{{ t('El partido aún no se juega — aquí verás tus aciertos cuando termine') }}</p>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

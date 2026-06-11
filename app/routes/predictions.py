@@ -9,6 +9,15 @@ from app.football_api import get_squad
 router = APIRouter()
 
 
+def _ordered_real_goals(conn, match_id, team):
+    """Goles reales de un equipo ordenados por minuto (posición estable)."""
+    rows = conn.execute(
+        "SELECT player_name, is_own_goal FROM match_goals WHERE match_id=? AND team=? ORDER BY minute",
+        (match_id, team)
+    ).fetchall()
+    return rows
+
+
 @router.get("/prediccion/{match_id}", response_class=HTMLResponse)
 def prediction_form(match_id: int, request: Request, user=Depends(require_login)):
     conn = get_db()
@@ -16,10 +25,9 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
     if not match:
         raise HTTPException(404, "Partido no encontrado")
 
-    # Bloquear si faltan menos de 1 hora para el inicio
+    # Cerrado (a <1h del inicio o ya jugado): vista de SOLO LECTURA
     if is_locked(match["kickoff"]):
-        conn.close()
-        return RedirectResponse("/partidos")
+        return _prediction_readonly(conn, match, match_id, user, request)
 
     existing = conn.execute(
         "SELECT * FROM predictions WHERE user_id = ? AND match_id = ?",
@@ -82,6 +90,61 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "others_scorers": others_scorers,
         "is_joker": bool(existing and existing["is_joker"]),
         "joker_other": joker_other,
+    })
+
+
+def _prediction_readonly(conn, match, match_id, user, request):
+    """Vista de solo lectura: lo que el usuario pronosticó, con aciertos si ya se jugó."""
+    finished = match["status"] == "FINISHED"
+
+    pred = conn.execute(
+        "SELECT * FROM predictions WHERE user_id=? AND match_id=?",
+        (user["id"], match_id)
+    ).fetchone()
+
+    scorer_lines = {"home": [], "away": []}
+    if pred:
+        for side, team in (("home", match["home_team"]), ("away", match["away_team"])):
+            predicted = conn.execute(
+                "SELECT position, player_name, is_own_goal FROM goalscorer_predictions "
+                "WHERE prediction_id=? AND team=? ORDER BY position",
+                (pred["id"], team)
+            ).fetchall()
+            real = _ordered_real_goals(conn, match_id, team) if finished else []
+            for gp in predicted:
+                pos = gp["position"]
+                real_goal = real[pos - 1] if pos - 1 < len(real) else None
+                if gp["is_own_goal"]:
+                    pred_label = "⚽ Autogol"
+                    hit = bool(real_goal and real_goal["is_own_goal"])
+                else:
+                    pred_label = gp["player_name"] or "—"
+                    hit = bool(real_goal and not real_goal["is_own_goal"]
+                               and gp["player_name"]
+                               and gp["player_name"].strip().lower() == (real_goal["player_name"] or "").strip().lower())
+                real_label = None
+                if finished and real_goal:
+                    real_label = "⚽ Autogol" if real_goal["is_own_goal"] else (real_goal["player_name"] or "—")
+                scorer_lines[side].append({
+                    "pos": pos, "predicted": pred_label,
+                    "real": real_label, "hit": hit if finished else None,
+                })
+
+    # Resultado: acierto exacto / ganador
+    result_status = None
+    if finished and pred:
+        if pred["hit_exact"]:
+            result_status = "exact"
+        elif pred["hit_winner"]:
+            result_status = "winner"
+        else:
+            result_status = "miss"
+
+    conn.close()
+    return templates.TemplateResponse("prediction_view.html", {
+        "request": request, "user": user, "match": match,
+        "pred": pred, "finished": finished,
+        "scorer_lines": scorer_lines, "result_status": result_status,
     })
 
 

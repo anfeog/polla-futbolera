@@ -94,17 +94,18 @@
         <!-- Pie -->
         <div class="px-5 pb-3 -mt-1 flex items-center justify-center">
             {% if pred %}
-                <div class="flex items-center gap-2 text-xs">
+                <a href="/prediccion/{{ m.id }}" class="flex items-center gap-2 text-xs hover:opacity-80 transition">
                     <span class="font-display uppercase tracking-wider text-white/40">{{ t('Tu pronóstico') }}</span>
                     <span class="font-display font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md">{{ pred.home_score_pred }}–{{ pred.away_score_pred }}</span>
                     {% if finished %}
                         <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(pred.points) }} pts</span>
+                        <span class="text-white/30 underline underline-offset-2">{{ t('ver') }}</span>
                     {% elif not closed %}
-                        <a href="/prediccion/{{ m.id }}" class="text-white/40 hover:text-white underline underline-offset-2">{{ t('editar') }}</a>
+                        <span class="text-white/40 underline underline-offset-2">{{ t('editar') }}</span>
                     {% else %}
-                        <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 {{ t('cerrado') }}</span>
+                        <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 {{ t('ver') }}</span>
                     {% endif %}
-                </div>
+                </a>
             {% elif not closed %}
                 <a href="/prediccion/{{ m.id }}"
                    class="font-display uppercase tracking-wider text-xs font-semibold px-5 py-2 rounded-xl brand-bar text-ink hover:opacity-90 transition shadow-lg shadow-sky-500/20">
