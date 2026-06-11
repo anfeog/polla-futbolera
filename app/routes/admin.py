@@ -107,11 +107,27 @@ def admin_resultados(request: Request, user=Depends(require_admin), stage: str =
     matches = conn.execute(
         "SELECT * FROM matches WHERE stage=? ORDER BY kickoff", (active_stage,)
     ).fetchall()
+
+    # Goles ya registrados por partido (en orden), para precargar los inputs
+    goals_by_match = {}
+    for m in matches:
+        gs = conn.execute(
+            "SELECT player_name, team, is_own_goal FROM match_goals WHERE match_id=? ORDER BY minute",
+            (m["id"],)
+        ).fetchall()
+        home_goals = [dict(g) for g in gs if g["team"] == m["home_team"]]
+        away_goals = [dict(g) for g in gs if g["team"] == m["away_team"]]
+        goals_by_match[m["id"]] = {"home": home_goals, "away": away_goals}
+
+    all_players = [r["name"] for r in conn.execute(
+        "SELECT DISTINCT name FROM players ORDER BY name"
+    ).fetchall()]
     conn.close()
     return templates.TemplateResponse("admin_resultados.html", {
         "request": request, "user": user,
         "stages": stages, "active_stage": active_stage,
         "matches": matches, "ko_stages": KO_STAGES,
+        "goals_by_match": goals_by_match, "all_players": all_players,
         "ok": request.query_params.get("ok"),
     })
 
@@ -132,43 +148,82 @@ async def set_match_result(
     home_team = (form.get("home_team") or match["home_team"]).strip()
     away_team = (form.get("away_team") or match["away_team"]).strip()
 
+    # ¿En vivo (provisional) o final? Botón "live" deja status IN_PLAY sin calcular puntos.
+    is_live = form.get("action") == "live"
+
     home_s = form.get("home_score", "")
     away_s = form.get("away_score", "")
     if home_s == "" or away_s == "":
-        # Limpiar resultado
+        # Limpiar resultado y goles
         conn.execute(
             "UPDATE matches SET home_team=?, away_team=?, home_score=NULL, away_score=NULL, "
             "penalty_home=NULL, penalty_away=NULL, advances_team=NULL, status='TIMED' WHERE id=?",
             (home_team, away_team, match_id)
         )
-    else:
-        home_score = int(home_s)
-        away_score = int(away_s)
-        pen_h = form.get("penalty_home", "")
-        pen_a = form.get("penalty_away", "")
-        penalty_home = int(pen_h) if pen_h != "" else None
-        penalty_away = int(pen_a) if pen_a != "" else None
-
-        if penalty_home is not None and penalty_away is not None:
-            advances = home_team if penalty_home > penalty_away else away_team
-        elif home_score != away_score:
-            advances = home_team if home_score > away_score else away_team
-        else:
-            advances = None
-
+        conn.execute("DELETE FROM match_goals WHERE match_id=?", (match_id,))
+        # Resetear puntos de las predicciones de este partido
         conn.execute(
-            """UPDATE matches SET
-               home_team=?, away_team=?,
-               home_score=?, away_score=?, status='FINISHED',
-               penalty_home=?, penalty_away=?, advances_team=?
-               WHERE id=?""",
-            (home_team, away_team, home_score, away_score,
-             penalty_home, penalty_away, advances, match_id)
+            "UPDATE predictions SET points=0, hit_exact=0, hit_winner=0, scorers_hit=0, "
+            "solo_hit=0, advances_hit=0, penalty_score_hit=0 WHERE match_id=?",
+            (match_id,)
         )
+        conn.commit()
+        conn.close()
+        stage_slug = form.get("stage", "")
+        return RedirectResponse(f"/admin/resultados?stage={stage_slug}&ok={match_id}", status_code=303)
 
-    conn.commit()
-    conn.close()
-    recalculate_all_for_match(match_id)
+    home_score = int(home_s)
+    away_score = int(away_s)
+    pen_h = form.get("penalty_home", "")
+    pen_a = form.get("penalty_away", "")
+    penalty_home = int(pen_h) if pen_h != "" else None
+    penalty_away = int(pen_a) if pen_a != "" else None
+
+    if penalty_home is not None and penalty_away is not None:
+        advances = home_team if penalty_home > penalty_away else away_team
+    elif home_score != away_score:
+        advances = home_team if home_score > away_score else away_team
+    else:
+        advances = None
+
+    new_status = "IN_PLAY" if is_live else "FINISHED"
+    conn.execute(
+        """UPDATE matches SET
+           home_team=?, away_team=?,
+           home_score=?, away_score=?, status=?,
+           penalty_home=?, penalty_away=?, advances_team=?
+           WHERE id=?""",
+        (home_team, away_team, home_score, away_score, new_status,
+         penalty_home, penalty_away, advances, match_id)
+    )
+
+    # Goleadores en orden (slot i = i-ésimo gol del equipo). El minuto = posición
+    # mantiene el orden estable para el cálculo de puntos.
+    conn.execute("DELETE FROM match_goals WHERE match_id=?", (match_id,))
+    for prefix, team, n in (("home", home_team, home_score), ("away", away_team, away_score)):
+        for i in range(1, n + 1):
+            name = (form.get(f"{prefix}_scorer_{i}") or "").strip()
+            is_og = 1 if form.get(f"{prefix}_og_{i}") else 0
+            if name or is_og:
+                conn.execute(
+                    "INSERT INTO match_goals (match_id, player_name, team, minute, is_own_goal) "
+                    "VALUES (?,?,?,?,?)",
+                    (match_id, name, team, i, is_og)
+                )
+
+    if is_live:
+        # En vivo: dejar puntos en 0 para que el ranking los muestre como provisionales
+        conn.execute(
+            "UPDATE predictions SET points=0, hit_exact=0, hit_winner=0, scorers_hit=0, "
+            "solo_hit=0, advances_hit=0, penalty_score_hit=0 WHERE match_id=?",
+            (match_id,)
+        )
+        conn.commit()
+        conn.close()
+    else:
+        conn.commit()
+        conn.close()
+        recalculate_all_for_match(match_id)
 
     stage_slug = form.get("stage", "")
     return RedirectResponse(f"/admin/resultados?stage={stage_slug}&ok={match_id}", status_code=303)

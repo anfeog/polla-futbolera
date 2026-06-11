@@ -9,9 +9,14 @@
     </div>
 </div>
 
+<div class="bg-sky-900/30 border border-sky-700/50 text-sky-200 px-4 py-3 rounded-xl mb-5 text-sm">
+    💡 <strong>Goleadores:</strong> escribe el marcador y aparecerán las casillas para anotar quién marcó <strong>en orden</strong> (1er gol, 2º gol…). Marca ⚽ si fue autogol.<br>
+    🔴 <strong>En vivo</strong> = guarda el marcador como provisional (la tabla muestra puntos en rojo). &nbsp; ✅ <strong>Final</strong> = cierra el partido y reparte los puntos definitivos.
+</div>
+
 {% if ok %}
 <div class="bg-emerald-900/40 border border-emerald-700/60 text-emerald-200 px-4 py-3 rounded-xl mb-4 text-sm">
-    ✅ Resultado del partido #{{ ok }} guardado y puntos recalculados.
+    ✅ Partido #{{ ok }} guardado.
 </div>
 {% endif %}
 
@@ -26,20 +31,27 @@
 {% endfor %}
 </div>
 
+<!-- Autocompletar jugadores -->
+<datalist id="players-list">
+    {% for p in all_players %}<option value="{{ p }}">{% endfor %}
+</datalist>
+
 <!-- Tabla de partidos -->
 <div class="space-y-2">
 {% for m in matches %}
 {% set is_ko = m.stage in ko_stages %}
 {% set has_result = m.home_score is not none %}
+{% set is_live = m.status in ['IN_PLAY','PAUSED'] %}
 <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border
-    {{ 'border-emerald-500/30' if has_result else 'border-white/10' }} overflow-hidden">
+    {{ 'border-red-500/40' if is_live else ('border-emerald-500/30' if has_result else 'border-white/10') }} overflow-hidden">
 
-    <form method="post" action="/admin/resultado/{{ m.id }}">
+    <form method="post" action="/admin/resultado/{{ m.id }}"
+          data-goals='{{ goals_by_match[m.id] | tojson }}'
+          data-home="{{ m.home_team }}" data-away="{{ m.away_team }}">
         <input type="hidden" name="stage" value="{{ active_stage }}">
 
         <div class="px-4 py-3 flex items-center gap-3 flex-wrap">
 
-            <!-- Fecha + kickoff -->
             <span class="font-display text-[10px] uppercase tracking-wider text-white/30 shrink-0">
                 {{ m.kickoff[:10] }} {{ m.kickoff[11:16] }}
             </span>
@@ -54,12 +66,12 @@
 
             <!-- Marcador -->
             <div class="flex items-center gap-1 shrink-0">
-                <input type="number" name="home_score" min="0" max="30"
+                <input type="number" name="home_score" min="0" max="30" data-score="home"
                     value="{{ m.home_score if m.home_score is not none else '' }}"
                     placeholder="–"
                     class="w-10 text-center text-lg font-heavy bg-black/40 border border-white/10 rounded-lg py-1 focus:outline-none focus:border-amber-400 transition">
                 <span class="text-white/30 font-bold">:</span>
-                <input type="number" name="away_score" min="0" max="30"
+                <input type="number" name="away_score" min="0" max="30" data-score="away"
                     value="{{ m.away_score if m.away_score is not none else '' }}"
                     placeholder="–"
                     class="w-10 text-center text-lg font-heavy bg-black/40 border border-white/10 rounded-lg py-1 focus:outline-none focus:border-amber-400 transition">
@@ -89,22 +101,42 @@
             </div>
             {% endif %}
 
-            <!-- Guardar -->
-            <button type="submit"
-                class="font-display text-xs uppercase tracking-wider px-4 py-1.5 rounded-xl
-                       bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30 transition shrink-0">
-                Guardar
-            </button>
-
             <!-- Estado actual -->
-            {% if has_result %}
-            <div class="flex items-center gap-1.5">
-                <span class="text-[10px] font-display uppercase tracking-wider text-emerald-400">✓ {{ m.home_score }}–{{ m.away_score }}</span>
-                {% if m.penalty_home is not none %}
-                <span class="text-[10px] font-display uppercase tracking-wider text-violet-400">({{ m.penalty_home }}–{{ m.penalty_away }}p · {{ m.advances_team[:8] if m.advances_team else '?' }})</span>
-                {% endif %}
-            </div>
+            {% if is_live %}
+            <span class="text-[10px] font-display uppercase tracking-wider text-red-400 flex items-center gap-1 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-livepulse"></span> En vivo
+            </span>
+            {% elif has_result %}
+            <span class="text-[10px] font-display uppercase tracking-wider text-emerald-400 shrink-0">✓ Final {{ m.home_score }}–{{ m.away_score }}</span>
             {% endif %}
+        </div>
+
+        <!-- Goleadores (generados por JS según el marcador) -->
+        <div class="scorers-wrap px-4 pb-3 hidden">
+            <div class="rounded-xl bg-black/20 border border-white/10 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <p class="scorers-home-label font-display text-[10px] uppercase tracking-wider text-emerald-400/70 mb-1.5"></p>
+                    <div class="scorers-home space-y-1.5"></div>
+                </div>
+                <div>
+                    <p class="scorers-away-label font-display text-[10px] uppercase tracking-wider text-sky-400/70 mb-1.5"></p>
+                    <div class="scorers-away space-y-1.5"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="px-4 pb-3 flex items-center gap-2">
+            <button type="submit" name="action" value="live"
+                class="font-display text-xs uppercase tracking-wider px-4 py-1.5 rounded-xl
+                       bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 transition">
+                🔴 Guardar en vivo
+            </button>
+            <button type="submit" name="action" value="final"
+                class="font-display text-xs uppercase tracking-wider px-4 py-1.5 rounded-xl
+                       bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 transition">
+                ✅ Guardar final
+            </button>
         </div>
     </form>
 </div>
@@ -114,5 +146,61 @@
 <div class="text-center py-12 text-white/30 font-display uppercase tracking-wider">No hay partidos en esta fase</div>
 {% endif %}
 </div>
+
+<script>
+(function () {
+    function inputRow(prefix, i, name, og) {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-center gap-1.5';
+        wrap.innerHTML = `
+            <span class="font-display text-[10px] text-white/30 w-4 shrink-0">${i}.</span>
+            <input type="text" name="${prefix}_scorer_${i}" list="players-list" autocomplete="off"
+                   value="${(name || '').replace(/"/g, '&quot;')}" placeholder="Goleador ${i}"
+                   class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-400 transition">
+            <label class="flex items-center gap-1 shrink-0 cursor-pointer" title="Autogol">
+                <input type="checkbox" name="${prefix}_og_${i}" ${og ? 'checked' : ''} class="accent-amber-400">
+                <span class="font-display text-[9px] uppercase tracking-wider text-white/40">AG</span>
+            </label>`;
+        return wrap;
+    }
+
+    function render(form) {
+        const goals = JSON.parse(form.dataset.goals || '{"home":[],"away":[]}');
+        const homeTeam = form.dataset.home, awayTeam = form.dataset.away;
+        const hs = parseInt(form.querySelector('[data-score="home"]').value) || 0;
+        const as = parseInt(form.querySelector('[data-score="away"]').value) || 0;
+        const wrap = form.querySelector('.scorers-wrap');
+
+        if (hs + as === 0) { wrap.classList.add('hidden'); return; }
+        wrap.classList.remove('hidden');
+
+        const homeBox = form.querySelector('.scorers-home');
+        const awayBox = form.querySelector('.scorers-away');
+        form.querySelector('.scorers-home-label').textContent = '⚽ ' + homeTeam + ' (' + hs + ')';
+        form.querySelector('.scorers-away-label').textContent = '⚽ ' + awayTeam + ' (' + as + ')';
+
+        // Conservar lo ya escrito al re-renderizar
+        function build(box, prefix, n, saved) {
+            const current = [...box.querySelectorAll('input[type=text]')].map(i => i.value);
+            const currentOg = [...box.querySelectorAll('input[type=checkbox]')].map(i => i.checked);
+            box.innerHTML = '';
+            for (let i = 1; i <= n; i++) {
+                const name = current[i-1] !== undefined ? current[i-1] : (saved[i-1] ? saved[i-1].player_name : '');
+                const og = currentOg[i-1] !== undefined ? currentOg[i-1] : (saved[i-1] ? !!saved[i-1].is_own_goal : false);
+                box.appendChild(inputRow(prefix, i, name, og));
+            }
+        }
+        build(homeBox, 'home', hs, goals.home || []);
+        build(awayBox, 'away', as, goals.away || []);
+    }
+
+    document.querySelectorAll('form[data-goals]').forEach(form => {
+        render(form);
+        form.querySelectorAll('[data-score]').forEach(inp => {
+            inp.addEventListener('input', () => render(form));
+        });
+    });
+})();
+</script>
 
 {% endblock %}

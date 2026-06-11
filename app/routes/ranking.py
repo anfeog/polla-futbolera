@@ -261,7 +261,7 @@ def ranking(request: Request, user=Depends(require_login)):
     """).fetchall()
 
     tg_bonus   = total_goals_bonus(conn)
-    live_bonus = live_provisional_points(conn)   # {user_id: pts} partidos en curso
+    live_bonus = live_provisional_points(conn)   # {user_id: {result, scorers, joker, total}}
 
     ranking = []
     for r in rows:
@@ -272,14 +272,17 @@ def ranking(request: Request, user=Depends(require_login)):
         solo_pts = (r["solo_hits"] or 0) * POINTS_SOLO
         joker_bonus = r["joker_bonus"] or 0
         total = r["match_points"] + joker_bonus + solo_pts + award_pts
-        provisional = round(live_bonus.get(r["id"], 0), 1)
+        live = live_bonus.get(r["id"]) or {}
         ranking.append({
             "id": r["id"],
             "username": r["username"],
             "avatar": r["avatar"] or "⚽",
             "status_msg": r["status_msg"],
             "total_points": total,
-            "provisional": provisional,   # puntos extra si el marcador actual es el final
+            "provisional":      round(live.get("total", 0), 1),   # extra si el marcador actual es el final
+            "prov_result":      round(live.get("result", 0), 1),
+            "prov_scorers":     round(live.get("scorers", 0), 1),
+            "prov_joker":       round(live.get("joker", 0), 1),
             "award_points": award_pts,
             "joker_bonus": joker_bonus,
             "solo_hits": r["solo_hits"] or 0,

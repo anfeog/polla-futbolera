@@ -139,7 +139,13 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                 <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">
                     {{ "%.1f"|format(row.total_points) }}
                     {% if row.provisional > 0 %}
-                    <span class="text-[11px] font-display text-red-400 animate-livepulse ml-0.5" title="Puntos provisionales del partido en vivo (marcador + goleadores ya marcados)">+{{ "%.1f"|format(row.provisional) }}</span>
+                    <span class="text-[11px] font-display text-red-400 animate-livepulse ml-0.5"
+                          title="Provisional en vivo: {% if row.prov_result %}marcador +{{ '%.0f'|format(row.prov_result) }}{% endif %}{% if row.prov_scorers %} · goleadores +{{ '%.0f'|format(row.prov_scorers) }}{% endif %}{% if row.prov_joker %} · comodín x2 +{{ '%.0f'|format(row.prov_joker) }}{% endif %}">+{{ "%.1f"|format(row.provisional) }}</span>
+                    <div class="flex items-center justify-center gap-1 mt-0.5 font-display font-normal">
+                        {% if row.prov_result > 0 %}<span class="text-[9px] text-emerald-400" title="Marcador/ganador">⚽+{{ "%.0f"|format(row.prov_result) }}</span>{% endif %}
+                        {% if row.prov_scorers > 0 %}<span class="text-[9px] text-fuchsia-400" title="Goleadores acertados">🎯+{{ "%.0f"|format(row.prov_scorers) }}</span>{% endif %}
+                        {% if row.prov_joker > 0 %}<span class="text-[9px] text-cyan-300" title="Comodín x2">🃏+{{ "%.0f"|format(row.prov_joker) }}</span>{% endif %}
+                    </div>
                     {% endif %}
                 </td>
                 <td class="py-3 px-2 text-center text-emerald-400 font-semibold">{{ row.exact_hits }}</td>

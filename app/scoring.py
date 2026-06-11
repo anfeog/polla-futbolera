@@ -230,7 +230,9 @@ def live_provisional_points(conn) -> dict:
     No toca la BD — solo calcula en memoria para mostrar en /ranking.
     El orden de goleadores es por minuto, estable, así que los goles ya
     marcados cuentan provisionalmente y solo pueden sumar a medida que avanza.
-    Devuelve {user_id: pts_extra_provisionales}.
+
+    Devuelve {user_id: {"result": x, "scorers": y, "joker": z, "total": t}}
+    con el desglose de dónde vienen los puntos provisionales.
     """
     live = conn.execute(
         "SELECT id, home_team, away_team, home_score, away_score FROM matches "
@@ -241,6 +243,10 @@ def live_provisional_points(conn) -> dict:
         return {}
 
     result: dict = {}
+
+    def _bucket(uid):
+        return result.setdefault(uid, {"result": 0.0, "scorers": 0.0, "joker": 0.0, "total": 0.0})
+
     for m in live:
         rh, ra = m["home_score"], m["away_score"]
         ht, at = m["home_team"], m["away_team"]
@@ -270,24 +276,29 @@ def live_provisional_points(conn) -> dict:
                 continue
 
             ph, pa = p["home_score_pred"], p["away_score_pred"]
-            pts = 0.0
+            result_pts = 0.0
             if ph == rh and pa == ra:
-                pts = POINTS_EXACT
+                result_pts = POINTS_EXACT
             elif (ph > pa and rh > ra) or (ph < pa and rh < ra) or (ph == pa and rh == ra):
-                pts = POINTS_WINNER
+                result_pts = POINTS_WINNER
 
             # Goleadores ya marcados que caen en su posición correcta
-            sc_pts, _ = _goalscorer_points(
+            scorer_pts, _ = _goalscorer_points(
                 scorers_by_pred.get(p["id"], []), real_goals, ht, at
             )
-            pts += sc_pts
+
+            base = result_pts + scorer_pts
+            if base <= 0:
+                continue
 
             # Comodín x2: duplica todos los puntos del partido
-            if p["is_joker"] and pts > 0:
-                pts += pts
+            joker_extra = base if p["is_joker"] else 0.0
 
-            if pts:
-                result[p["user_id"]] = result.get(p["user_id"], 0.0) + pts
+            b = _bucket(p["user_id"])
+            b["result"]  += result_pts
+            b["scorers"] += scorer_pts
+            b["joker"]   += joker_extra
+            b["total"]   += base + joker_extra
 
     return result
 
