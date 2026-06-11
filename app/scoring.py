@@ -45,6 +45,36 @@ def _goals_by_team_ordered(match_goals: list, team: str) -> list:
     return sorted(goals, key=lambda g: (g["minute"] or 999))
 
 
+def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
+    """
+    Puntos de goleador: +2 por jugador en su posición correcta dentro de su
+    equipo, +20 por autogol acertado. El orden es por minuto, que es estable
+    (el gol #1 ya marcado sigue siendo el #1), así sirve igual para el cálculo
+    final y para los puntos provisionales en vivo.
+    Devuelve (puntos, aciertos).
+    """
+    points = 0.0
+    hits = 0
+    for team in (home_team, away_team):
+        actual = _goals_by_team_ordered(real_goals, team)
+        predicted = [p for p in scorer_preds if p["team"] == team]
+        for gp in predicted:
+            pos = gp["position"] - 1
+            if pos >= len(actual):
+                continue
+            actual_goal = actual[pos]
+            if gp["is_own_goal"]:
+                if actual_goal["is_own_goal"]:
+                    points += POINTS_OWN_GOAL
+                    hits += 1
+            elif (not actual_goal["is_own_goal"]
+                    and gp["player_name"]
+                    and gp["player_name"].strip().lower() == (actual_goal["player_name"] or "").strip().lower()):
+                points += POINTS_SCORER
+                hits += 1
+    return points, hits
+
+
 def calculate_match_points(prediction_id: int) -> float:
     conn = get_db()
 
@@ -85,27 +115,10 @@ def calculate_match_points(prediction_id: int) -> float:
         (prediction_id,)
     ).fetchall()
 
-    for team in [match["home_team"], match["away_team"]]:
-        actual = _goals_by_team_ordered(real_goals, team)
-        predicted = [p for p in scorer_preds if p["team"] == team]
-
-        for gp in predicted:
-            pos = gp["position"] - 1  # convertir a índice 0
-            if pos >= len(actual):
-                continue
-
-            actual_goal = actual[pos]
-
-            if gp["is_own_goal"]:
-                if actual_goal["is_own_goal"]:
-                    points += POINTS_OWN_GOAL
-                    scorers_hit += 1
-            else:
-                if (not actual_goal["is_own_goal"]
-                        and gp["player_name"]
-                        and gp["player_name"].strip().lower() == (actual_goal["player_name"] or "").strip().lower()):
-                    points += POINTS_SCORER
-                    scorers_hit += 1
+    sc_pts, scorers_hit = _goalscorer_points(
+        scorer_preds, real_goals, match["home_team"], match["away_team"]
+    )
+    points += sc_pts
 
     # Puntos por penales (solo fase eliminatoria con empate en 90 min)
     advances_hit = 0
@@ -213,8 +226,10 @@ def total_goals_bonus(conn) -> dict:
 
 def live_provisional_points(conn) -> dict:
     """
-    Puntos provisionales (marcador/ganador) por partidos EN CURSO.
+    Puntos provisionales (marcador/ganador + goleadores) por partidos EN CURSO.
     No toca la BD — solo calcula en memoria para mostrar en /ranking.
+    El orden de goleadores es por minuto, estable, así que los goles ya
+    marcados cuentan provisionalmente y solo pueden sumar a medida que avanza.
     Devuelve {user_id: pts_extra_provisionales}.
     """
     live = conn.execute(
@@ -228,23 +243,50 @@ def live_provisional_points(conn) -> dict:
     result: dict = {}
     for m in live:
         rh, ra = m["home_score"], m["away_score"]
+        ht, at = m["home_team"], m["away_team"]
+
+        real_goals = conn.execute(
+            "SELECT * FROM match_goals WHERE match_id = ?", (m["id"],)
+        ).fetchall()
         preds = conn.execute(
-            "SELECT user_id, home_score_pred, away_score_pred, is_joker, points "
+            "SELECT id, user_id, home_score_pred, away_score_pred, is_joker, points "
             "FROM predictions WHERE match_id = ?", (m["id"],)
         ).fetchall()
+
+        # Goleadores predichos de todos, agrupados por predicción (1 sola consulta)
+        scorer_rows = conn.execute("""
+            SELECT gp.prediction_id, gp.team, gp.position, gp.player_name, gp.is_own_goal
+            FROM goalscorer_predictions gp
+            JOIN predictions p ON p.id = gp.prediction_id
+            WHERE p.match_id = ?
+        """, (m["id"],)).fetchall()
+        scorers_by_pred: dict = {}
+        for sr in scorer_rows:
+            scorers_by_pred.setdefault(sr["prediction_id"], []).append(sr)
+
         for p in preds:
+            # Si el partido ya tiene puntos calculados, no añadir provisional
+            if (p["points"] or 0) != 0:
+                continue
+
             ph, pa = p["home_score_pred"], p["away_score_pred"]
             pts = 0.0
             if ph == rh and pa == ra:
                 pts = POINTS_EXACT
             elif (ph > pa and rh > ra) or (ph < pa and rh < ra) or (ph == pa and rh == ra):
                 pts = POINTS_WINNER
-            # Aplicar joker si usó comodín (puntos extra = mismos puntos × 1, ya que el ×2 son los mismos que ganarías)
+
+            # Goleadores ya marcados que caen en su posición correcta
+            sc_pts, _ = _goalscorer_points(
+                scorers_by_pred.get(p["id"], []), real_goals, ht, at
+            )
+            pts += sc_pts
+
+            # Comodín x2: duplica todos los puntos del partido
             if p["is_joker"] and pts > 0:
-                pts += pts  # doble
-            # Solo sumar si aún no están calculados (match no terminó)
-            already = p["points"] or 0
-            if already == 0:
+                pts += pts
+
+            if pts:
                 result[p["user_id"]] = result.get(p["user_id"], 0.0) + pts
 
     return result

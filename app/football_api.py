@@ -220,11 +220,14 @@ async def update_finished_matches():
             continue
 
         if is_live:
-            # Actualizar marcador y estado en vivo, sin recalcular puntos
+            # Actualizar marcador y estado en vivo, sin recalcular puntos.
+            # Los goles SÍ se guardan: su orden (por minuto) es estable, así
+            # el ranking puede mostrar puntos provisionales de goleador.
             conn.execute(
                 "UPDATE matches SET home_score=?, away_score=?, status=? WHERE api_id=?",
                 (home_score, away_score, api_status, api_id)
             )
+            _store_match_goals(conn, row, m.get("goals", []) or [])
             continue
 
         # ── Partido FINISHED ───────────────────────────────────────
@@ -250,24 +253,8 @@ async def update_finished_matches():
             if not already_finished or score_changed:
                 updated_ids.append(row["id"])
 
-        # Guardar goles (solo partidos terminados)
-        api_goals = m.get("goals", []) or []
-        if api_goals:
-            conn.execute("DELETE FROM match_goals WHERE match_id=?", (row["id"],))
-            for g in api_goals:
-                scorer_obj  = g.get("scorer") or {}
-                team_obj    = g.get("team")   or {}
-                player_name = (scorer_obj.get("name") or scorer_obj.get("shortName") or "").strip()
-                team_name   = (team_obj.get("name") or "").strip()
-                minute      = g.get("minute")
-                goal_type   = g.get("type", "REGULAR")
-                is_own      = 1 if goal_type == "OWN_GOAL" else 0
-                if not team_name:
-                    team_name = row["home_team"] if g.get("team", {}).get("id") else row["away_team"]
-                conn.execute(
-                    "INSERT INTO match_goals (match_id, player_name, team, minute, is_own_goal) VALUES (?,?,?,?,?)",
-                    (row["id"], player_name, team_name, minute, is_own)
-                )
+        # Guardar goles del partido terminado
+        _store_match_goals(conn, row, m.get("goals", []) or [])
 
     conn.commit()
     conn.close()
@@ -276,3 +263,24 @@ async def update_finished_matches():
         recalculate_all_for_match(match_id)
 
     return len(updated_ids)
+
+
+def _store_match_goals(conn, row, api_goals):
+    """Reemplaza los goles de un partido con los de la API (orden por minuto estable)."""
+    if not api_goals:
+        return
+    conn.execute("DELETE FROM match_goals WHERE match_id=?", (row["id"],))
+    for g in api_goals:
+        scorer_obj  = g.get("scorer") or {}
+        team_obj    = g.get("team")   or {}
+        player_name = (scorer_obj.get("name") or scorer_obj.get("shortName") or "").strip()
+        team_name   = (team_obj.get("name") or "").strip()
+        minute      = g.get("minute")
+        goal_type   = g.get("type", "REGULAR")
+        is_own      = 1 if goal_type == "OWN_GOAL" else 0
+        if not team_name:
+            team_name = row["home_team"] if g.get("team", {}).get("id") else row["away_team"]
+        conn.execute(
+            "INSERT INTO match_goals (match_id, player_name, team, minute, is_own_goal) VALUES (?,?,?,?,?)",
+            (row["id"], player_name, team_name, minute, is_own)
+        )

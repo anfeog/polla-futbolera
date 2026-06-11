@@ -139,7 +139,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                 <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">
                     {{ "%.1f"|format(row.total_points) }}
                     {% if row.provisional > 0 %}
-                    <span class="text-[11px] font-display text-red-400 animate-livepulse ml-0.5" title="Puntos si el marcador actual es el final">+{{ "%.1f"|format(row.provisional) }}</span>
+                    <span class="text-[11px] font-display text-red-400 animate-livepulse ml-0.5" title="Puntos provisionales del partido en vivo (marcador + goleadores ya marcados)">+{{ "%.1f"|format(row.provisional) }}</span>
                     {% endif %}
                 </td>
                 <td class="py-3 px-2 text-center text-emerald-400 font-semibold">{{ row.exact_hits }}</td>
