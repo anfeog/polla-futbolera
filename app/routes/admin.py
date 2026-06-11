@@ -12,6 +12,7 @@ router = APIRouter(prefix="/admin")
 
 @router.get("", response_class=HTMLResponse)
 def admin_panel(request: Request, user=Depends(require_admin)):
+    from datetime import datetime, timezone
     conn = get_db()
     users = conn.execute("SELECT id, username, is_admin, created_at FROM users ORDER BY id").fetchall()
     awards = conn.execute("SELECT * FROM tournament_awards WHERE id=1").fetchone()
@@ -21,6 +22,7 @@ def admin_panel(request: Request, user=Depends(require_admin)):
     return templates.TemplateResponse("admin.html", {
         "request": request, "user": user, "users": users, "awards": awards,
         "n_players": n_players, "n_matches": n_matches,
+        "now_hhmmss": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
     })
 
 
@@ -191,5 +193,13 @@ async def load_matches(request: Request, user=Depends(require_admin)):
 async def force_update_results(user=Depends(require_admin)):
     """Fuerza una actualización inmediata de resultados (no espera los 5 min del scheduler)."""
     from app.football_api import update_finished_matches
-    await update_finished_matches()
-    return RedirectResponse("/admin?updated=1", status_code=303)
+    try:
+        recalced = await update_finished_matches()
+    except Exception as e:
+        return RedirectResponse(f"/admin?force_error={e}", status_code=303)
+    conn = get_db()
+    live = conn.execute(
+        "SELECT COUNT(*) c FROM matches WHERE status IN ('IN_PLAY','PAUSED')"
+    ).fetchone()["c"]
+    conn.close()
+    return RedirectResponse(f"/admin?updated={recalced}&live={live}", status_code=303)
