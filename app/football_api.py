@@ -177,46 +177,69 @@ def get_squad(team_api_id):
 
 
 async def update_finished_matches():
-    """Actualiza resultados de partidos terminados, almacena goles y recalcula puntos."""
+    """Actualiza resultados: partidos terminados (recalcula puntos) y en vivo (solo marcador)."""
     from app.scoring import recalculate_all_for_match
 
     async with httpx.AsyncClient(timeout=15) as client:
+        # Una sola llamada trae terminados + en vivo + pausados
         resp = await client.get(
             f"{BASE_URL}/competitions/{WC_2026_ID}/matches",
             headers=HEADERS,
-            params={"status": "FINISHED"}
+            params={"status": "FINISHED,IN_PLAY,PAUSED"}
         )
         resp.raise_for_status()
         data = resp.json()
 
     conn = get_db()
-    updated_ids = []
+    updated_ids = []  # solo los recién FINISHED recalculan puntos
 
     for m in data.get("matches", []):
-        api_id = str(m["id"])
-        score = m.get("score", {})
-        full = score.get("fullTime", {})
-        home_score = full.get("home")
-        away_score = full.get("away")
+        api_id     = str(m["id"])
+        api_status = m.get("status", "")
+        is_live    = api_status in ("IN_PLAY", "PAUSED")
+        score      = m.get("score", {})
+
+        # En vivo: usar el marcador actual (halfTime o currentScore según la API)
+        if is_live:
+            current = score.get("fullTime") or score.get("halfTime") or {}
+            home_score = current.get("home")
+            away_score = current.get("away")
+        else:
+            full = score.get("fullTime", {})
+            home_score = full.get("home")
+            away_score = full.get("away")
 
         if home_score is None:
             continue
 
-        row = conn.execute("SELECT id, home_score, home_team, away_team FROM matches WHERE api_id=?", (api_id,)).fetchone()
+        row = conn.execute(
+            "SELECT id, home_score, away_score, status, home_team, away_team FROM matches WHERE api_id=?",
+            (api_id,)
+        ).fetchone()
         if not row:
             continue
 
-        # Penales (fase eliminatoria)
+        if is_live:
+            # Actualizar marcador y estado en vivo, sin recalcular puntos
+            conn.execute(
+                "UPDATE matches SET home_score=?, away_score=?, status=? WHERE api_id=?",
+                (home_score, away_score, api_status, api_id)
+            )
+            continue
+
+        # ── Partido FINISHED ───────────────────────────────────────
         penalties = score.get("penalties") or {}
-        pen_home = penalties.get("home")  # None si no hubo penales
-        pen_away = penalties.get("away")
+        pen_home  = penalties.get("home")
+        pen_away  = penalties.get("away")
         if pen_home is not None and pen_away is not None:
             advances = row["home_team"] if pen_home > pen_away else row["away_team"]
         else:
             advances = None
 
-        score_changed = row["home_score"] != home_score
-        if score_changed or (pen_home is not None and not row["home_score"]):
+        already_finished = row["status"] == "FINISHED"
+        score_changed    = row["home_score"] != home_score
+
+        if not already_finished or score_changed or (pen_home is not None):
             conn.execute(
                 """UPDATE matches
                    SET home_score=?, away_score=?, status='FINISHED',
@@ -224,16 +247,16 @@ async def update_finished_matches():
                    WHERE api_id=?""",
                 (home_score, away_score, pen_home, pen_away, advances, api_id)
             )
-            if score_changed:
+            if not already_finished or score_changed:
                 updated_ids.append(row["id"])
 
-        # Guardar/actualizar goles (siempre que vengan de la API)
+        # Guardar goles (solo partidos terminados)
         api_goals = m.get("goals", []) or []
         if api_goals:
             conn.execute("DELETE FROM match_goals WHERE match_id=?", (row["id"],))
             for g in api_goals:
-                scorer_obj = g.get("scorer") or {}
-                team_obj   = g.get("team")   or {}
+                scorer_obj  = g.get("scorer") or {}
+                team_obj    = g.get("team")   or {}
                 player_name = (scorer_obj.get("name") or scorer_obj.get("shortName") or "").strip()
                 team_name   = (team_obj.get("name") or "").strip()
                 minute      = g.get("minute")
