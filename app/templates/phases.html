@@ -1,52 +1,64 @@
 {% extends "base.html" %}
-{% block title %}Fases — Mundial 2026{% endblock %}
+{% block title %}Partidos — Mundial 2026{% endblock %}
 {% block content %}
 
 <div class="mb-8">
     <p class="font-display text-xs uppercase tracking-[0.3em] text-sky-400 mb-1">FIFA World Cup 26</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">FASES</h1>
-    <p class="text-white/50 text-sm mt-1">Elige una fase para pronosticar sus partidos.</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">{{ t('PARTIDOS') }}</h1>
+    <p class="text-white/50 text-sm mt-1">{{ t('Elige una fase para ver y pronosticar sus partidos.') }}</p>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {% for p in phases %}
-    {% if p.available %}
-    <a href="/partidos/{{ p.slug }}"
+    {% if p.available or p.always %}
+    <a href="{{ p.link }}"
        class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-white/30 transition p-5 block">
         <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
                 <span class="text-3xl">{{ p.icon }}</span>
                 <div>
-                    <h2 class="font-display font-bold text-xl uppercase tracking-wide leading-tight">{{ p.label }}</h2>
-                    <p class="text-white/40 text-xs">{{ p.total }} partidos</p>
+                    <h2 class="font-display font-bold text-xl uppercase tracking-wide leading-tight">{{ t(p.label) }}</h2>
+                    <p class="text-white/40 text-xs">
+                        {% if p.total > 0 %}{{ p.total }} {{ t('partidos') }}
+                        {% else %}{{ t('Equipos por definir') }}{% endif %}
+                    </p>
                 </div>
             </div>
+            {% if p.total > 0 %}
             <span class="font-heavy text-3xl {{ 'text-emerald-400' if p.pct == 100 else 'text-white/80' }}">{{ p.pct }}%</span>
+            {% endif %}
         </div>
 
+        {% if p.total > 0 %}
         <!-- Barra de progreso -->
         <div class="h-2.5 rounded-full bg-black/40 overflow-hidden">
             <div class="h-full fifa-strip transition-all" style="width: {{ p.pct if p.pct > 0 else 2 }}%"></div>
         </div>
         <div class="flex items-center justify-between mt-2">
             <span class="font-display text-xs uppercase tracking-wider text-white/50">
-                {{ p.predicted }} de {{ p.total }} pronosticados
+                {{ p.predicted }} {{ t('de') }} {{ p.total }} {{ t('pronosticados') }}
             </span>
             <span class="font-display text-xs uppercase tracking-wider text-sky-300 group-hover:translate-x-1 transition-transform">
-                {{ 'Completado ✓' if p.pct == 100 else 'Pronosticar →' }}
+                {{ t('Completado ✓') if p.pct == 100 else t('Pronosticar →') }}
             </span>
         </div>
+        {% else %}
+        <!-- Knockout sin equipos aún: solo ver el cuadro -->
+        <div class="flex items-center justify-between">
+            <span class="font-display text-xs uppercase tracking-wider text-white/40">🔒 {{ t('Se habilita al definirse los clasificados') }}</span>
+            <span class="font-display text-xs uppercase tracking-wider text-sky-300 group-hover:translate-x-1 transition-transform">{{ t('Ver cuadro →') }}</span>
+        </div>
+        {% endif %}
     </a>
     {% else %}
     <div class="relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/5 p-5 opacity-60">
         <div class="flex items-center gap-3 mb-4">
             <span class="text-3xl grayscale">{{ p.icon }}</span>
             <div>
-                <h2 class="font-display font-bold text-xl uppercase tracking-wide leading-tight text-white/60">{{ p.label }}</h2>
-                <p class="text-white/30 text-xs">{{ p.total_all }} partidos · equipos por definir</p>
+                <h2 class="font-display font-bold text-xl uppercase tracking-wide leading-tight text-white/60">{{ t(p.label) }}</h2>
+                <p class="text-white/30 text-xs">{{ t('Aún no cargados') }}</p>
             </div>
         </div>
-        <div class="font-display text-xs uppercase tracking-wider text-white/30">🔒 Se habilita al definirse los clasificados</div>
     </div>
     {% endif %}
     {% endfor %}

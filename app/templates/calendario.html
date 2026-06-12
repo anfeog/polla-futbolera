@@ -32,7 +32,7 @@
     {% endif %}
 {% endfor %}
 
-<div class="mb-7">
+<div class="mb-7"{% if is_today %} id="today-anchor"{% endif %}>
     <!-- Cabecera del día -->
     <div class="flex items-center gap-3 mb-3">
         <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
@@ -134,5 +134,15 @@
     </div>
 </div>
 {% endfor %}
+
+<script>
+// Saltar al día de hoy al abrir el calendario (sin salto brusco si está arriba)
+(function () {
+    const el = document.getElementById('today-anchor');
+    if (el && el.getBoundingClientRect().top > window.innerHeight * 0.6) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+})();
+</script>
 
 {% endblock %}

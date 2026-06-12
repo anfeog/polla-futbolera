@@ -85,6 +85,22 @@ def _pred_locked(conn, matches, user_id):
     return user_predictions, locked
 
 
+def _pred_locked_bulk(conn, matches, user_id):
+    """Igual que _pred_locked pero en UNA sola consulta (para listas largas)."""
+    ids = [m["id"] for m in matches]
+    preds = {}
+    if ids:
+        ph = ",".join("?" * len(ids))
+        rows = conn.execute(
+            f"SELECT * FROM predictions WHERE user_id=? AND match_id IN ({ph})",
+            (user_id, *ids)
+        ).fetchall()
+        preds = {r["match_id"]: r for r in rows}
+    user_predictions = {m["id"]: preds.get(m["id"]) for m in matches}
+    locked = {m["id"]: is_locked(m["kickoff"]) for m in matches}
+    return user_predictions, locked
+
+
 def _calendar(matches):
     """Agrupa una lista de partidos por fecha → [(date_str, [matches])]."""
     by_date: dict = defaultdict(list)
@@ -98,9 +114,23 @@ def _today():
 
 
 @router.get("/calendario", response_class=HTMLResponse)
-def calendario_redirect(request: Request, user=Depends(require_login)):
-    """El calendario fue integrado en las fases — redirigir a partidos."""
-    return RedirectResponse("/partidos", status_code=302)
+def calendario(request: Request, user=Depends(require_login)):
+    """Vista de calendario: todos los partidos por día con tu estado de pronóstico."""
+    conn = get_db()
+    matches = conn.execute("""
+        SELECT * FROM matches
+        WHERE home_team != 'Por definir' AND away_team != 'Por definir'
+        ORDER BY kickoff ASC
+    """).fetchall()
+    user_predictions, locked = _pred_locked_bulk(conn, matches, user["id"])
+    conn.close()
+    return templates.TemplateResponse("calendario.html", {
+        "request": request, "user": user,
+        "calendar": _calendar(matches),
+        "user_predictions": user_predictions,
+        "locked": locked,
+        "today": _today(),
+    })
 
 
 # ──────────────────────────────────────────────────────────────
@@ -175,33 +205,45 @@ def inicio(request: Request, user=Depends(require_login)):
 @router.get("/partidos", response_class=HTMLResponse)
 def phases_grid(request: Request, user=Depends(require_login)):
     conn = get_db()
-    stages = [r["stage"] for r in conn.execute("SELECT DISTINCT stage FROM matches").fetchall()]
-    stages.sort(key=_stage_sort_key)
 
-    phases = []
-    for stage in stages:
+    def progreso(where_sql, params):
         total = conn.execute(
-            "SELECT COUNT(*) c FROM matches WHERE stage=? AND home_team != 'Por definir'", (stage,)
+            f"SELECT COUNT(*) c FROM matches WHERE {where_sql} AND home_team != 'Por definir'", params
         ).fetchone()["c"]
         total_all = conn.execute(
-            "SELECT COUNT(*) c FROM matches WHERE stage=?", (stage,)
+            f"SELECT COUNT(*) c FROM matches WHERE {where_sql}", params
         ).fetchone()["c"]
-        predicted = conn.execute("""
-            SELECT COUNT(*) c FROM predictions p
-            JOIN matches m ON m.id = p.match_id
-            WHERE m.stage=? AND m.home_team != 'Por definir' AND p.user_id=?
-        """, (stage, user["id"])).fetchone()["c"]
-        pct = round(predicted / total * 100) if total else 0
-        phases.append({
-            "stage": stage, "slug": slugify(stage),
-            "label": STAGE_LABELS.get(stage, stage),
-            "icon":  STAGE_ICONS.get(stage, "⚽"),
-            "total": total, "total_all": total_all,
-            "predicted": predicted, "pct": pct,
-            "available": total > 0,
-        })
+        predicted = conn.execute(f"""
+            SELECT COUNT(*) c FROM predictions p JOIN matches m ON m.id = p.match_id
+            WHERE m.{where_sql} AND m.home_team != 'Por definir' AND p.user_id=?
+        """, (*params, user["id"])).fetchone()["c"]
+        return total, total_all, predicted
+
+    # Fase de Grupos
+    g_total, g_total_all, g_pred = progreso("stage = ?", ("Group Stage",))
+
+    # Fase Eliminatoria (todas las rondas KO juntas)
+    ph = ",".join("?" * len(KNOCKOUT_STAGES))
+    k_total, k_total_all, k_pred = progreso(f"stage IN ({ph})", tuple(KNOCKOUT_STAGES))
 
     conn.close()
+
+    phases = [
+        {
+            "label": "Fase de Grupos", "icon": "🏟️",
+            "link": "/partidos/group-stage",
+            "total": g_total, "total_all": g_total_all,
+            "predicted": g_pred, "pct": round(g_pred / g_total * 100) if g_total else 0,
+            "available": g_total > 0, "always": False,
+        },
+        {
+            "label": "Fase Eliminatoria", "icon": "🏆",
+            "link": "/cuadro",
+            "total": k_total, "total_all": k_total_all,
+            "predicted": k_pred, "pct": round(k_pred / k_total * 100) if k_total else 0,
+            "available": k_total > 0, "always": True,   # siempre clicable (ver el cuadro)
+        },
+    ]
     return templates.TemplateResponse("phases.html", {
         "request": request, "user": user, "phases": phases,
     })
