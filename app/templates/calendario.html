@@ -4,143 +4,168 @@
 
 <div class="mb-6">
     <p class="font-display text-xs uppercase tracking-[0.3em] text-lime-400 mb-1">FIFA World Cup 26</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">📅 CALENDARIO</h1>
-    <p class="text-white/50 text-sm mt-1">Todos los partidos por fecha. No te pierdas el cierre de pronósticos (1h antes).</p>
+    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">📅 {{ t('CALENDARIO') }}</h1>
+    <p class="text-white/50 text-sm mt-1">{{ t('Todos los partidos por fecha, en tu hora local. Cierre 1h antes de cada partido.') }}</p>
 </div>
 
 <!-- Leyenda -->
 <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-display uppercase tracking-wider text-white/40 mb-6">
-    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500/70"></span> Pronosticado</span>
-    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400/70"></span> Pendiente</span>
-    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-white/20"></span> Cerrado</span>
-    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> En vivo</span>
+    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500/70"></span> {{ t('Pronosticado') }}</span>
+    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400/70"></span> {{ t('Pendiente') }}</span>
+    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-white/20"></span> {{ t('Cerrado') }}</span>
+    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> {{ t('En vivo') }}</span>
 </div>
 
 {% if not calendar %}
 <div class="text-center py-20 text-white/40">
     <div class="text-6xl mb-4">📅</div>
-    <p class="font-display uppercase tracking-wider">No hay partidos cargados</p>
+    <p class="font-display uppercase tracking-wider">{{ t('No hay partidos cargados') }}</p>
 </div>
 {% endif %}
 
+<!-- Partidos en una lista plana; JS los agrupa por día LOCAL -->
+<div id="cal-list">
 {% for date, day_matches in calendar %}
-{% set is_today = date == today %}
-{% set day_pending = [] %}
 {% for m in day_matches %}
-    {% if not user_predictions[m.id] and not locked[m.id] %}
-        {% set _ = day_pending.append(1) %}
-    {% endif %}
-{% endfor %}
+{% set pred = user_predictions[m.id] %}
+{% set closed = locked[m.id] %}
+{% set live = m.status in ['IN_PLAY', 'PAUSED'] %}
+{% set finished = m.status == 'FINISHED' %}
 
-<div class="mb-7"{% if is_today %} id="today-anchor"{% endif %}>
-    <!-- Cabecera del día -->
-    <div class="flex items-center gap-3 mb-3">
-        <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
-        <div class="flex items-center gap-2">
-            {% if is_today %}
-            <span class="w-2 h-2 rounded-full bg-lime-400 animate-livepulse"></span>
-            {% endif %}
-            <h2 class="font-display text-sm font-semibold uppercase tracking-[0.2em]
-                {{ 'text-lime-400' if is_today else 'text-white/60' }}">
-                {{ date | date_fmt }}
-            </h2>
-            {% if day_pending | length > 0 %}
-            <span class="text-[10px] font-display uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
-                {{ day_pending | length }} pendiente{{ 's' if day_pending | length > 1 else '' }}
-            </span>
-            {% endif %}
-        </div>
-        <span class="h-px flex-1 bg-gradient-to-l from-transparent to-white/15"></span>
+<div class="match-card relative flex items-center gap-3 rounded-xl px-4 py-3 border transition mb-2
+    {{ 'border-red-500/50 bg-red-500/5' if live
+       else ('border-emerald-500/25 bg-emerald-500/5' if pred
+       else ('border-amber-400/25 bg-amber-400/5' if not closed
+       else 'border-white/8 bg-white/[0.02]')) }}"
+    data-kickoff="{{ m.kickoff }}"
+    data-predicted="{{ '1' if pred else '0' }}"
+    data-locked="{{ '1' if closed else '0' }}">
+
+    <!-- Hora (local, la rellena JS) -->
+    <div class="shrink-0 text-center w-12">
+        <div class="kickoff-time font-display font-bold text-sm leading-tight">{{ m.kickoff[11:16] }}</div>
+        <div class="text-[9px] font-display uppercase tracking-wider text-white/30">{{ t('local') }}</div>
     </div>
 
-    <!-- Partidos del día -->
-    <div class="space-y-2">
-    {% for m in day_matches %}
-    {% set pred = user_predictions[m.id] %}
-    {% set closed = locked[m.id] %}
-    {% set live = m.status in ['IN_PLAY', 'PAUSED'] %}
-    {% set finished = m.status == 'FINISHED' %}
+    <div class="w-px h-8 bg-white/10 shrink-0"></div>
 
-    <div class="relative flex items-center gap-3 rounded-xl px-4 py-3 border transition
-        {{ 'border-red-500/50 bg-red-500/5' if live
-           else ('border-emerald-500/25 bg-emerald-500/5' if pred
-           else ('border-amber-400/25 bg-amber-400/5' if not closed
-           else 'border-white/8 bg-white/[0.02]')) }}">
-
-        <!-- Hora -->
-        <div class="shrink-0 text-center w-11">
-            <div class="font-display font-bold text-sm leading-tight">{{ m.kickoff[11:16] }}</div>
-            <div class="text-[9px] font-display uppercase tracking-wider text-white/30">UTC</div>
+    <!-- Equipos + resultado -->
+    <div class="flex-1 flex items-center gap-2 min-w-0">
+        <div class="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+            <span class="font-display text-sm uppercase tracking-wide truncate text-right hidden sm:block">{{ m.home_team }}</span>
+            <span class="font-display text-sm uppercase tracking-wide truncate text-right sm:hidden">{{ m.home_tla or m.home_team[:3] }}</span>
+            {% set hc = crest(m.home_team, m.home_flag) %}
+            {% if hc %}<img src="{{ hc }}" class="w-6 h-6 object-contain shrink-0 drop-shadow">{% endif %}
         </div>
 
-        <!-- Divisor -->
-        <div class="w-px h-8 bg-white/10 shrink-0"></div>
-
-        <!-- Equipos + resultado -->
-        <div class="flex-1 flex items-center gap-2 min-w-0">
-            <!-- Local -->
-            <div class="flex items-center gap-1.5 flex-1 justify-end min-w-0">
-                <span class="font-display text-sm uppercase tracking-wide truncate text-right hidden sm:block">{{ m.home_team }}</span>
-                <span class="font-display text-sm uppercase tracking-wide truncate text-right sm:hidden">{{ m.home_tla or m.home_team[:3] }}</span>
-                {% set hc = crest(m.home_team, m.home_flag) %}
-                {% if hc %}<img src="{{ hc }}" class="w-6 h-6 object-contain shrink-0 drop-shadow">{% endif %}
-            </div>
-
-            <!-- Centro -->
-            <div class="font-display font-bold text-white/60 shrink-0 w-14 text-center text-sm">
-                {% if live %}
-                    <span class="text-red-400 text-xs animate-livepulse">🔴 LIVE</span>
-                {% elif finished %}
-                    <span class="text-white/90">{{ m.home_score }}:{{ m.away_score }}</span>
-                {% else %}
-                    <span class="text-white/30">vs</span>
-                {% endif %}
-            </div>
-
-            <!-- Visitante -->
-            <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                {% set ac = crest(m.away_team, m.away_flag) %}
-                {% if ac %}<img src="{{ ac }}" class="w-6 h-6 object-contain shrink-0 drop-shadow">{% endif %}
-                <span class="font-display text-sm uppercase tracking-wide truncate hidden sm:block">{{ m.away_team }}</span>
-                <span class="font-display text-sm uppercase tracking-wide truncate sm:hidden">{{ m.away_tla or m.away_team[:3] }}</span>
-            </div>
-        </div>
-
-        <!-- Divisor -->
-        <div class="w-px h-8 bg-white/10 shrink-0"></div>
-
-        <!-- Acción / estado -->
-        <div class="shrink-0 text-right min-w-[90px]">
-            {% if pred %}
-                <div class="font-display text-xs uppercase tracking-wider text-emerald-400">
-                    ✅ {{ pred.home_score_pred }}–{{ pred.away_score_pred }}
-                </div>
-                {% if finished and pred.points > 0 %}
-                <div class="font-display text-[10px] text-emerald-300">+{{ "%.1f"|format(pred.points) }} pts</div>
-                {% elif not closed %}
-                <a href="/prediccion/{{ m.id }}" class="text-[10px] font-display text-white/30 hover:text-white underline underline-offset-2">editar</a>
-                {% endif %}
-            {% elif not closed %}
-                <a href="/prediccion/{{ m.id }}"
-                   class="font-display text-xs uppercase tracking-wider font-semibold px-3 py-1.5 rounded-lg brand-bar text-ink hover:opacity-90 transition whitespace-nowrap">
-                    Predecir
-                </a>
+        <div class="font-display font-bold text-white/60 shrink-0 w-14 text-center text-sm">
+            {% if live %}
+                <span class="text-red-400 text-xs animate-livepulse">🔴 LIVE</span>
+            {% elif finished %}
+                <span class="text-white/90">{{ m.home_score }}:{{ m.away_score }}</span>
             {% else %}
-                <span class="font-display text-[11px] uppercase tracking-wider text-white/25">🔒 Cerrado</span>
+                <span class="text-white/30">vs</span>
             {% endif %}
         </div>
+
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+            {% set ac = crest(m.away_team, m.away_flag) %}
+            {% if ac %}<img src="{{ ac }}" class="w-6 h-6 object-contain shrink-0 drop-shadow">{% endif %}
+            <span class="font-display text-sm uppercase tracking-wide truncate hidden sm:block">{{ m.away_team }}</span>
+            <span class="font-display text-sm uppercase tracking-wide truncate sm:hidden">{{ m.away_tla or m.away_team[:3] }}</span>
+        </div>
     </div>
-    {% endfor %}
+
+    <div class="w-px h-8 bg-white/10 shrink-0"></div>
+
+    <!-- Acción / estado -->
+    <div class="shrink-0 text-right min-w-[90px]">
+        {% if pred %}
+            <a href="/prediccion/{{ m.id }}" class="font-display text-xs uppercase tracking-wider text-emerald-400 hover:opacity-80 transition block">
+                ✅ {{ pred.home_score_pred }}–{{ pred.away_score_pred }}
+            </a>
+            {% if finished and pred.points > 0 %}
+            <div class="font-display text-[10px] text-emerald-300">+{{ "%.1f"|format(pred.points) }} pts</div>
+            {% elif not closed %}
+            <a href="/prediccion/{{ m.id }}" class="text-[10px] font-display text-white/30 hover:text-white underline underline-offset-2">{{ t('editar') }}</a>
+            {% endif %}
+        {% elif not closed %}
+            <a href="/prediccion/{{ m.id }}"
+               class="font-display text-xs uppercase tracking-wider font-semibold px-3 py-1.5 rounded-lg brand-bar text-ink hover:opacity-90 transition whitespace-nowrap">
+                {{ t('Predecir') }}
+            </a>
+        {% else %}
+            <span class="font-display text-[11px] uppercase tracking-wider text-white/25">🔒 {{ t('Cerrado') }}</span>
+        {% endif %}
     </div>
 </div>
 {% endfor %}
+{% endfor %}
+</div>
 
 <script>
-// Saltar al día de hoy al abrir el calendario (sin salto brusco si está arriba)
 (function () {
-    const el = document.getElementById('today-anchor');
-    if (el && el.getBoundingClientRect().top > window.innerHeight * 0.6) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const list = document.getElementById('cal-list');
+    if (!list) return;
+    const cards = [...list.querySelectorAll('.match-card')];
+    if (!cards.length) return;
+
+    const DIAS  = {{ t('Domingo,Lunes,Martes,Miércoles,Jueves,Viernes,Sábado') | tojson }}.split(',');
+    const MESES = {{ t('Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic') | tojson }}.split(',');
+    const T_PEND_1 = {{ t('pendiente') | tojson }};
+    const T_PEND_N = {{ t('pendientes') | tojson }};
+    const pad = n => String(n).padStart(2, '0');
+    const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const now = new Date();
+    const todayKey = keyOf(now);
+
+    // Agrupar por fecha LOCAL
+    const groups = new Map();
+    for (const c of cards) {
+        const d = new Date(c.dataset.kickoff);   // 'Z' → hora local del dispositivo
+        const k = keyOf(d);
+        if (!groups.has(k)) groups.set(k, { d, cards: [] });
+        groups.get(k).cards.push(c);
+        const t = c.querySelector('.kickoff-time');
+        if (t) t.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    list.innerHTML = '';
+    let todayEl = null;
+    for (const k of [...groups.keys()].sort()) {
+        const g = groups.get(k);
+        const isToday = k === todayKey;
+        const pending = g.cards.filter(c => c.dataset.predicted === '0' && c.dataset.locked === '0').length;
+        const label = `${DIAS[g.d.getDay()]} ${g.d.getDate()} ${MESES[g.d.getMonth()]}`;
+
+        const sec = document.createElement('div');
+        sec.className = 'mb-7';
+        if (isToday) { sec.id = 'today-anchor'; }
+
+        const head = document.createElement('div');
+        head.className = 'flex items-center gap-3 mb-3';
+        head.innerHTML = `
+            <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
+            <div class="flex items-center gap-2">
+                ${isToday ? '<span class="w-2 h-2 rounded-full bg-lime-400 animate-livepulse"></span>' : ''}
+                <h2 class="font-display text-sm font-semibold uppercase tracking-[0.2em] ${isToday ? 'text-lime-400' : 'text-white/60'}">${label}</h2>
+                ${pending > 0 ? `<span class="text-[10px] font-display uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">${pending} ${pending > 1 ? T_PEND_N : T_PEND_1}</span>` : ''}
+            </div>
+            <span class="h-px flex-1 bg-gradient-to-l from-transparent to-white/15"></span>`;
+        sec.appendChild(head);
+
+        const body = document.createElement('div');
+        body.className = 'space-y-2';
+        g.cards.forEach(c => body.appendChild(c));
+        sec.appendChild(body);
+        list.appendChild(sec);
+        if (isToday) todayEl = sec;
+    }
+
+    // Saltar al día de hoy si está más abajo
+    if (todayEl && todayEl.getBoundingClientRect().top > window.innerHeight * 0.6) {
+        todayEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 })();
 </script>
