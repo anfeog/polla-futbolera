@@ -32,7 +32,8 @@
 {% set live = m.status in ['IN_PLAY', 'PAUSED'] %}
 {% set finished = m.status == 'FINISHED' %}
 
-<div class="match-card relative flex items-center gap-3 rounded-xl px-4 py-3 border transition mb-2
+<a href="/prediccion/{{ m.id }}"
+    class="match-card relative flex items-center gap-3 rounded-xl px-4 py-3 border transition mb-2 hover:border-white/30
     {{ 'border-red-500/50 bg-red-500/5' if live
        else ('border-emerald-500/25 bg-emerald-500/5' if pred
        else ('border-amber-400/25 bg-amber-400/5' if not closed
@@ -81,24 +82,25 @@
     <!-- Acción / estado -->
     <div class="shrink-0 text-right min-w-[90px]">
         {% if pred %}
-            <a href="/prediccion/{{ m.id }}" class="font-display text-xs uppercase tracking-wider text-emerald-400 hover:opacity-80 transition block">
+            <span class="font-display text-xs uppercase tracking-wider text-emerald-400 block">
                 ✅ {{ pred.home_score_pred }}–{{ pred.away_score_pred }}
-            </a>
+            </span>
             {% if finished and pred.points > 0 %}
-            <div class="font-display text-[10px] text-emerald-300">+{{ "%.1f"|format(pred.points) }} pts</div>
+            <span class="font-display text-[10px] text-emerald-300 block">+{{ "%.1f"|format(pred.points) }} pts</span>
             {% elif not closed %}
-            <a href="/prediccion/{{ m.id }}" class="text-[10px] font-display text-white/30 hover:text-white underline underline-offset-2">{{ t('editar') }}</a>
+            <span class="text-[10px] font-display text-white/30 underline underline-offset-2">{{ t('editar') }}</span>
+            {% else %}
+            <span class="text-[10px] font-display text-white/30 underline underline-offset-2">{{ t('ver') }}</span>
             {% endif %}
         {% elif not closed %}
-            <a href="/prediccion/{{ m.id }}"
-               class="font-display text-xs uppercase tracking-wider font-semibold px-3 py-1.5 rounded-lg brand-bar text-ink hover:opacity-90 transition whitespace-nowrap">
+            <span class="font-display text-xs uppercase tracking-wider font-semibold px-3 py-1.5 rounded-lg brand-bar text-ink whitespace-nowrap">
                 {{ t('Predecir') }}
-            </a>
+            </span>
         {% else %}
-            <span class="font-display text-[11px] uppercase tracking-wider text-white/25">🔒 {{ t('Cerrado') }}</span>
+            <span class="font-display text-[11px] uppercase tracking-wider text-white/40 underline underline-offset-2">🔒 {{ t('ver') }}</span>
         {% endif %}
     </div>
-</div>
+</a>
 {% endfor %}
 {% endfor %}
 </div>

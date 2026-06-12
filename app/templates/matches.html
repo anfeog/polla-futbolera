@@ -112,7 +112,7 @@
                     {{ t('Pronosticar') }}
                 </a>
             {% else %}
-                <span class="font-display uppercase tracking-wider text-[10px] text-white/30">🔒 {{ t('Pronóstico cerrado') }}</span>
+                <a href="/prediccion/{{ m.id }}" class="font-display uppercase tracking-wider text-[10px] text-white/40 underline underline-offset-2 hover:text-white transition">🔒 {{ t('ver') }}</a>
             {% endif %}
         </div>
     </div>
