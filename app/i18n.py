@@ -136,6 +136,8 @@ STRINGS = {
     "No acertaste el resultado": ("Você não acertou o placar", "You missed the result"),
     "No pronosticaste este partido": ("Você não palpitou neste jogo", "You didn't predict this match"),
     "Tus goleadores": ("Seus artilheiros", "Your scorers"),
+    "Goleadores reales": ("Artilheiros reais", "Actual scorers"),
+    "Lo que pronosticaron todos": ("O que todos palpitaram", "What everyone predicted"),
     "verde = acertado": ("verde = acertou", "green = correct"),
     "Puntos de este partido": ("Pontos deste jogo", "Points from this match"),
     "El partido aún no se juega — aquí verás tus aciertos cuando termine":

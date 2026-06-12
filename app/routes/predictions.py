@@ -93,9 +93,53 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
     })
 
 
+def _scorer_lines_for(conn, match, match_id, pred_id, finished, real_cache):
+    """Lista de goleadores predichos por equipo, con acierto si ya se jugó."""
+    lines = {"home": [], "away": []}
+    for side, team in (("home", match["home_team"]), ("away", match["away_team"])):
+        predicted = conn.execute(
+            "SELECT position, player_name, is_own_goal FROM goalscorer_predictions "
+            "WHERE prediction_id=? AND team=? ORDER BY position",
+            (pred_id, team)
+        ).fetchall()
+        if team not in real_cache:
+            real_cache[team] = _ordered_real_goals(conn, match_id, team) if finished else []
+        real = real_cache[team]
+        for gp in predicted:
+            pos = gp["position"]
+            real_goal = real[pos - 1] if pos - 1 < len(real) else None
+            if gp["is_own_goal"]:
+                pred_label = "⚽ Autogol"
+                hit = bool(real_goal and real_goal["is_own_goal"])
+            else:
+                pred_label = gp["player_name"] or "—"
+                hit = bool(real_goal and not real_goal["is_own_goal"]
+                           and gp["player_name"]
+                           and gp["player_name"].strip().lower() == (real_goal["player_name"] or "").strip().lower())
+            real_label = None
+            if finished and real_goal:
+                real_label = "⚽ Autogol" if real_goal["is_own_goal"] else (real_goal["player_name"] or "—")
+            lines[side].append({
+                "pos": pos, "predicted": pred_label,
+                "real": real_label, "hit": hit if finished else None,
+            })
+    return lines
+
+
+def _result_status(pred, finished):
+    if not (finished and pred):
+        return None
+    if pred["hit_exact"]:
+        return "exact"
+    if pred["hit_winner"]:
+        return "winner"
+    return "miss"
+
+
 def _prediction_readonly(conn, match, match_id, user, request):
-    """Vista de solo lectura: lo que el usuario pronosticó, con aciertos si ya se jugó."""
+    """Vista de solo lectura: tu pronóstico + el de todos, con aciertos si ya se jugó."""
     finished = match["status"] == "FINISHED"
+    real_cache = {}
 
     pred = conn.execute(
         "SELECT * FROM predictions WHERE user_id=? AND match_id=?",
@@ -104,47 +148,51 @@ def _prediction_readonly(conn, match, match_id, user, request):
 
     scorer_lines = {"home": [], "away": []}
     if pred:
-        for side, team in (("home", match["home_team"]), ("away", match["away_team"])):
-            predicted = conn.execute(
-                "SELECT position, player_name, is_own_goal FROM goalscorer_predictions "
-                "WHERE prediction_id=? AND team=? ORDER BY position",
-                (pred["id"], team)
-            ).fetchall()
-            real = _ordered_real_goals(conn, match_id, team) if finished else []
-            for gp in predicted:
-                pos = gp["position"]
-                real_goal = real[pos - 1] if pos - 1 < len(real) else None
-                if gp["is_own_goal"]:
-                    pred_label = "⚽ Autogol"
-                    hit = bool(real_goal and real_goal["is_own_goal"])
-                else:
-                    pred_label = gp["player_name"] or "—"
-                    hit = bool(real_goal and not real_goal["is_own_goal"]
-                               and gp["player_name"]
-                               and gp["player_name"].strip().lower() == (real_goal["player_name"] or "").strip().lower())
-                real_label = None
-                if finished and real_goal:
-                    real_label = "⚽ Autogol" if real_goal["is_own_goal"] else (real_goal["player_name"] or "—")
-                scorer_lines[side].append({
-                    "pos": pos, "predicted": pred_label,
-                    "real": real_label, "hit": hit if finished else None,
-                })
+        scorer_lines = _scorer_lines_for(conn, match, match_id, pred["id"], finished, real_cache)
+    result_status = _result_status(pred, finished)
 
-    # Resultado: acierto exacto / ganador
-    result_status = None
-    if finished and pred:
-        if pred["hit_exact"]:
-            result_status = "exact"
-        elif pred["hit_winner"]:
-            result_status = "winner"
-        else:
-            result_status = "miss"
+    # Pronósticos de TODOS los participantes (transparencia)
+    all_rows = conn.execute("""
+        SELECT p.id, p.user_id, p.home_score_pred, p.away_score_pred,
+               p.is_joker, p.points, p.hit_exact, p.hit_winner,
+               u.username, u.avatar
+        FROM predictions p
+        JOIN users u ON u.id = p.user_id
+        WHERE p.match_id = ? AND u.is_admin = 0
+    """, (match_id,)).fetchall()
+
+    everyone = []
+    for r in all_rows:
+        everyone.append({
+            "username": r["username"], "avatar": r["avatar"] or "⚽",
+            "is_me": r["user_id"] == user["id"],
+            "home": r["home_score_pred"], "away": r["away_score_pred"],
+            "is_joker": r["is_joker"],
+            "points": r["points"] or 0,
+            "result_status": _result_status(r, finished),
+            "scorers": _scorer_lines_for(conn, match, match_id, r["id"], finished, real_cache),
+        })
+    # Ordenar: si ya se jugó, por puntos desc; si no, alfabético
+    if finished:
+        everyone.sort(key=lambda e: (-e["points"], e["username"].lower()))
+    else:
+        everyone.sort(key=lambda e: e["username"].lower())
+
+    # Goleadores reales (para mostrar quién marcó de verdad)
+    real_scorers = {"home": [], "away": []}
+    if finished:
+        for side, team in (("home", match["home_team"]), ("away", match["away_team"])):
+            gs = real_cache.get(team) or _ordered_real_goals(conn, match_id, team)
+            real_scorers[side] = [
+                ("⚽ Autogol" if g["is_own_goal"] else (g["player_name"] or "—")) for g in gs
+            ]
 
     conn.close()
     return templates.TemplateResponse("prediction_view.html", {
         "request": request, "user": user, "match": match,
         "pred": pred, "finished": finished,
         "scorer_lines": scorer_lines, "result_status": result_status,
+        "everyone": everyone, "real_scorers": real_scorers,
     })
 
 

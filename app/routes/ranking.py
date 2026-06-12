@@ -244,14 +244,17 @@ def como_jugar(request: Request, user=Depends(require_login)):
 def ranking(request: Request, user=Depends(require_login)):
     conn = get_db()
 
+    # Todos los agregados se cuentan SOLO sobre partidos FINISHED, para que
+    # sean consistentes con `played`. Los partidos en vivo (IN_PLAY) suman
+    # aparte vía live_provisional_points. Así el % nunca pasa de 100.
     rows = conn.execute("""
         SELECT u.id, u.username, u.avatar, u.status_msg,
-               COALESCE(SUM(p.points), 0)            AS match_points,
-               COALESCE(SUM(p.points * p.is_joker), 0) AS joker_bonus,
-               COALESCE(SUM(p.solo_hit), 0)          AS solo_hits,
-               COALESCE(SUM(p.hit_exact), 0)         AS exact_hits,
-               COALESCE(SUM(p.hit_winner), 0)        AS winner_hits,
-               COALESCE(SUM(p.scorers_hit), 0)       AS scorers_hit,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points ELSE 0 END), 0)            AS match_points,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points * p.is_joker ELSE 0 END), 0) AS joker_bonus,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_hit ELSE 0 END), 0)          AS solo_hits,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.hit_exact ELSE 0 END), 0)         AS exact_hits,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.hit_winner ELSE 0 END), 0)        AS winner_hits,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.scorers_hit ELSE 0 END), 0)       AS scorers_hit,
                SUM(CASE WHEN m.status='FINISHED' THEN 1 ELSE 0 END) AS played
         FROM users u
         LEFT JOIN predictions p ON p.user_id = u.id
@@ -268,7 +271,7 @@ def ranking(request: Request, user=Depends(require_login)):
         award_pts = award_points_for_user(r["id"], conn) + tg_bonus.get(r["id"], 0)
         played = r["played"] or 0
         results_hit = r["exact_hits"] + r["winner_hits"]
-        pct = round(results_hit / played * 100) if played else 0
+        pct = min(round(results_hit / played * 100), 100) if played else 0
         solo_pts = (r["solo_hits"] or 0) * POINTS_SOLO
         joker_bonus = r["joker_bonus"] or 0
         total = r["match_points"] + joker_bonus + solo_pts + award_pts

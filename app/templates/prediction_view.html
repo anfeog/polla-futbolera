@@ -128,4 +128,63 @@
 
 {% endif %}
 
+<!-- Goleadores reales (cuando ya se jugó) -->
+{% if finished and (real_scorers.home or real_scorers.away) %}
+<div class="mt-6 rounded-2xl bg-gradient-to-b from-emerald-500/[0.08] to-white/[0.01] border border-emerald-500/20 p-4">
+    <p class="font-display text-[10px] uppercase tracking-wider text-emerald-300 mb-2">✅ {{ t('Goleadores reales') }}</p>
+    <div class="flex flex-wrap gap-1.5">
+        {% for side, team in [('home', match.home_team), ('away', match.away_team)] %}
+        {% for name in real_scorers[side] %}
+        <span class="text-xs font-display px-2 py-0.5 rounded-md bg-white/5 border border-white/10">{{ name }}</span>
+        {% endfor %}
+        {% endfor %}
+        {% if not real_scorers.home and not real_scorers.away %}
+        <span class="text-xs text-white/30">{{ t('Sin goleadores') }}</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Pronósticos de todos -->
+{% if everyone %}
+<div class="mt-6">
+    <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-3 px-1">👥 {{ t('Lo que pronosticaron todos') }}</p>
+    <div class="space-y-2">
+        {% for e in everyone %}
+        <div class="rounded-2xl border p-3.5
+            {% if e.result_status == 'exact' %}bg-emerald-500/[0.08] border-emerald-500/25
+            {% elif e.result_status == 'winner' %}bg-sky-500/[0.06] border-sky-500/20
+            {% elif e.is_me %}bg-sky-500/[0.06] border-sky-500/30
+            {% else %}bg-white/[0.03] border-white/10{% endif %}">
+            <div class="flex items-center gap-2">
+                <span class="text-lg leading-none shrink-0">{{ e.avatar }}</span>
+                <span class="font-display font-semibold uppercase tracking-wide text-sm {{ 'text-sky-300' if e.is_me else '' }} truncate">
+                    {{ e.username }}{% if e.is_me %} <span class="text-[10px] text-white/40 normal-case">{{ t('(tú)') }}</span>{% endif %}
+                </span>
+                <span class="ml-auto flex items-center gap-2 shrink-0">
+                    <span class="font-heavy text-base">{{ e.home }}<span class="text-white/30">–</span>{{ e.away }}</span>
+                    {% if e.is_joker %}<span class="text-xs text-cyan-300" title="Comodín x2">🃏</span>{% endif %}
+                    {% if finished %}
+                    <span class="font-display text-xs font-bold {{ 'text-emerald-300' if e.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(e.points) }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% set chips = e.scorers.home + e.scorers.away %}
+            {% if chips %}
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for s in chips %}
+                <span class="text-[11px] font-display px-1.5 py-0.5 rounded
+                    {% if s.hit %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                    {% else %}bg-white/5 text-white/60 border border-white/10{% endif %}">
+                    {{ s.predicted }}{% if s.hit %} ✓{% endif %}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
