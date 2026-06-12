@@ -139,6 +139,7 @@ def _result_status(pred, finished):
 def _prediction_readonly(conn, match, match_id, user, request):
     """Vista de solo lectura: tu pronóstico + el de todos, con aciertos si ya se jugó."""
     finished = match["status"] == "FINISHED"
+    live = match["status"] in ("IN_PLAY", "PAUSED")
     real_cache = {}
 
     pred = conn.execute(
@@ -190,7 +191,7 @@ def _prediction_readonly(conn, match, match_id, user, request):
     conn.close()
     return templates.TemplateResponse("prediction_view.html", {
         "request": request, "user": user, "match": match,
-        "pred": pred, "finished": finished,
+        "pred": pred, "finished": finished, "live": live,
         "scorer_lines": scorer_lines, "result_status": result_status,
         "everyone": everyone, "real_scorers": real_scorers,
     })

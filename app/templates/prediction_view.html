@@ -11,7 +11,9 @@
 <div class="rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 p-5 mb-5">
     <div class="flex items-center justify-between mb-3">
         <span class="font-display text-[10px] uppercase tracking-[0.2em] text-sky-400">{{ match.stage }}</span>
-        {% if finished %}
+        {% if live %}
+        <span class="font-display text-[10px] uppercase tracking-wider text-red-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-livepulse"></span> {{ t('En vivo') }}</span>
+        {% elif finished %}
         <span class="font-display text-[10px] uppercase tracking-wider text-emerald-400">{{ t('Final') }}</span>
         {% else %}
         <span class="font-display text-[10px] uppercase tracking-wider text-amber-400/80">🔒 {{ t('Pronóstico cerrado') }}</span>
@@ -24,9 +26,9 @@
             {% if hc %}<img src="{{ hc }}" class="w-10 h-10 object-contain shrink-0">{% endif %}
         </div>
         <div class="shrink-0 text-center">
-            {% if finished and match.home_score is not none %}
-            <div class="font-heavy text-3xl leading-none">{{ match.home_score }} <span class="text-white/30">:</span> {{ match.away_score }}</div>
-            <div class="text-[9px] uppercase tracking-wider text-white/40 mt-1">{{ t('Resultado real') }}</div>
+            {% if (finished or live) and match.home_score is not none %}
+            <div class="font-heavy text-3xl leading-none {{ 'text-red-300' if live else '' }}">{{ match.home_score }} <span class="text-white/30">:</span> {{ match.away_score }}</div>
+            <div class="text-[9px] uppercase tracking-wider mt-1 {{ 'text-red-400' if live else 'text-white/40' }}">{{ t('Marcador en vivo') if live else t('Resultado real') }}</div>
             {% else %}
             <div class="font-display text-white/30 font-bold">VS</div>
             {% endif %}
@@ -119,6 +121,10 @@
 <div class="rounded-2xl bg-gradient-to-r from-amber-500/[0.12] to-transparent border border-amber-500/25 px-5 py-4 flex items-center justify-between">
     <span class="font-display text-sm uppercase tracking-wider text-amber-200">{{ t('Puntos de este partido') }}</span>
     <span class="font-heavy text-2xl text-amber-300">{{ "%.1f"|format(pred.points or 0) }}</span>
+</div>
+{% elif live %}
+<div class="rounded-2xl bg-red-500/[0.06] border border-red-500/20 px-5 py-4 text-center">
+    <p class="text-red-300/80 text-xs font-display uppercase tracking-wider">🔴 {{ t('En juego — los aciertos se confirman al terminar') }}</p>
 </div>
 {% else %}
 <div class="rounded-2xl bg-white/[0.03] border border-white/10 px-5 py-4 text-center">

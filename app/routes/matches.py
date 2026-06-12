@@ -168,10 +168,9 @@ def inicio(request: Request, user=Depends(require_login)):
             break
 
     # ── Recordatorio: premios sin predecir (mientras sigan abiertos) ──────────
-    first_k = conn.execute(
-        "SELECT MIN(kickoff) k FROM matches WHERE home_team != 'Por definir'"
-    ).fetchone()["k"]
-    premios_open = (not is_past(first_k)) if first_k else True
+    # Mismo plazo que /premios (1h antes de Canadá–Bosnia), no el primer partido.
+    from app.routes.premios import _awards_lock_kickoff
+    premios_open = not is_locked(_awards_lock_kickoff(conn))
     award_row = conn.execute(
         "SELECT top_scorer FROM award_predictions WHERE user_id=?", (user["id"],)
     ).fetchone()

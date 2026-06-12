@@ -70,91 +70,83 @@
 </div>
 {% endif %}
 
-<!-- Partidos agrupados por fecha -->
+<!-- Partidos: lista plana; JS los agrupa por día LOCAL -->
+<div id="match-daylist">
 {% for date, day_matches in calendar %}
-{% set is_today = date == today %}
-{% set day_pending = [] %}
-{% for m in day_matches %}{% if not user_predictions[m.id] and not locked[m.id] %}{% set _ = day_pending.append(1) %}{% endif %}{% endfor %}
+{% for m in day_matches %}
+{% set pred    = user_predictions[m.id] %}
+{% set live    = m.status in ['IN_PLAY', 'PAUSED'] %}
+{% set finished = m.status == 'FINISHED' %}
+{% set closed  = locked[m.id] %}
 
-<div class="mb-6">
-    <div class="flex items-center gap-3 mb-3">
-        <span class="h-px flex-1 bg-gradient-to-r from-transparent to-white/15"></span>
-        <div class="flex items-center gap-2">
-            {% if is_today %}<span class="w-2 h-2 rounded-full bg-lime-400 animate-livepulse"></span>{% endif %}
-            <h2 class="font-display text-sm font-semibold uppercase tracking-[0.2em] {{ 'text-lime-400' if is_today else 'text-white/60' }}">
-                {{ date | date_fmt }}
-            </h2>
-            {% if day_pending | length > 0 %}
-            <span class="text-[10px] font-display uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
-                {{ day_pending | length }} pendiente{{ 's' if day_pending | length > 1 else '' }}
-            </span>
-            {% endif %}
+<div class="match-card relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 hover:border-white/20 transition mb-3"
+     data-kickoff="{{ m.kickoff }}" data-predicted="{{ '1' if pred else '0' }}" data-locked="{{ '1' if closed else '0' }}">
+    <div class="absolute left-0 top-0 bottom-0 w-1 {{ 'bg-red-500 animate-livepulse' if live else ('brand-bar' if pred else 'bg-white/10') }}"></div>
+
+    <div class="pl-5 pr-4 py-4 flex items-center gap-3">
+        <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
+            <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate text-right">{{ m.home_team }}</span>
+            {% set hc = crest(m.home_team, m.home_flag) %}
+            {% if hc %}<img src="{{ hc }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
         </div>
-        <span class="h-px flex-1 bg-gradient-to-l from-transparent to-white/15"></span>
-    </div>
-
-    <div class="space-y-3">
-    {% for m in day_matches %}
-    {% set pred    = user_predictions[m.id] %}
-    {% set live    = m.status in ['IN_PLAY', 'PAUSED'] %}
-    {% set finished = m.status == 'FINISHED' %}
-    {% set closed  = locked[m.id] %}
-
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/10 hover:border-white/20 transition">
-        <div class="absolute left-0 top-0 bottom-0 w-1 {{ 'bg-red-500 animate-livepulse' if live else ('brand-bar' if pred else 'bg-white/10') }}"></div>
-
-        <div class="pl-5 pr-4 py-4 flex items-center gap-3">
-            <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
-                <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate text-right">{{ m.home_team }}</span>
-                {% set hc = crest(m.home_team, m.home_flag) %}
-                {% if hc %}<img src="{{ hc }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
-            </div>
-            <div class="shrink-0 text-center min-w-[88px]">
-                {% if m.home_score is not none %}
-                    <div class="font-display font-bold text-2xl sm:text-3xl leading-none flex items-center justify-center gap-2">
-                        <span>{{ m.home_score }}</span><span class="text-white/30">:</span><span>{{ m.away_score }}</span>
-                    </div>
-                    <div class="mt-1 text-[10px] font-display uppercase tracking-[0.2em] {{ 'text-red-400' if live else 'text-white/40' }}">
-                        {{ 'En vivo' if live else 'Final' }}
-                    </div>
-                {% else %}
-                    <div class="font-display font-bold text-lg leading-none text-white/80">{{ m.kickoff[11:16] }}</div>
-                    <div class="mt-1 text-[10px] uppercase tracking-wider text-white/40">UTC</div>
-                {% endif %}
-            </div>
-            <div class="flex items-center gap-2 flex-1 min-w-0">
-                {% set ac = crest(m.away_team, m.away_flag) %}
-                {% if ac %}<img src="{{ ac }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
-                <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate">{{ m.away_team }}</span>
-            </div>
-        </div>
-        <div class="px-5 pb-3 -mt-1 flex items-center justify-center">
-            {% if pred %}
-                <a href="/prediccion/{{ m.id }}" class="flex items-center gap-2 text-xs hover:opacity-80 transition">
-                    <span class="font-display uppercase tracking-wider text-white/40">{{ t('Tu pronóstico') }}</span>
-                    <span class="font-display font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md">{{ pred.home_score_pred }}–{{ pred.away_score_pred }}</span>
-                    {% if finished %}
-                        <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(pred.points) }} pts</span>
-                        <span class="text-white/30 underline underline-offset-2">{{ t('ver') }}</span>
-                    {% elif not closed %}
-                        <span class="text-white/40 underline underline-offset-2">{{ t('editar') }}</span>
-                    {% else %}
-                        <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 {{ t('ver') }}</span>
-                    {% endif %}
-                </a>
-            {% elif not closed %}
-                <a href="/prediccion/{{ m.id }}"
-                   class="font-display uppercase tracking-wider text-xs font-semibold px-5 py-2 rounded-xl brand-bar text-ink hover:opacity-90 transition shadow-lg shadow-sky-500/20">
-                    Pronosticar
-                </a>
+        <div class="shrink-0 text-center min-w-[88px]">
+            {% if m.home_score is not none %}
+                <div class="font-display font-bold text-2xl sm:text-3xl leading-none flex items-center justify-center gap-2">
+                    <span>{{ m.home_score }}</span><span class="text-white/30">:</span><span>{{ m.away_score }}</span>
+                </div>
+                <div class="mt-1 text-[10px] font-display uppercase tracking-[0.2em] {{ 'text-red-400' if live else 'text-white/40' }}">
+                    {{ t('En vivo') if live else t('Final') }}
+                </div>
             {% else %}
-                <a href="/prediccion/{{ m.id }}" class="font-display uppercase tracking-wider text-[10px] text-white/40 underline underline-offset-2 hover:text-white transition">🔒 {{ t('ver') }}</a>
+                <div class="kickoff-time font-display font-bold text-lg leading-none text-white/80">{{ m.kickoff[11:16] }}</div>
+                <div class="mt-1 text-[10px] uppercase tracking-wider text-white/40">{{ t('local') }}</div>
             {% endif %}
         </div>
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+            {% set ac = crest(m.away_team, m.away_flag) %}
+            {% if ac %}<img src="{{ ac }}" class="w-9 h-9 object-contain shrink-0 drop-shadow">{% endif %}
+            <span class="font-display font-semibold text-base sm:text-lg uppercase tracking-wide truncate">{{ m.away_team }}</span>
+        </div>
     </div>
-    {% endfor %}
+    <div class="px-5 pb-3 -mt-1 flex items-center justify-center">
+        {% if pred %}
+            <a href="/prediccion/{{ m.id }}" class="flex items-center gap-2 text-xs hover:opacity-80 transition">
+                <span class="font-display uppercase tracking-wider text-white/40">{{ t('Tu pronóstico') }}</span>
+                <span class="font-display font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-md">{{ pred.home_score_pred }}–{{ pred.away_score_pred }}</span>
+                {% if finished %}
+                    <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(pred.points) }} pts</span>
+                    <span class="text-white/30 underline underline-offset-2">{{ t('ver') }}</span>
+                {% elif not closed %}
+                    <span class="text-white/40 underline underline-offset-2">{{ t('editar') }}</span>
+                {% else %}
+                    <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 {{ t('ver') }}</span>
+                {% endif %}
+            </a>
+        {% elif not closed %}
+            <a href="/prediccion/{{ m.id }}"
+               class="font-display uppercase tracking-wider text-xs font-semibold px-5 py-2 rounded-xl brand-bar text-ink hover:opacity-90 transition shadow-lg shadow-sky-500/20">
+                {{ t('Pronosticar') }}
+            </a>
+        {% else %}
+            <a href="/prediccion/{{ m.id }}" class="font-display uppercase tracking-wider text-[10px] text-white/40 underline underline-offset-2 hover:text-white transition">🔒 {{ t('ver') }}</a>
+        {% endif %}
     </div>
 </div>
 {% endfor %}
+{% endfor %}
+</div>
+
+<script src="/static/localcal.js"></script>
+<script>
+regroupByLocalDay({
+    listId: 'match-daylist',
+    dias:  {{ t('Domingo,Lunes,Martes,Miércoles,Jueves,Viernes,Sábado') | tojson }}.split(','),
+    meses: {{ t('Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic') | tojson }}.split(','),
+    pend1: {{ t('pendiente') | tojson }},
+    pendN: {{ t('pendientes') | tojson }},
+    sectionClass: 'mb-6',
+    bodyClass: 'space-y-3',
+});
+</script>
 
 {% endblock %}

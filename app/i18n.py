@@ -154,6 +154,10 @@ STRINGS = {
     "editar": ("editar", "edit"),
     "ver": ("ver", "view"),
     "Resultado real": ("Placar real", "Actual result"),
+    "Marcador en vivo": ("Placar ao vivo", "Live score"),
+    "En juego — los aciertos se confirman al terminar":
+        ("Em andamento — os acertos se confirmam ao terminar",
+         "In progress — hits are confirmed when it ends"),
     "Tu marcador": ("Seu placar", "Your score"),
     "No acertaste el resultado": ("Você não acertou o placar", "You missed the result"),
     "No pronosticaste este partido": ("Você não palpitou neste jogo", "You didn't predict this match"),
