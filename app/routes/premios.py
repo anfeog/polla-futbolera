@@ -3,17 +3,30 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.timeutils import is_past
+from app.timeutils import is_locked
 from app.scoring import tournament_finished, real_total_goals
 
 router = APIRouter()
 
 
-def _first_kickoff(conn) -> str | None:
+def _awards_lock_kickoff(conn) -> str | None:
+    """
+    Partido de referencia para cerrar los premios. Se amplió el plazo a 1h
+    antes de Canadá vs Bosnia (muchos no alcanzaron a hacer los premios al
+    empezar el Mundial). Fallback: primer partido del torneo.
+    """
     row = conn.execute(
+        "SELECT kickoff FROM matches WHERE "
+        "(home_team LIKE '%osnia%' OR away_team LIKE '%osnia%') AND "
+        "(home_team LIKE '%anada%' OR away_team LIKE '%anada%') "
+        "ORDER BY kickoff LIMIT 1"
+    ).fetchone()
+    if row and row["kickoff"]:
+        return row["kickoff"]
+    fk = conn.execute(
         "SELECT MIN(kickoff) k FROM matches WHERE home_team != 'Por definir'"
     ).fetchone()
-    return row["k"] if row else None
+    return fk["k"] if fk else None
 
 
 @router.get("/premios", response_class=HTMLResponse)
@@ -23,7 +36,7 @@ def awards_form(request: Request, user=Depends(require_login)):
         "SELECT * FROM award_predictions WHERE user_id = ?", (user["id"],)
     ).fetchone()
     real = conn.execute("SELECT * FROM tournament_awards WHERE id = 1").fetchone()
-    locked = is_past(_first_kickoff(conn))
+    locked = is_locked(_awards_lock_kickoff(conn))
     # Listas para autocompletar (todos los jugadores / solo arqueros)
     all_players = [r["name"] for r in conn.execute(
         "SELECT DISTINCT name FROM players ORDER BY name"
@@ -75,7 +88,7 @@ def save_awards(
     user=Depends(require_login),
 ):
     conn = get_db()
-    if is_past(_first_kickoff(conn)):
+    if is_locked(_awards_lock_kickoff(conn)):
         conn.close()
         return RedirectResponse("/premios", status_code=303)
 

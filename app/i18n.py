@@ -209,7 +209,7 @@ STRINGS = {
     "+10 puntos": ("+10 pontos", "+10 points"),
     "Autogol acertado =": ("Gol contra acertado =", "Own goal hit ="),
     "+20 puntos": ("+20 pontos", "+20 points"),
-    "🔒 Los premios se cerraron al empezar el Mundial.": ("🔒 Os prêmios fecharam quando a Copa começou.", "🔒 Awards locked when the World Cup started."),
+    "🔒 Los premios ya están cerrados.": ("🔒 Os prêmios já estão fechados.", "🔒 Awards are now closed."),
     "🥇 Bota de Oro": ("🥇 Chuteira de Ouro", "🥇 Golden Boot"),
     "Máximo goleador del torneo": ("Artilheiro do torneio", "Tournament top scorer"),
     "🏆 Balón de Oro": ("🏆 Bola de Ouro", "🏆 Golden Ball"),
