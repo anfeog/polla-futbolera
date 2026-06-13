@@ -4,8 +4,11 @@ from datetime import datetime, timezone, timedelta
 # Minutos antes del pitido en que se cierran los pronósticos.
 PREDICTION_LOCK_MINUTES = 60   # regla original (partidos antes de SHORT_LOCK_FROM)
 SHORT_LOCK_MINUTES = 1         # nueva regla: cierre 1 min antes del pitido
-# Se aplica la regla corta a los partidos cuyo kickoff (fecha UTC) sea >= esta fecha.
-SHORT_LOCK_FROM = "2026-06-14"
+# La regla corta aplica a los partidos cuya fecha LOCAL (Colombia, UTC-5) sea
+# >= esta fecha. Así "United States vs Paraguay" (13 jun 01:00 UTC = 12 jun
+# 20:00 Col) mantiene 1h, y los del 13 jun Colombia ya cierran 1 min antes.
+SHORT_LOCK_FROM = "2026-06-13"
+_LOCAL_OFFSET = timedelta(hours=-5)   # hora de Colombia
 
 
 def _parse_kickoff(kickoff: str) -> datetime:
@@ -18,8 +21,9 @@ def _parse_kickoff(kickoff: str) -> datetime:
 
 
 def _lock_minutes(kickoff: str) -> int:
-    """1 min para partidos desde SHORT_LOCK_FROM; 60 min para los anteriores."""
-    return SHORT_LOCK_MINUTES if (kickoff or "")[:10] >= SHORT_LOCK_FROM else PREDICTION_LOCK_MINUTES
+    """1 min para partidos cuya fecha local (Colombia) sea >= SHORT_LOCK_FROM; si no, 60 min."""
+    local_date = (_parse_kickoff(kickoff) + _LOCAL_OFFSET).date().isoformat()
+    return SHORT_LOCK_MINUTES if local_date >= SHORT_LOCK_FROM else PREDICTION_LOCK_MINUTES
 
 
 def lock_time(kickoff: str) -> datetime:
