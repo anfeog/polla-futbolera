@@ -248,8 +248,11 @@ async def load_matches(request: Request, user=Depends(require_admin)):
 async def force_update_results(user=Depends(require_admin)):
     """Fuerza una actualización inmediata de resultados (no espera los 5 min del scheduler)."""
     from app.football_api import update_finished_matches
+    from app.espn import sync_goalscorers
+    import asyncio
     try:
         recalced = await update_finished_matches()
+        scorers = await asyncio.to_thread(sync_goalscorers)   # goleadores ESPN
     except Exception as e:
         return RedirectResponse(f"/admin?force_error={e}", status_code=303)
     conn = get_db()
@@ -257,4 +260,4 @@ async def force_update_results(user=Depends(require_admin)):
         "SELECT COUNT(*) c FROM matches WHERE status IN ('IN_PLAY','PAUSED')"
     ).fetchone()["c"]
     conn.close()
-    return RedirectResponse(f"/admin?updated={recalced}&live={live}", status_code=303)
+    return RedirectResponse(f"/admin?updated={recalced}&live={live}&scorers={scorers}", status_code=303)

@@ -63,9 +63,18 @@ def startup():
 def _start_scheduler():
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from app.football_api import update_finished_matches, fetch_and_store_matches
+    from app.espn import sync_goalscorers
+    import asyncio
     scheduler = AsyncIOScheduler()
-    # Actualiza resultados (marcadores/goles/penales) cada 5 minutos
+
+    async def _sync_scorers_job():
+        # sync_goalscorers es bloqueante (HTTP sync): correr en hilo aparte
+        await asyncio.to_thread(sync_goalscorers)
+
+    # Actualiza resultados (marcadores/penales) cada 5 minutos (football-data.org)
     scheduler.add_job(update_finished_matches, "interval", minutes=5, id="update_results")
+    # Goleadores desde ESPN (football-data.org gratis no los da) cada 6 minutos
+    scheduler.add_job(_sync_scorers_job, "interval", minutes=6, id="sync_scorers")
     # Refresca el cuadro completo cada 2 horas: rellena los equipos de las
     # fases KO en cuanto la API los define -> desbloquea sus predicciones solo.
     scheduler.add_job(fetch_and_store_matches, "interval", hours=2, id="refresh_fixture")

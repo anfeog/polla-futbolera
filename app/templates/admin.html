@@ -140,9 +140,11 @@
     {% if request.query_params.get('updated') is not none %}
     {% set n_up = request.query_params.get('updated')|int %}
     {% set n_live = request.query_params.get('live')|int %}
+    {% set n_sc = request.query_params.get('scorers')|int %}
     <div class="bg-green-900/40 border border-green-700/60 text-green-200 px-4 py-3 rounded-lg mb-4 text-sm">
         ✅ <strong>Actualización forzada</strong> · {{ now_hhmmss }} —
         {% if n_up > 0 %}{{ n_up }} partido(s) recalculado(s) con puntos definitivos.{% else %}sin partidos nuevos por recalcular.{% endif %}
+        {% if n_sc > 0 %}<div class="mt-1 text-emerald-300">⚽ {{ n_sc }} partido(s) con goleadores importados de ESPN.</div>{% endif %}
         {% if n_live > 0 %}
         <div class="mt-1 text-amber-300">🔴 {{ n_live }} partido(s) aún en vivo según la API (sus puntos siguen provisionales hasta que la API los marque como terminados).</div>
         {% endif %}

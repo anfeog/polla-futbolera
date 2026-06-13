@@ -45,6 +45,14 @@ def _goals_by_team_ordered(match_goals: list, team: str) -> list:
     return sorted(goals, key=lambda g: (g["minute"] or 999))
 
 
+def _norm_player(s) -> str:
+    """Normaliza nombre de jugador para comparar (sin acentos, minúsculas)."""
+    import unicodedata
+    s = (s or "").strip()
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    return s.lower()
+
+
 def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
     """
     Puntos de goleador: +2 por jugador en su posición correcta dentro de su
@@ -69,7 +77,7 @@ def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
                     hits += 1
             elif (not actual_goal["is_own_goal"]
                     and gp["player_name"]
-                    and gp["player_name"].strip().lower() == (actual_goal["player_name"] or "").strip().lower()):
+                    and _norm_player(gp["player_name"]) == _norm_player(actual_goal["player_name"])):
                 points += POINTS_SCORER
                 hits += 1
     return points, hits
