@@ -77,45 +77,65 @@ def _fetch_goals(event_id: str) -> list:
     return goals
 
 
-def _find_event_id(events: list, home: str, away: str):
-    """Encuentra el event id de ESPN cuyo par de equipos coincide con el nuestro."""
+def _find_event(events: list, home: str, away: str):
+    """Encuentra el evento de ESPN cuyo par de equipos coincide con el nuestro."""
     want = {_norm_team(home), _norm_team(away)}
     for e in events:
         comps = e.get("competitions", [{}])[0].get("competitors", [])
         teams = {_norm_team(c.get("team", {}).get("displayName")) for c in comps}
         if teams == want:
-            return e["id"]
+            return e
     return None
+
+
+def _event_status_scores(event):
+    """(status_name, {norm_team: score}) de un evento de ESPN."""
+    comp = event.get("competitions", [{}])[0]
+    status = ((comp.get("status") or event.get("status") or {}).get("type") or {}).get("name", "")
+    scores = {}
+    for c in comp.get("competitors", []):
+        try:
+            sc = int(c.get("score"))
+        except (TypeError, ValueError):
+            sc = None
+        scores[_norm_team(c.get("team", {}).get("displayName"))] = sc
+    return status, scores
 
 
 def sync_goalscorers() -> int:
     """
-    Para cada partido FINISHED sin sus goleadores completos, los baja de ESPN
-    y recalcula los puntos. Devuelve cuántos partidos se actualizaron.
-    Solo aplica si ESPN tiene los goles COMPLETOS (= total del marcador), para
-    no repartir puntos con datos parciales.
+    ESPN autosuficiente: para los partidos que ya empezaron, si ESPN los reporta
+    'full-time' con sus goles completos, fija el marcador, marca FINISHED, guarda
+    los goleadores (con autogoles) y recalcula los puntos — SIN depender de que
+    football-data.org los marque como terminados.
+
+    No toca partidos ya completos (marcador + nº de goles que cuadra), para
+    respetar lo cargado a mano. Devuelve cuántos partidos se actualizaron.
     """
+    from datetime import datetime, timezone
     from app.scoring import recalculate_all_for_match
 
+    now_iso = datetime.now(timezone.utc).isoformat()
     conn = get_db()
     matches = conn.execute("""
-        SELECT id, home_team, away_team, home_score, away_score, kickoff
+        SELECT id, home_team, away_team, home_score, away_score, status, kickoff
         FROM matches
-        WHERE status = 'FINISHED' AND home_score IS NOT NULL
-    """).fetchall()
+        WHERE home_team != 'Por definir' AND away_team != 'Por definir'
+          AND kickoff <= ?
+        ORDER BY kickoff DESC LIMIT 40
+    """, (now_iso,)).fetchall()
 
     updated = 0
     sb_cache: dict = {}
 
     for m in matches:
-        total = (m["home_score"] or 0) + (m["away_score"] or 0)
-        if total == 0:
-            continue
         have = conn.execute(
             "SELECT COUNT(*) c FROM match_goals WHERE match_id=?", (m["id"],)
         ).fetchone()["c"]
-        if have >= total:
-            continue  # ya está completo (por ESPN o manual)
+        cur_total = (m["home_score"] or 0) + (m["away_score"] or 0)
+        # Ya completo: FINISHED y nº de goles guardados cuadra con el marcador
+        if m["status"] == "FINISHED" and m["home_score"] is not None and have >= cur_total:
+            continue
 
         date = m["kickoff"][:10].replace("-", "")
         if date not in sb_cache:
@@ -123,18 +143,33 @@ def sync_goalscorers() -> int:
                 sb_cache[date] = _fetch_scoreboard(date)
             except Exception:
                 sb_cache[date] = []
-        event_id = _find_event_id(sb_cache[date], m["home_team"], m["away_team"])
-        if not event_id:
+        event = _find_event(sb_cache[date], m["home_team"], m["away_team"])
+        if not event:
             continue
 
+        status, scores = _event_status_scores(event)
+        if status != "STATUS_FULL_TIME":
+            continue  # ESPN dice que aún no termina
+
+        nh, na = _norm_team(m["home_team"]), _norm_team(m["away_team"])
+        hs, as_ = scores.get(nh), scores.get(na)
+        if hs is None or as_ is None:
+            continue
+        total = hs + as_
+
         try:
-            goals = _fetch_goals(event_id)
+            goals = _fetch_goals(event["id"])
         except Exception:
             continue
         if len(goals) != total:
-            continue  # ESPN aún no tiene todos: reintentar en el próximo ciclo
+            continue  # ESPN aún no tiene todos los goles: reintentar luego
 
-        nh, na = _norm_team(m["home_team"]), _norm_team(m["away_team"])
+        # Fijar marcador + estado FINISHED desde ESPN
+        conn.execute(
+            "UPDATE matches SET home_score=?, away_score=?, status='FINISHED' WHERE id=?",
+            (hs, as_, m["id"])
+        )
+        # Reemplazar goleadores
         conn.execute("DELETE FROM match_goals WHERE match_id=?", (m["id"],))
         for g in goals:
             gt = _norm_team(g["team"])
