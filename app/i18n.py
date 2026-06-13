@@ -21,9 +21,9 @@ STRINGS = {
     "Calendario": ("Calendário", "Calendar"),
     "CALENDARIO": ("CALENDÁRIO", "CALENDAR"),
     "local": ("local", "local"),
-    "Todos los partidos por fecha, en tu hora local. Cierre 1h antes de cada partido.":
-        ("Todos os jogos por data, no seu horário local. Fecha 1h antes de cada jogo.",
-         "All matches by date, in your local time. Closes 1h before each match."),
+    "Todos los partidos por fecha, en tu hora local. Cierre 1 min antes de cada partido.":
+        ("Todos os jogos por data, no seu horário local. Fecha 1 min antes de cada jogo.",
+         "All matches by date, in your local time. Closes 1 min before each match."),
     "Pronosticado": ("Palpitado", "Predicted"),
     "Pendiente": ("Pendente", "Pending"),
     "Cerrado": ("Encerrado", "Closed"),
@@ -65,7 +65,7 @@ STRINGS = {
     "Ver tutorial": ("Ver tutorial", "View tutorial"),
     "Todos los partidos": ("Todos os jogos", "All matches"),
     "Te falta pronosticar": ("Falta você palpitar", "Still to predict"),
-    "Cierre 1h antes del pitido": ("Fecha 1h antes do apito", "Closes 1h before kickoff"),
+    "Cierre 1 min antes del pitido": ("Fecha 1 min antes do apito", "Closes 1 min before kickoff"),
     "¡Estás al día!": ("Você está em dia!", "You're all caught up!"),
     "Ya pronosticaste todos los próximos partidos. Vuelve cuando se acerquen nuevos.":
         ("Você já palpitou em todos os próximos jogos. Volte quando houver novos.",

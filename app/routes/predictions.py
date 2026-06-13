@@ -206,7 +206,7 @@ async def save_prediction(match_id: int, request: Request, user=Depends(require_
 
     if is_locked(match["kickoff"]):
         conn.close()
-        raise HTTPException(400, "Los pronósticos cerraron (1 hora antes del partido)")
+        raise HTTPException(400, "Los pronósticos ya cerraron para este partido")
 
     KO_STAGES = {"Last 32", "Last 16", "Quarter Finals", "Semi Finals", "Third Place", "Final"}
 
