@@ -112,8 +112,9 @@ def sync_goalscorers() -> int:
     No toca partidos ya completos (marcador + nº de goles que cuadra), para
     respetar lo cargado a mano. Devuelve cuántos partidos se actualizaron.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime, timezone, timedelta
     from app.scoring import recalculate_all_for_match
+    from app.timeutils import _parse_kickoff
 
     now_iso = datetime.now(timezone.utc).isoformat()
     conn = get_db()
@@ -137,13 +138,21 @@ def sync_goalscorers() -> int:
         if m["status"] == "FINISHED" and m["home_score"] is not None and have >= cur_total:
             continue
 
-        date = m["kickoff"][:10].replace("-", "")
-        if date not in sb_cache:
-            try:
-                sb_cache[date] = _fetch_scoreboard(date)
-            except Exception:
-                sb_cache[date] = []
-        event = _find_event(sb_cache[date], m["home_team"], m["away_team"])
+        # ESPN organiza por fecha de EE.UU. (atrasada vs UTC), así que un partido
+        # de madrugada UTC puede aparecer bajo el día anterior. Buscar en una
+        # ventana de fechas alrededor del kickoff.
+        k = _parse_kickoff(m["kickoff"])
+        event = None
+        for delta in (0, -1, 1):
+            d = (k + timedelta(days=delta)).strftime("%Y%m%d")
+            if d not in sb_cache:
+                try:
+                    sb_cache[d] = _fetch_scoreboard(d)
+                except Exception:
+                    sb_cache[d] = []
+            event = _find_event(sb_cache[d], m["home_team"], m["away_team"])
+            if event:
+                break
         if not event:
             continue
 
