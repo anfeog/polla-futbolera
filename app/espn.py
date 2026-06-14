@@ -61,9 +61,15 @@ def _fetch_goals(event_id: str) -> list:
     for e in (data.get("keyEvents") or []):
         ty = ((e.get("type") or {}).get("text") or "")
         tyl = ty.lower()
-        if "goal" not in tyl:
+        txt = (e.get("text") or "").lower()
+        # Un gol puede venir como: "Goal", "Goal - Header", "Own Goal" (tienen
+        # 'goal'), o "Penalty - Scored" (penal convertido, NO tiene 'goal').
+        # El texto de un gol siempre empieza con "Goal!".
+        is_goal = ("goal" in tyl) or ("penalty" in tyl and "scored" in tyl) or txt.startswith("goal!")
+        if not is_goal:
             continue
-        if "disallow" in tyl or "cancel" in tyl or "no goal" in tyl:
+        # Descartar penales fallados/atajados y goles anulados
+        if "miss" in tyl or "saved" in tyl or "disallow" in tyl or "cancel" in tyl or "no goal" in txt:
             continue
         parts = e.get("participants") or []
         scorer = parts[0].get("athlete", {}).get("displayName") if parts else None
