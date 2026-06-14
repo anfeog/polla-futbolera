@@ -53,6 +53,29 @@ def _norm_player(s) -> str:
     return s.lower()
 
 
+def _names_match(pred: str, real: str) -> bool:
+    """
+    Compara nombres de jugador de forma tolerante: las fuentes escriben distinto
+    (ej. lista de plantilla 'Nestor Irankunda' vs ESPN 'Nestory Irankunda'). Se
+    consideran iguales si: coinciden exactos, o comparten el apellido (último
+    token, >=4 letras), o uno contiene al otro, o comparten algún token largo.
+    """
+    a, b = _norm_player(pred), _norm_player(real)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    ta, tb = a.split(), b.split()
+    if not ta or not tb:
+        return False
+    if ta[-1] == tb[-1] and len(ta[-1]) >= 4:      # mismo apellido
+        return True
+    if a in b or b in a:                            # uno contenido en el otro
+        return True
+    common = {t for t in ta if len(t) >= 4} & {t for t in tb if len(t) >= 4}
+    return bool(common)
+
+
 def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
     """
     Puntos de goleador: +2 por jugador en su posición correcta dentro de su
@@ -77,7 +100,7 @@ def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
                     hits += 1
             elif (not actual_goal["is_own_goal"]
                     and gp["player_name"]
-                    and _norm_player(gp["player_name"]) == _norm_player(actual_goal["player_name"])):
+                    and _names_match(gp["player_name"], actual_goal["player_name"])):
                 points += POINTS_SCORER
                 hits += 1
     return points, hits
