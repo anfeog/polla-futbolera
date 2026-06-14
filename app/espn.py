@@ -108,7 +108,7 @@ def _event_status_scores(event):
     return status, scores
 
 
-def sync_goalscorers() -> int:
+def sync_goalscorers(report: list = None) -> int:
     """
     ESPN autosuficiente: para los partidos que ya empezaron, si ESPN los reporta
     'full-time' con sus goles completos, fija el marcador, marca FINISHED, guarda
@@ -117,10 +117,24 @@ def sync_goalscorers() -> int:
 
     No toca partidos ya completos (marcador + nº de goles que cuadra), para
     respetar lo cargado a mano. Devuelve cuántos partidos se actualizaron.
+
+    Si se pasa una lista `report`, se llena con el detalle por partido (qué pidió
+    a ESPN y qué devolvió), para mostrarlo en el panel admin.
     """
     from datetime import datetime, timezone, timedelta
     from app.scoring import recalculate_all_for_match
     from app.timeutils import _parse_kickoff
+
+    def _log(match, action, status=None, goals=None):
+        if report is not None:
+            report.append({
+                "match": match, "action": action,
+                "status": status,
+                "goals": [
+                    f"{g['minute']}' {g['scorer']} ({g['team']}){' AG' if g['is_own_goal'] else ''}"
+                    for g in (goals or [])
+                ],
+            })
 
     now_iso = datetime.now(timezone.utc).isoformat()
     conn = get_db()
@@ -136,13 +150,14 @@ def sync_goalscorers() -> int:
     sb_cache: dict = {}
 
     for m in matches:
+        name = f"{m['home_team']} vs {m['away_team']}"
         have = conn.execute(
             "SELECT COUNT(*) c FROM match_goals WHERE match_id=?", (m["id"],)
         ).fetchone()["c"]
         cur_total = (m["home_score"] or 0) + (m["away_score"] or 0)
         # Ya completo: FINISHED y nº de goles guardados cuadra con el marcador
         if m["status"] == "FINISHED" and m["home_score"] is not None and have >= cur_total:
-            continue
+            continue   # no se reporta: ya estaba listo
 
         # ESPN organiza por fecha de EE.UU. (atrasada vs UTC), así que un partido
         # de madrugada UTC puede aparecer bajo el día anterior. Buscar en una
@@ -160,24 +175,30 @@ def sync_goalscorers() -> int:
             if event:
                 break
         if not event:
+            _log(name, "❌ No encontrado en ESPN")
             continue
 
         status, scores = _event_status_scores(event)
         if status != "STATUS_FULL_TIME":
-            continue  # ESPN dice que aún no termina
+            _log(name, "⏳ ESPN dice que aún no termina", status=status)
+            continue
 
         nh, na = _norm_team(m["home_team"]), _norm_team(m["away_team"])
         hs, as_ = scores.get(nh), scores.get(na)
         if hs is None or as_ is None:
+            _log(name, "⚠️ ESPN sin marcador claro", status=status)
             continue
         total = hs + as_
 
         try:
             goals = _fetch_goals(event["id"])
         except Exception:
+            _log(name, "⚠️ Error pidiendo goles a ESPN", status=status)
             continue
         if len(goals) != total:
-            continue  # ESPN aún no tiene todos los goles: reintentar luego
+            _log(name, f"⏳ ESPN incompleto ({len(goals)}/{total} goles) — reintenta luego",
+                 status=status, goals=goals)
+            continue
 
         # Fijar marcador + estado FINISHED desde ESPN
         conn.execute(
@@ -196,6 +217,7 @@ def sync_goalscorers() -> int:
             )
         conn.commit()
         recalculate_all_for_match(m["id"])
+        _log(name, f"✅ Actualizado: {hs}-{as_} + {len(goals)} goleadores", status=status, goals=goals)
         updated += 1
 
     conn.close()

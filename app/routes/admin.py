@@ -10,8 +10,7 @@ import asyncio
 router = APIRouter(prefix="/admin")
 
 
-@router.get("", response_class=HTMLResponse)
-def admin_panel(request: Request, user=Depends(require_admin)):
+def _render_admin(request, user, **extra):
     from datetime import datetime, timezone
     conn = get_db()
     users = conn.execute("SELECT id, username, is_admin, created_at FROM users ORDER BY id").fetchall()
@@ -19,11 +18,18 @@ def admin_panel(request: Request, user=Depends(require_admin)):
     n_players = conn.execute("SELECT COUNT(*) c FROM players").fetchone()["c"]
     n_matches = conn.execute("SELECT COUNT(*) c FROM matches").fetchone()["c"]
     conn.close()
-    return templates.TemplateResponse("admin.html", {
+    ctx = {
         "request": request, "user": user, "users": users, "awards": awards,
         "n_players": n_players, "n_matches": n_matches,
         "now_hhmmss": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
-    })
+    }
+    ctx.update(extra)
+    return templates.TemplateResponse("admin.html", ctx)
+
+
+@router.get("", response_class=HTMLResponse)
+def admin_panel(request: Request, user=Depends(require_admin)):
+    return _render_admin(request, user)
 
 
 @router.post("/crear-usuario")
@@ -244,20 +250,25 @@ async def load_matches(request: Request, user=Depends(require_admin)):
         })
 
 
-@router.post("/actualizar-resultados")
-async def force_update_results(user=Depends(require_admin)):
-    """Fuerza una actualización inmediata de resultados (no espera los 5 min del scheduler)."""
+@router.post("/actualizar-resultados", response_class=HTMLResponse)
+async def force_update_results(request: Request, user=Depends(require_admin)):
+    """Fuerza la actualización inmediata y muestra el detalle de lo que ESPN devolvió."""
     from app.football_api import update_finished_matches
     from app.espn import sync_goalscorers
     import asyncio
+    report = []
     try:
         recalced = await update_finished_matches()
-        scorers = await asyncio.to_thread(sync_goalscorers)   # goleadores ESPN
+        scorers = await asyncio.to_thread(sync_goalscorers, report)
     except Exception as e:
-        return RedirectResponse(f"/admin?force_error={e}", status_code=303)
+        return _render_admin(request, user, force_error=str(e))
     conn = get_db()
     live = conn.execute(
         "SELECT COUNT(*) c FROM matches WHERE status IN ('IN_PLAY','PAUSED')"
     ).fetchone()["c"]
     conn.close()
-    return RedirectResponse(f"/admin?updated={recalced}&live={live}&scorers={scorers}", status_code=303)
+    return _render_admin(
+        request, user,
+        force_recalced=recalced, force_scorers=scorers,
+        force_live=live, force_report=report,
+    )
