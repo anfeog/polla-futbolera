@@ -1,7 +1,8 @@
 // Service worker mínimo para que la app sea instalable (PWA).
-// Estrategia: network-first sin cachear páginas (datos siempre frescos),
-// con fallback al caché solo para que no falle si no hay red.
-const CACHE = 'polla-2026-v1';
+// IMPORTANTE: solo gestiona /static/ (íconos, logos, JS). Las páginas (HTML)
+// van directo a la red por el navegador, así una página NUNCA queda en blanco
+// si el SW falla o no hay caché (bug anterior: devolvía undefined sin red).
+const CACHE = 'polla-2026-v2';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -17,14 +18,19 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+
+  let url;
+  try { url = new URL(e.request.url); } catch (_) { return; }
+
+  // Solo interceptar recursos estáticos. Todo lo demás (navegación, páginas)
+  // lo maneja el navegador normalmente -> nunca pantalla en blanco.
+  if (url.pathname.indexOf('/static/') === -1) return;
+
   e.respondWith(
     fetch(e.request)
       .then((resp) => {
-        // Cachear solo recursos estáticos (íconos, logos) para velocidad
-        if (e.request.url.includes('/static/')) {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
+        const copy = resp.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy));
         return resp;
       })
       .catch(() => caches.match(e.request))
