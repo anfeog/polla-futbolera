@@ -21,6 +21,86 @@
     </div>
 </div>
 
+<!-- Carrusel de partidos en vivo -->
+{% if live_matches %}
+<div class="mb-6">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-livepulse shrink-0"></span>
+        <span class="font-display text-xs uppercase tracking-wider text-red-300 font-semibold">{{ t('En vivo ahora') }}</span>
+    </div>
+    <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4"
+         style="scrollbar-width:none;-webkit-overflow-scrolling:touch;" onscroll="">
+        <style>.live-scroll::-webkit-scrollbar{display:none}</style>
+
+        <!-- Tarjeta tutorial -->
+        <a href="/como-jugar"
+           class="snap-start shrink-0 w-44 rounded-2xl bg-gradient-to-b from-sky-500/[0.14] to-sky-500/[0.03] border border-sky-500/25 hover:border-sky-400/50 transition p-4 flex flex-col items-center justify-center text-center gap-2 min-h-[200px]">
+            <span class="text-3xl">📖</span>
+            <span class="font-display text-xs uppercase tracking-wide text-sky-300 font-semibold leading-tight">{{ t('¿Cómo jugar?') }}</span>
+            <span class="text-[10px] text-white/40 leading-tight">{{ t('Reglas y puntuación') }}</span>
+            <span class="mt-auto font-display text-[10px] uppercase tracking-wider text-ink bg-sky-400 rounded-full px-3 py-1">{{ t('Ver →') }}</span>
+        </a>
+
+        <!-- Tarjetas de partidos en vivo -->
+        {% for lm in live_matches %}
+        {% set m = lm.m %}
+        {% set hc = crest(m.home_team, m.home_flag) %}
+        {% set ac = crest(m.away_team, m.away_flag) %}
+        {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
+        {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
+        <a href="/prediccion/{{ m.id }}"
+           class="snap-start shrink-0 w-72 rounded-2xl bg-gradient-to-b from-red-500/[0.10] to-red-500/[0.02] border border-red-500/25 hover:border-red-400/45 transition p-4 block">
+
+            <!-- Cabecera -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-livepulse shrink-0"></span>
+                    <span class="font-display text-[10px] uppercase tracking-wider text-red-300">{{ t('En vivo') }}</span>
+                </div>
+                <span class="font-display text-[10px] uppercase tracking-wider text-white/30">{{ m.stage }}</span>
+            </div>
+
+            <!-- Marcador -->
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <div class="flex flex-col items-center gap-1 flex-1 min-w-0">
+                    {% if hc %}<img src="{{ hc }}" class="w-9 h-9 object-contain drop-shadow mx-auto">
+                    {% else %}<div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold mx-auto">{{ htla }}</div>{% endif %}
+                    <span class="font-display text-[9px] uppercase tracking-wide text-white/60 text-center truncate w-full">{{ htla }}</span>
+                </div>
+                <div class="font-heavy text-3xl tracking-tight shrink-0 text-white px-1">{{ m.home_score }} – {{ m.away_score }}</div>
+                <div class="flex flex-col items-center gap-1 flex-1 min-w-0">
+                    {% if ac %}<img src="{{ ac }}" class="w-9 h-9 object-contain drop-shadow mx-auto">
+                    {% else %}<div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold mx-auto">{{ atla }}</div>{% endif %}
+                    <span class="font-display text-[9px] uppercase tracking-wide text-white/60 text-center truncate w-full">{{ atla }}</span>
+                </div>
+            </div>
+
+            <!-- Predicciones de todos -->
+            {% if lm.preds %}
+            <div class="border-t border-white/5 pt-3">
+                <p class="font-display text-[9px] uppercase tracking-wider text-white/25 mb-2">{{ t('Predicciones') }}</p>
+                <div class="flex flex-wrap gap-1.5">
+                    {% for p in lm.preds %}
+                    {% set exact = m.home_score != none and p.home_score_pred == m.home_score and p.away_score_pred == m.away_score %}
+                    {% set winning = not exact and m.home_score != none and ((p.home_score_pred > p.away_score_pred and m.home_score > m.away_score) or (p.home_score_pred < p.away_score_pred and m.home_score < m.away_score) or (p.home_score_pred == p.away_score_pred and m.home_score == m.away_score)) %}
+                    <div class="flex items-center gap-1 px-2 py-1 rounded-lg {% if exact %}bg-emerald-500/20 border border-emerald-500/40{% elif winning %}bg-blue-500/10 border border-blue-500/20{% else %}bg-white/5 border border-white/10{% endif %}">
+                        <span class="text-xs leading-none">{{ p.avatar or '⚽' }}</span>
+                        <span class="font-display text-[10px] text-white/70">{{ p.home_score_pred }}-{{ p.away_score_pred }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="border-t border-white/5 pt-3 text-center">
+                <span class="font-display text-[10px] text-white/25 uppercase tracking-wider">{{ t('Sin pronósticos aún') }}</span>
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Recordatorios -->
 {% if premios_pending or comodin_stages %}
 <div class="space-y-3 mb-6">

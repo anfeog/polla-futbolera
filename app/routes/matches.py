@@ -189,12 +189,27 @@ def inicio(request: Request, user=Depends(require_login)):
     joker_stages = {r["stage"] for r in used}
     comodin_stages = [STAGE_LABELS.get(s, s) for s in stage_open if s not in joker_stages]
 
+    # ── Partidos EN VIVO: marcador + pronósticos de todos (para el carrusel) ──
+    live_matches = []
+    live_rows = conn.execute("""
+        SELECT * FROM matches WHERE status IN ('IN_PLAY','PAUSED') ORDER BY kickoff
+    """).fetchall()
+    for m in live_rows:
+        preds = conn.execute("""
+            SELECT u.username, u.avatar, p.home_score_pred, p.away_score_pred
+            FROM predictions p JOIN users u ON u.id = p.user_id
+            WHERE p.match_id = ? AND u.is_admin = 0
+            ORDER BY u.username
+        """, (m["id"],)).fetchall()
+        live_matches.append({"m": dict(m), "preds": [dict(p) for p in preds]})
+
     conn.close()
     return templates.TemplateResponse("inicio.html", {
         "request": request, "user": user, "matches": upcoming,
         "any_upcoming": any_upcoming,
         "premios_pending": premios_pending,
         "comodin_stages": comodin_stages,
+        "live_matches": live_matches,
     })
 
 
