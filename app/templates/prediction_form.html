@@ -10,7 +10,7 @@
         <p class="text-white/50 text-sm">{{ match.kickoff[:10] }} · {{ match.kickoff[11:16] }} UTC</p>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-6 items-start">
+    <div class="flex flex-col lg:flex-row gap-6 items-start lg:justify-center">
 
     <!-- ══ COLUMNA IZQUIERDA: Formulario ══ -->
     <div class="w-full lg:max-w-lg lg:shrink-0">
@@ -160,7 +160,8 @@
     </form>
     </div><!-- /columna form -->
 
-    <!-- ══ COLUMNA DERECHA: Pronósticos de los demás ══ -->
+    {% if others %}
+    <!-- ══ COLUMNA DERECHA: Pronósticos de los demás (solo tras el cierre) ══ -->
     <div class="w-full lg:flex-1 lg:sticky lg:top-6">
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden">
             <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
@@ -258,6 +259,7 @@
             {% endif %}
         </div>
     </div><!-- /columna derecha -->
+    {% endif %}
 
     </div><!-- /flex wrapper -->
 </div>
