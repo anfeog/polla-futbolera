@@ -4,12 +4,14 @@ import os
 from datetime import datetime
 from fastapi.templating import Jinja2Templates
 from app.crests import crest_url
+from app.team_colors import team_gradient
 from app.i18n import t, get_lang, LANGS, LANG_FLAGS
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 templates.env.globals["crest"] = crest_url
+templates.env.globals["team_gradient"] = team_gradient
 templates.env.globals["t"] = t
 templates.env.globals["get_lang"] = get_lang
 templates.env.globals["LANGS"] = LANGS
