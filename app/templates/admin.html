@@ -17,6 +17,14 @@
 <div class="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">{{ error }}</div>
 {% endif %}
 
+{% if reset_user %}
+<div class="bg-emerald-900/40 border border-emerald-700 text-emerald-200 px-4 py-3 rounded-lg mb-4 text-sm">
+    Contraseña de <strong>{{ reset_user }}</strong> reseteada. Clave temporal:
+    <code class="bg-black/40 px-2 py-0.5 rounded text-emerald-300 font-mono">{{ reset_password }}</code>.
+    Pásasela y pídele que la cambie en su perfil.
+</div>
+{% endif %}
+
 <!-- Crear usuario -->
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
     <h2 class="font-semibold mb-4">Añadir participante</h2>
@@ -60,10 +68,16 @@
                 </td>
                 <td class="py-3 px-4 text-right">
                     {% if not u.is_admin %}
-                    <form method="post" action="/admin/eliminar-usuario/{{ u.id }}"
-                        onsubmit="return confirm('¿Eliminar a {{ u.username }}?')">
-                        <button type="submit" class="text-xs text-red-500 hover:text-red-400 transition">Eliminar</button>
-                    </form>
+                    <div class="flex items-center justify-end gap-3">
+                        <form method="post" action="/admin/resetear-clave/{{ u.id }}"
+                            onsubmit="return confirm('¿Resetear la contraseña de {{ u.username }}? Quedará como una clave temporal.')">
+                            <button type="submit" class="text-xs text-sky-400 hover:text-sky-300 transition">Resetear clave</button>
+                        </form>
+                        <form method="post" action="/admin/eliminar-usuario/{{ u.id }}"
+                            onsubmit="return confirm('¿Eliminar a {{ u.username }}?')">
+                            <button type="submit" class="text-xs text-red-500 hover:text-red-400 transition">Eliminar</button>
+                        </form>
+                    </div>
                     {% endif %}
                 </td>
             </tr>

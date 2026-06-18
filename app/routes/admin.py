@@ -9,6 +9,10 @@ import asyncio
 
 router = APIRouter(prefix="/admin")
 
+# Clave temporal que se asigna al resetear: el jugador entra con ella y la
+# cambia en su perfil.
+TEMP_PASSWORD = "soyhuevonsemeolvido"
+
 
 def _render_admin(request, user, **extra):
     from datetime import datetime, timezone
@@ -28,8 +32,12 @@ def _render_admin(request, user, **extra):
 
 
 @router.get("", response_class=HTMLResponse)
-def admin_panel(request: Request, user=Depends(require_admin)):
-    return _render_admin(request, user)
+def admin_panel(request: Request, user=Depends(require_admin), reset: str = ""):
+    extra = {}
+    if reset:
+        extra["reset_user"] = reset
+        extra["reset_password"] = TEMP_PASSWORD
+    return _render_admin(request, user, **extra)
 
 
 @router.post("/crear-usuario")
@@ -62,6 +70,25 @@ def delete_user(user_id: int, user=Depends(require_admin)):
     conn.commit()
     conn.close()
     return RedirectResponse("/admin", status_code=303)
+
+
+@router.post("/resetear-clave/{user_id}")
+def reset_password(user_id: int, user=Depends(require_admin)):
+    """Asigna la clave temporal a un jugador que olvidó la suya."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT username FROM users WHERE id = ? AND is_admin = 0", (user_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return RedirectResponse("/admin", status_code=303)
+    conn.execute(
+        "UPDATE users SET password_hash = ? WHERE id = ?",
+        (hash_password(TEMP_PASSWORD), user_id),
+    )
+    conn.commit()
+    conn.close()
+    return RedirectResponse(f"/admin?reset={row['username']}", status_code=303)
 
 
 @router.post("/premios-ganadores")
