@@ -2,7 +2,7 @@
 // IMPORTANTE: solo gestiona /static/ (íconos, logos, JS). Las páginas (HTML)
 // van directo a la red por el navegador, así una página NUNCA queda en blanco
 // si el SW falla o no hay caché (bug anterior: devolvía undefined sin red).
-const CACHE = 'polla-2026-v2';
+const CACHE = 'polla-2026-v3';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

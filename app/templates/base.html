@@ -45,8 +45,19 @@
     <link rel="apple-touch-icon" href="/static/icon-180.png">
     <script>
       if ('serviceWorker' in navigator) {
+        // Recarga una sola vez cuando un SW nuevo toma el control, para que los
+        // clientes que tenían una versión vieja/rota se sanen sin reinstalar.
+        var __swRefreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (__swRefreshing) return;
+          __swRefreshing = true;
+          window.location.reload();
+        });
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js').catch(function () {});
+          navigator.serviceWorker.register('/sw.js').then(function (reg) {
+            // Fuerza a buscar una versión nueva del SW en cada carga.
+            reg.update();
+          }).catch(function () {});
         });
       }
     </script>
