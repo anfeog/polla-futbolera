@@ -2,83 +2,58 @@
 {% block title %}Inicio — Polla Mundial 2026{% endblock %}
 {% block content %}
 
-{% if live_matches %}
-<!-- ═══ HÉROE EN VIVO — estilo HUD ═══ -->
-<div class="relative rounded-2xl overflow-hidden mb-8" style="background:#07091280;border:1px solid rgba(255,255,255,0.09);">
+{# ════════ Diapositivas del carrusel del inicio ════════ #}
 
-    <!-- Decoración de fondo: copa realista izq + balón der -->
+{# — Diapositiva: partido en vivo (HUD estilo TV) — #}
+{% macro live_slide(lm) %}
+{% set m = lm.m %}
+{% set hc = crest(m.home_team, m.home_flag) %}
+{% set ac = crest(m.away_team, m.away_flag) %}
+{% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
+{% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
+<div class="relative rounded-2xl overflow-hidden" style="background:#07091280;border:1px solid rgba(255,255,255,0.09);">
     <img src="/static/the-iconic-golden-fifa-world-cup-trophy-a-symbol-of-global-football-achievement-presented-in-a-dramatic-spotlight-on-a-transparent-background-isolated-on-transparent-background-free-png.webp"
          class="absolute -bottom-6 -left-8 w-40 opacity-[0.07] pointer-events-none select-none" aria-hidden="true">
     <img src="/static/pngtree-fifa-world-cup-soccer-ball-2026-trionda-png-image_17698008.webp"
          class="absolute -bottom-8 -right-8 w-44 opacity-[0.06] pointer-events-none select-none" aria-hidden="true">
-
-    <!-- Barra superior: EN VIVO + tutorial -->
     <div class="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
         <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-red-500 animate-livepulse shrink-0"></span>
             <span class="font-display text-[10px] uppercase tracking-[0.25em] text-red-300 font-semibold">{{ t('En vivo ahora') }}</span>
         </div>
-        <a href="/como-jugar" class="font-display text-[10px] uppercase tracking-wider text-white/30 hover:text-sky-300 transition">
-            📖 {{ t('Tutorial') }} →
-        </a>
+        <a href="/como-jugar" class="font-display text-[10px] uppercase tracking-wider text-white/30 hover:text-sky-300 transition">📖 {{ t('Tutorial') }} →</a>
     </div>
-
-    {% if live_matches | length == 1 %}
-    <!-- ── Partido único: HUD grande ── -->
-    {% set lm = live_matches[0] %}
-    {% set m = lm.m %}
-    {% set hc = crest(m.home_team, m.home_flag) %}
-    {% set ac = crest(m.away_team, m.away_flag) %}
-    {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
-    {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
-
-    <!-- Gradiente lateral sutil izq→der -->
     <div class="absolute inset-0 pointer-events-none"
          style="background:linear-gradient(to right,rgba(220,38,38,.09) 0%,transparent 38%,transparent 62%,rgba(59,130,246,.09) 100%)"></div>
-
     <a href="/prediccion/{{ m.id }}" class="block relative">
-
-        <!-- Zona del marcador estilo HUD con marco bordeado -->
         <div class="px-3 sm:px-6 py-6">
-            <!-- Panel del marcador (marco bordeado tipo TV) -->
             <div class="relative flex items-stretch rounded-2xl overflow-hidden border border-white/15
                         bg-gradient-to-b from-white/[0.06] to-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_30px_-10px_rgba(0,0,0,0.8)]">
-                <!-- Filo con los colores de la bandera de cada país -->
                 <span class="absolute left-0 top-0 bottom-0 w-1.5" style="background:{{ team_gradient(m.home_team) }}"></span>
                 <span class="absolute right-0 top-0 bottom-0 w-1.5" style="background:{{ team_gradient(m.away_team) }}"></span>
-
-                <!-- Equipo local -->
                 <div class="flex items-center gap-2.5 flex-1 min-w-0 justify-end pl-4 pr-2 sm:pr-3 py-3">
                     <span class="font-display font-black uppercase tracking-wider text-[11px] sm:text-base text-right truncate">{{ m.home_team }}</span>
                     {% if hc %}<img src="{{ hc }}" class="w-11 h-11 sm:w-14 sm:h-14 object-cover rounded-full ring-2 ring-white/25 shadow-lg shrink-0">
                     {% else %}<div class="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white/10 ring-2 ring-white/25 flex items-center justify-center font-display font-bold shrink-0">{{ htla }}</div>{% endif %}
                 </div>
-
-                <!-- Núcleo: marcador + copa grande -->
                 <div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 bg-black/30 border-x border-white/10 shrink-0">
                     <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.home_score }}</span>
                     <img src="/static/pngtree-fifa-world-cup-trophy-png-image_6524057.png"
                          class="w-14 h-14 sm:w-20 sm:h-20 object-contain drop-shadow-[0_2px_8px_rgba(250,204,21,0.35)]" aria-hidden="true">
                     <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.away_score }}</span>
                 </div>
-
-                <!-- Equipo visitante -->
                 <div class="flex items-center gap-2.5 flex-1 min-w-0 justify-start pr-4 pl-2 sm:pl-3 py-3">
                     {% if ac %}<img src="{{ ac }}" class="w-11 h-11 sm:w-14 sm:h-14 object-cover rounded-full ring-2 ring-white/25 shadow-lg shrink-0">
                     {% else %}<div class="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white/10 ring-2 ring-white/25 flex items-center justify-center font-display font-bold shrink-0">{{ atla }}</div>{% endif %}
                     <span class="font-display font-black uppercase tracking-wider text-[11px] sm:text-base text-left truncate">{{ m.away_team }}</span>
                 </div>
             </div>
-
-            <!-- Badge de fase estilo HUD ("DEBATE EN VIVO") -->
             <div class="flex justify-center mt-3">
                 <div class="px-5 py-1 border-b-2 border-emerald-400/70">
                     <span class="font-display text-[10px] uppercase tracking-[0.3em] text-emerald-300">{{ m.stage }}</span>
                 </div>
             </div>
         </div>
-
-        <!-- Predicciones -->
         {% if lm.preds %}
         <div class="border-t border-white/[0.06] px-5 py-4">
             <p class="font-display text-[9px] uppercase tracking-[0.25em] text-white/20 mb-3 text-center">{{ t('Predicciones') }}</p>
@@ -96,63 +71,187 @@
         </div>
         {% endif %}
     </a>
+</div>
+{% endmacro %}
 
+{# — Mini-tarjeta de un cruce del cuadro — #}
+{% macro mini_match(m) %}
+{% set home_tbd = m.home_team == 'Por definir' %}
+{% set away_tbd = m.away_team == 'Por definir' %}
+{% set has_pen = m.penalty_home is not none %}
+{% set home_adv = (m.home_score is not none and m.away_score is not none and m.home_score > m.away_score) or (has_pen and m.penalty_home > m.penalty_away) %}
+{% set away_adv = (m.home_score is not none and m.away_score is not none and m.away_score > m.home_score) or (has_pen and m.penalty_away > m.penalty_home) %}
+{% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else (m.home_team[:3].upper() if not home_tbd else '?') %}
+{% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else (m.away_team[:3].upper() if not away_tbd else '?') %}
+{% set hc = crest(m.home_team, m.home_flag) if not home_tbd else none %}
+{% set ac = crest(m.away_team, m.away_flag) if not away_tbd else none %}
+<div class="rounded-lg overflow-hidden border border-white/[0.08] bg-black/30">
+    <div class="flex items-center gap-1.5 px-2 py-1 {{ 'bg-emerald-500/10' if home_adv }}">
+        {% if hc %}<img src="{{ hc }}" class="w-4 h-4 object-contain shrink-0">
+        {% elif not home_tbd %}<div class="w-4 h-4 rounded-full bg-white/10 shrink-0"></div>
+        {% else %}<div class="w-4 h-4 rounded-full border border-dashed border-white/20 shrink-0"></div>{% endif %}
+        <span class="font-display text-[10px] font-semibold uppercase tracking-wide flex-1 truncate {{ 'text-white/25 italic' if home_tbd else ('text-emerald-300' if home_adv else 'text-white/70') }}">{{ htla }}</span>
+        {% if m.home_score is not none %}<span class="font-heavy text-xs shrink-0 {{ 'text-emerald-300' if home_adv else 'text-white/40' }}">{{ m.home_score }}</span>{% endif %}
+    </div>
+    <div class="flex items-center gap-1.5 px-2 py-1 border-t border-white/5 {{ 'bg-emerald-500/10' if away_adv }}">
+        {% if ac %}<img src="{{ ac }}" class="w-4 h-4 object-contain shrink-0">
+        {% elif not away_tbd %}<div class="w-4 h-4 rounded-full bg-white/10 shrink-0"></div>
+        {% else %}<div class="w-4 h-4 rounded-full border border-dashed border-white/20 shrink-0"></div>{% endif %}
+        <span class="font-display text-[10px] font-semibold uppercase tracking-wide flex-1 truncate {{ 'text-white/25 italic' if away_tbd else ('text-emerald-300' if away_adv else 'text-white/70') }}">{{ atla }}</span>
+        {% if m.away_score is not none %}<span class="font-heavy text-xs shrink-0 {{ 'text-emerald-300' if away_adv else 'text-white/40' }}">{{ m.away_score }}</span>{% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{# — Columna de una ronda del cuadro (máx. 4 cruces) — #}
+{% macro kcol(col) %}
+<div class="flex flex-col gap-1 shrink-0" style="width:80px">
+    <p class="text-center font-display text-[8px] uppercase tracking-[0.1em] text-white/30 truncate">{{ col.icon }} {{ t(col.label) }}</p>
+    <div class="flex flex-col justify-center flex-1 gap-1">
+    {% if col.matches %}
+        {% for m in col.matches[:4] %}{{ mini_match(m) }}{% endfor %}
+        {% if col.matches | length > 4 %}
+        <div class="text-center font-display text-[8px] uppercase tracking-wider text-white/30">+{{ col.matches | length - 4 }}</div>
+        {% endif %}
     {% else %}
-    <!-- ── Varios partidos simultáneos: carrusel ── -->
-    <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-4 pt-1" style="scrollbar-width:none">
-        {% for lm in live_matches %}
-        {% set m = lm.m %}
-        {% set hc = crest(m.home_team, m.home_flag) %}
-        {% set ac = crest(m.away_team, m.away_flag) %}
-        {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
-        {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
-        <a href="/prediccion/{{ m.id }}"
-           class="snap-start shrink-0 w-[80vw] max-w-sm rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition p-4 block">
+        <div class="text-center text-white/15 text-[9px] font-display py-3">—</div>
+    {% endif %}
+    </div>
+</div>
+{% endmacro %}
 
-            <!-- Marcador compacto con copa -->
-            <div class="flex items-center justify-between gap-2 mb-3">
-                <div class="flex flex-col items-center gap-1 flex-1 min-w-0">
-                    {% if hc %}<img src="{{ hc }}" class="w-11 h-11 object-contain drop-shadow mx-auto">
-                    {% else %}<div class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold mx-auto">{{ htla }}</div>{% endif %}
-                    <span class="font-display font-bold text-[9px] uppercase tracking-wide text-white/70 text-center truncate w-full">{{ htla }}</span>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="font-heavy text-3xl leading-none tabular-nums">{{ m.home_score }}</span>
-                    <img src="/static/pngtree-fifa-world-cup-trophy-png-image_6524057.png"
-                         class="w-6 h-6 object-contain opacity-80" aria-hidden="true">
-                    <span class="font-heavy text-3xl leading-none tabular-nums">{{ m.away_score }}</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 flex-1 min-w-0">
-                    {% if ac %}<img src="{{ ac }}" class="w-11 h-11 object-contain drop-shadow mx-auto">
-                    {% else %}<div class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center font-display text-[10px] font-bold mx-auto">{{ atla }}</div>{% endif %}
-                    <span class="font-display font-bold text-[9px] uppercase tracking-wide text-white/70 text-center truncate w-full">{{ atla }}</span>
-                </div>
+{# — Diapositiva: preview del cuadro a dos mitades — #}
+{% macro bracket_slide(left, right, final, provisional) %}
+<a href="/cuadro" class="block rounded-2xl bg-gradient-to-b from-fuchsia-500/[0.10] to-white/[0.01] border border-fuchsia-500/20 hover:border-fuchsia-400/40 transition overflow-hidden group">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+        <div class="flex items-center gap-2">
+            <span class="text-lg">🎲</span>
+            <h2 class="font-display text-sm uppercase tracking-wider text-fuchsia-200 font-semibold">{{ t('El cuadro') }}</h2>
+            {% if provisional %}<span class="font-display text-[8px] uppercase tracking-wider text-amber-300/80 bg-amber-500/15 border border-amber-500/30 rounded-full px-2 py-0.5">{{ t('Provisional') }}</span>{% endif %}
+        </div>
+        <span class="font-display text-[10px] uppercase tracking-wider text-fuchsia-300/70 group-hover:text-fuchsia-200 transition">{{ t('Ver completo →') }}</span>
+    </div>
+    <div class="overflow-x-auto px-3 py-3" style="scrollbar-width:none">
+        <div class="flex items-stretch gap-1 min-w-max">
+            {# Mitad izquierda: hacia el centro #}
+            {% for col in left %}
+                {{ kcol(col) }}
+                <div class="flex items-center text-white/15 text-xs">›</div>
+            {% endfor %}
+            {# Centro: Final #}
+            <div class="flex flex-col items-center justify-center gap-1 shrink-0 px-1" style="width:92px">
+                <span class="text-2xl leading-none">🏆</span>
+                <p class="font-display text-[8px] uppercase tracking-[0.1em] text-amber-400/60">{{ t('Final') }}</p>
+                {% if final %}{% for m in final %}<div class="w-full">{{ mini_match(m) }}</div>{% endfor %}
+                {% else %}<div class="w-full rounded-lg border border-dashed border-amber-400/25 py-2 text-center font-display text-[8px] uppercase tracking-wider text-amber-400/40">{{ t('Por disputar') }}</div>{% endif %}
             </div>
+            {# Mitad derecha: saliendo del centro #}
+            {% for col in right %}
+                <div class="flex items-center text-white/15 text-xs">‹</div>
+                {{ kcol(col) }}
+            {% endfor %}
+        </div>
+    </div>
+</a>
+{% endmacro %}
 
-            <!-- Predicciones compactas -->
-            {% if lm.preds %}
-            <div class="border-t border-white/[0.06] pt-2.5">
-                <div class="flex flex-wrap gap-1.5 justify-center">
-                    {% for p in lm.preds %}
-                    {% set exact = m.home_score != none and p.home_score_pred == m.home_score and p.away_score_pred == m.away_score %}
-                    {% set winning = not exact and m.home_score != none and ((p.home_score_pred > p.away_score_pred and m.home_score > m.away_score) or (p.home_score_pred < p.away_score_pred and m.home_score < m.away_score) or (p.home_score_pred == p.away_score_pred and m.home_score == m.away_score)) %}
-                    <div class="flex items-center gap-1 px-2 py-1 rounded-lg {% if exact %}bg-emerald-500/20 border border-emerald-500/40{% elif winning %}bg-blue-500/10 border border-blue-500/20{% else %}bg-white/[0.04] border border-white/10{% endif %}">
-                        <span class="text-xs leading-none">{{ p.avatar or '⚽' }}</span>
-                        <span class="font-display text-[10px] text-white/50 truncate max-w-[50px]">{{ p.username }}</span>
-                        <span class="font-display text-[10px] font-semibold {% if exact %}text-emerald-300{% else %}text-white/85{% endif %}">{{ p.home_score_pred }}-{{ p.away_score_pred }}</span>
+{# — Diapositiva: mejores terceros — #}
+{% macro thirds_slide(thirds, qualify) %}
+<div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 overflow-hidden">
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+        <span class="text-lg">🥉</span>
+        <h2 class="font-display text-sm uppercase tracking-wider text-white/70 font-semibold">{{ t('Mejores terceros') }}</h2>
+        <a href="/partidos/group-stage" class="ml-auto font-display text-[10px] uppercase tracking-wider text-sky-400 hover:text-sky-300 transition">{{ t('Ver grupos →') }}</a>
+    </div>
+    <table class="w-full">
+        <thead>
+            <tr class="text-white/30 text-[10px] uppercase font-display tracking-wider border-b border-white/[0.06]">
+                <th class="py-2 pl-3 pr-1 text-left">#</th>
+                <th class="py-2 text-left">{{ t('Equipo') }}</th>
+                <th class="py-2 px-1 text-center">Gr</th>
+                <th class="py-2 px-1 text-center">{{ t('PJ') }}</th>
+                <th class="py-2 px-1 text-center">DG</th>
+                <th class="py-2 px-3 text-center">Pts</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for tp in thirds %}
+            {% set qualifies = loop.index <= qualify %}
+            <tr class="border-b border-white/[0.04] last:border-0 {{ 'bg-emerald-500/[0.06]' if qualifies }}">
+                <td class="py-2 pl-3 pr-1 font-display text-xs {{ 'text-emerald-300' if qualifies else 'text-white/40' }}">{{ loop.index }}</td>
+                <td class="py-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        {% set c = crest(tp.team, tp.flag) %}
+                        {% if c %}<img src="{{ c }}" class="w-5 h-5 object-contain shrink-0">
+                        {% else %}<div class="w-5 h-5 rounded-full bg-white/10 shrink-0"></div>{% endif %}
+                        <span class="font-display uppercase tracking-wide text-xs text-white/85 truncate">{{ tp.team }}</span>
                     </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </a>
+                </td>
+                <td class="py-2 px-1 text-center font-display text-xs text-white/45">{{ tp.group_label[-1] }}</td>
+                <td class="py-2 px-1 text-center text-xs text-white/45">{{ tp.P }}</td>
+                <td class="py-2 px-1 text-center text-xs text-white/45">{{ '+' if tp.GD > 0 }}{{ tp.GD }}</td>
+                <td class="py-2 px-3 text-center font-heavy text-sm {{ 'text-emerald-300' if qualifies else 'text-white/90' }}">{{ tp.Pts }}</td>
+            </tr>
         {% endfor %}
+        </tbody>
+    </table>
+    <p class="px-3 py-2 flex items-center gap-1.5 text-[10px] font-display uppercase tracking-wider text-white/25 border-t border-white/[0.05]">
+        <span class="inline-block w-2 h-2 rounded-sm bg-emerald-500/40"></span>
+        {{ t('Los') }} {{ qualify }} {{ t('mejores avanzan a la siguiente ronda') }}
+    </p>
+</div>
+{% endmacro %}
+
+{# ════════ Carrusel: en vivo · terceros · cuadro (uno a la vez) ════════ #}
+{% set slide_count = (live_matches | length) + (1 if best_thirds else 0) + (1 if bracket_ready else 0) %}
+{% if slide_count > 0 %}
+<div class="relative mb-8">
+    <div id="hero-carousel" class="flex items-start overflow-x-auto overflow-y-hidden snap-x snap-mandatory transition-[height] duration-200"
+         style="scrollbar-width:none;-ms-overflow-style:none">
+        {% for lm in live_matches %}<div class="snap-start shrink-0 w-full">{{ live_slide(lm) }}</div>{% endfor %}
+        {% if best_thirds %}<div class="snap-start shrink-0 w-full">{{ thirds_slide(best_thirds, thirds_qualify) }}</div>{% endif %}
+        {% if bracket_ready %}<div class="snap-start shrink-0 w-full">{{ bracket_slide(bracket_left, bracket_right, bracket_final, bracket_provisional) }}</div>{% endif %}
+    </div>
+    {% if slide_count > 1 %}
+    <button type="button" data-car-prev aria-label="Anterior"
+            class="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/55 backdrop-blur border border-white/15 text-white/80 hover:bg-black/75 hover:text-white transition flex items-center justify-center text-2xl leading-none pb-0.5">‹</button>
+    <button type="button" data-car-next aria-label="Siguiente"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/55 backdrop-blur border border-white/15 text-white/80 hover:bg-black/75 hover:text-white transition flex items-center justify-center text-2xl leading-none pb-0.5">›</button>
+    <div class="flex justify-center gap-1.5 mt-3">
+        {% for i in range(slide_count) %}<span class="car-dot h-2 w-2 rounded-full bg-white/20 transition-all"></span>{% endfor %}
     </div>
     {% endif %}
 </div>
-
+<script>
+(function(){
+  var car = document.getElementById('hero-carousel');
+  if (!car) return;
+  var slides = Array.prototype.slice.call(car.children);
+  var dots = Array.prototype.slice.call(document.querySelectorAll('.car-dot'));
+  function activeIdx(){ return car.clientWidth ? Math.round(car.scrollLeft / car.clientWidth) : 0; }
+  function fit(){
+    var i = Math.max(0, Math.min(slides.length - 1, activeIdx()));
+    if (slides[i]) car.style.height = slides[i].offsetHeight + 'px';
+    dots.forEach(function(d, j){
+      d.classList.toggle('bg-white/80', j === i);
+      d.classList.toggle('w-4', j === i);
+      d.classList.toggle('bg-white/20', j !== i);
+      d.classList.toggle('w-2', j !== i);
+    });
+  }
+  function go(dir){ car.scrollBy({ left: dir * car.clientWidth, behavior: 'smooth' }); }
+  var prev = document.querySelector('[data-car-prev]'), next = document.querySelector('[data-car-next]');
+  if (prev) prev.addEventListener('click', function(){ go(-1); });
+  if (next) next.addEventListener('click', function(){ go(1); });
+  var t;
+  car.addEventListener('scroll', function(){ clearTimeout(t); t = setTimeout(fit, 80); });
+  window.addEventListener('resize', fit);
+  Array.prototype.slice.call(car.querySelectorAll('img')).forEach(function(im){ im.addEventListener('load', fit); });
+  fit(); setTimeout(fit, 300); setTimeout(fit, 900);
+})();
+</script>
 {% else %}
-<!-- Banner normal cuando no hay partido en vivo -->
+<!-- Banner normal cuando no hay partido en vivo ni cuadro/terceros aún -->
 <div class="rounded-2xl bg-gradient-to-br from-sky-500/[0.12] via-violet-500/[0.06] to-transparent border border-white/10 p-6 sm:p-8 mb-8 text-center">
     <img src="/static/wc26.avif" alt="FIFA World Cup 2026" class="h-24 sm:h-28 mx-auto mb-4 drop-shadow-2xl object-contain">
     <h1 class="font-heavy text-3xl sm:text-4xl mb-2 brand-gradient">{{ t('¡HOLA,') }} {{ user.username | upper }}! {{ user.avatar }}</h1>

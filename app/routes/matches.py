@@ -43,7 +43,10 @@ def group_label(g: str) -> str:
 
 
 def _compute_standings(matches):
-    """Tabla de posiciones a partir de los partidos con resultado."""
+    """Tabla de posiciones con el desempate OFICIAL del Mundial 2026:
+    Pts → enfrentamiento directo (Pts, DG, GF entre los empatados) →
+    DG general → GF general.
+    (Fair play y ranking FIFA no se aplican: la base no guarda tarjetas.)"""
     teams: dict = {}
     for m in matches:
         for side in ("home", "away"):
@@ -70,7 +73,191 @@ def _compute_standings(matches):
         else:
             teams[ht]["D"] += 1; teams[ht]["Pts"] += 1
             teams[at]["D"] += 1; teams[at]["Pts"] += 1
-    return sorted(teams.items(), key=lambda x: (-x[1]["Pts"], -x[1]["GD"], -x[1]["GF"]))
+
+    # Mini-liga del enfrentamiento directo entre un conjunto de equipos.
+    def _h2h(names):
+        names = set(names)
+        sub = {n: {"Pts": 0, "GD": 0, "GF": 0} for n in names}
+        for m in matches:
+            if m["home_score"] is None:
+                continue
+            ht, at = m["home_team"], m["away_team"]
+            if ht in names and at in names:
+                h, a = m["home_score"], m["away_score"]
+                sub[ht]["GF"] += h; sub[ht]["GD"] += h - a
+                sub[at]["GF"] += a; sub[at]["GD"] += a - h
+                if h > a:   sub[ht]["Pts"] += 3
+                elif h < a: sub[at]["Pts"] += 3
+                else:       sub[ht]["Pts"] += 1; sub[at]["Pts"] += 1
+        return sub
+
+    # El head-to-head solo desempata entre equipos igualados en puntos.
+    h2h: dict = {}
+    by_pts: dict = {}
+    for n, st in teams.items():
+        by_pts.setdefault(st["Pts"], []).append(n)
+    for _pts, group in by_pts.items():
+        h2h.update(_h2h(group))   # si un equipo está solo, queda en 0 (sin efecto)
+
+    return sorted(
+        teams.items(),
+        key=lambda x: (
+            -x[1]["Pts"],
+            -h2h[x[0]]["Pts"], -h2h[x[0]]["GD"], -h2h[x[0]]["GF"],
+            -x[1]["GD"], -x[1]["GF"],
+        ),
+    )
+
+
+def _best_thirds(conn):
+    """Tabla de mejores terceros de la fase de grupos, ordenada Pts > DG > GF."""
+    groups_raw = conn.execute(
+        "SELECT DISTINCT group_name FROM matches WHERE stage='Group Stage' "
+        "AND group_name IS NOT NULL ORDER BY group_name"
+    ).fetchall()
+    thirds = []
+    for gr in groups_raw:
+        gn = gr["group_name"]
+        gms = conn.execute(
+            "SELECT * FROM matches WHERE stage='Group Stage' AND group_name=? ORDER BY kickoff",
+            (gn,)
+        ).fetchall()
+        standings = _compute_standings(gms)
+        if len(standings) >= 3:
+            name, stats = standings[2]
+            thirds.append({"team": name, "group": gn, "group_label": group_label(gn), **stats})
+    thirds.sort(key=lambda x: (-x["Pts"], -x["GD"], -x["GF"]))
+    return thirds
+
+
+def _bracket_halves(conn):
+    """Cuadro eliminatorio partido en dos mitades que se encuentran en la Final.
+    Devuelve (left_cols, right_cols, final_matches, ko_rows)."""
+    ko_rows = conn.execute(
+        "SELECT * FROM matches WHERE stage != 'Group Stage' ORDER BY kickoff ASC"
+    ).fetchall()
+    by_stage: dict = defaultdict(list)
+    for m in ko_rows:
+        by_stage[m["stage"]].append(dict(m))
+    HALF_STAGES = ["Last 32", "Last 16", "Quarter Finals", "Semi Finals"]
+    left_cols, right_cols = [], []
+    for s in HALF_STAGES:
+        ms = by_stage.get(s, [])
+        mid = len(ms) // 2
+        col = {"label": STAGE_LABELS.get(s, s), "icon": STAGE_ICONS.get(s, "⚽")}
+        left_cols.append({**col, "matches": ms[:mid]})
+        right_cols.append({**col, "matches": ms[mid:]})
+    final_matches = by_stage.get("Final", [])
+    return left_cols, right_cols, final_matches, ko_rows
+
+
+# Plantilla oficial del Round of 32 (FIFA Mundial 2026), en orden de partido 73→88.
+# ("W", grupo)=1º · ("RU", grupo)=2º · ("3", {grupos})=mejor tercero de uno de esos
+# grupos. La asignación EXACTA de cada tercero a su slot la fija el Anexo C de la
+# FIFA; aquí se resuelve con un emparejamiento válido cualquiera (provisional).
+R32_TEMPLATE = [
+    (("RU", "A"), ("RU", "B")),
+    (("W", "E"),  ("3", {"A", "B", "C", "D", "F"})),
+    (("W", "F"),  ("RU", "C")),
+    (("W", "C"),  ("RU", "F")),
+    (("W", "I"),  ("3", {"C", "D", "F", "G", "H"})),
+    (("RU", "E"), ("RU", "I")),
+    (("W", "A"),  ("3", {"C", "E", "F", "H", "I"})),
+    (("W", "L"),  ("3", {"E", "H", "I", "J", "K"})),
+    (("W", "D"),  ("3", {"B", "E", "F", "I", "J"})),
+    (("W", "G"),  ("3", {"A", "E", "H", "I", "J"})),
+    (("RU", "K"), ("RU", "L")),
+    (("W", "H"),  ("RU", "J")),
+    (("W", "B"),  ("3", {"E", "F", "G", "I", "J"})),
+    (("W", "J"),  ("RU", "H")),
+    (("W", "K"),  ("3", {"D", "E", "I", "J", "L"})),
+    (("RU", "D"), ("RU", "G")),
+]
+
+
+def _group_letter(group_name):
+    return (group_name or "").replace("GROUP_", "")
+
+
+def _projected_r32(conn):
+    """Empareja PROVISIONALMENTE el Round of 32 con las posiciones actuales de los
+    grupos (1º, 2º y mejores terceros). La asignación exacta de cada tercero la
+    define el Anexo C de la FIFA; aquí se usa un emparejamiento válido cualquiera
+    (respeta los grupos candidatos). La API reemplaza esto con los cruces reales.
+    Devuelve 16 dicts con forma de partido, o None si aún no hay datos de grupos."""
+    groups_raw = conn.execute(
+        "SELECT DISTINCT group_name FROM matches WHERE stage='Group Stage' "
+        "AND group_name IS NOT NULL ORDER BY group_name"
+    ).fetchall()
+    if not groups_raw:
+        return None
+
+    pos = {}   # letra de grupo -> [teamdict por posición]
+    for gr in groups_raw:
+        gn = gr["group_name"]
+        gms = conn.execute(
+            "SELECT * FROM matches WHERE stage='Group Stage' AND group_name=? ORDER BY kickoff",
+            (gn,)
+        ).fetchall()
+        st = _compute_standings(gms)
+        pos[_group_letter(gn)] = [
+            {"name": name, "flag": s["flag"], "tla": s["tla"]} for name, s in st
+        ]
+
+    thirds = _best_thirds(conn)[:8]
+    third_by_group = {
+        _group_letter(t["group"]): {"name": t["team"], "flag": t.get("flag"), "tla": t.get("tla")}
+        for t in thirds
+    }
+    qualified = set(third_by_group)
+
+    # Slots de tercero a llenar y emparejamiento (backtracking) con grupos candidatos.
+    third_slots = []   # (índice_partido, lado, candidatos_clasificados)
+    for i, (hs, as_) in enumerate(R32_TEMPLATE):
+        for side, spec in (("home", hs), ("away", as_)):
+            if spec[0] == "3":
+                third_slots.append((i, side, spec[1] & qualified))
+    assignment = {}
+
+    def _solve(k):
+        if k == len(third_slots):
+            return True
+        idx, side, cands = third_slots[k]
+        for g in sorted(cands):
+            if g not in assignment.values():
+                assignment[(idx, side)] = g
+                if _solve(k + 1):
+                    return True
+                del assignment[(idx, side)]
+        return False
+
+    _solve(0)
+
+    def _resolve(spec, idx, side):
+        kind = spec[0]
+        if kind == "W":
+            lst = pos.get(spec[1]);  return lst[0] if lst and len(lst) >= 1 else None
+        if kind == "RU":
+            lst = pos.get(spec[1]);  return lst[1] if lst and len(lst) >= 2 else None
+        g = assignment.get((idx, side))
+        return third_by_group.get(g) if g else None
+
+    def _cell(t):
+        return (t["name"], t.get("flag"), t.get("tla")) if t else ("Por definir", None, None)
+
+    out = []
+    for i, (hs, as_) in enumerate(R32_TEMPLATE):
+        hn, hf, hl = _cell(_resolve(hs, i, "home"))
+        an, af, al = _cell(_resolve(as_, i, "away"))
+        out.append({
+            "home_team": hn, "away_team": an,
+            "home_flag": hf, "away_flag": af,
+            "home_tla": hl,  "away_tla": al,
+            "home_score": None, "away_score": None,
+            "penalty_home": None, "penalty_away": None,
+            "status": "TIMED",
+        })
+    return out
 
 
 def _pred_locked(conn, matches, user_id):
@@ -203,6 +390,28 @@ def inicio(request: Request, user=Depends(require_login)):
         """, (m["id"],)).fetchall()
         live_matches.append({"m": dict(m), "preds": [dict(p) for p in preds]})
 
+    # ── Preview del cuadro eliminatorio a dos mitades (si ya hay cruces) ──────
+    left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn)
+    real_set = any(
+        m["home_team"] != "Por definir" or m["away_team"] != "Por definir"
+        for m in ko_rows
+    )
+    # Si el R32 real aún no está definido, lo emparejamos PROVISIONALMENTE con
+    # las posiciones actuales de los grupos (la API lo reemplaza el día del cruce).
+    bracket_provisional = False
+    if not real_set:
+        projected = _projected_r32(conn)
+        if projected:
+            left_cols[0]["matches"]  = projected[:8]
+            right_cols[0]["matches"] = projected[8:]
+            bracket_provisional = True
+    bracket_ready = real_set or bracket_provisional
+
+    # ── Tabla de mejores terceros (si la fase de grupos ya tiene resultados) ──
+    best_thirds = _best_thirds(conn)
+    if not any(t["P"] > 0 for t in best_thirds):
+        best_thirds = []
+
     conn.close()
     return templates.TemplateResponse("inicio.html", {
         "request": request, "user": user, "matches": upcoming,
@@ -210,6 +419,13 @@ def inicio(request: Request, user=Depends(require_login)):
         "premios_pending": premios_pending,
         "comodin_stages": comodin_stages,
         "live_matches": live_matches,
+        "bracket_ready": bracket_ready,
+        "bracket_provisional": bracket_provisional,
+        "bracket_left":  left_cols,
+        "bracket_right": list(reversed(right_cols)),   # SF→QF→L16→L32 hacia afuera
+        "bracket_final": final_matches,
+        "best_thirds": best_thirds,
+        "thirds_qualify": 8,   # 8 mejores terceros clasifican (12 grupos)
     })
 
 
@@ -370,7 +586,7 @@ def phase_detail(slug: str, request: Request, user=Depends(require_login)):
         ).fetchall()
 
         if groups_raw:
-            groups, third_place_list = [], []
+            groups = []
 
             for gr in groups_raw:
                 gn = gr["group_name"]
@@ -407,17 +623,8 @@ def phase_detail(slug: str, request: Request, user=Depends(require_login)):
                     "standings": _compute_standings(group_matches),
                 })
 
-                # Terceros para la tabla de mejores terceros
-                standings = _compute_standings(group_matches)
-                if len(standings) >= 3:
-                    t3_name, t3_stats = standings[2]
-                    third_place_list.append({
-                        "team": t3_name, "group": gn, "group_label": gl,
-                        **t3_stats
-                    })
-
-            # Ordenar terceros: pts > DG > GF
-            third_place_list.sort(key=lambda x: (-x["Pts"], -x["GD"], -x["GF"]))
+            # Tabla de mejores terceros (helper compartido con /inicio)
+            third_place_list = _best_thirds(conn)
 
             # Equipos con partido en curso ahora mismo
             live_rows = conn.execute(
