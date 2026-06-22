@@ -46,6 +46,9 @@ STRINGS = {
     "El cuadro": ("As chaves", "The bracket"),
     "Ver completo →": ("Ver completo →", "View full →"),
     "Provisional": ("Provisório", "Provisional"),
+    "Dieciseisavos proyectados con las posiciones actuales. Se actualizan con los cruces reales cuando terminen los grupos.":
+        ("Trinta e dois projetados com as posições atuais. Atualizam-se com os confrontos reais quando os grupos terminarem.",
+         "Round of 32 projected from current standings. Updates with the real matchups once the groups finish."),
     "Mejores terceros": ("Melhores terceiros", "Best third-placed"),
     "Ver grupos →": ("Ver grupos →", "View groups →"),
     "Equipo": ("Time", "Team"),

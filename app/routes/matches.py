@@ -250,12 +250,13 @@ def _projected_r32(conn):
         hn, hf, hl = _cell(_resolve(hs, i, "home"))
         an, af, al = _cell(_resolve(as_, i, "away"))
         out.append({
+            "id": None, "kickoff": "", "projected": True,
             "home_team": hn, "away_team": an,
             "home_flag": hf, "away_flag": af,
             "home_tla": hl,  "away_tla": al,
             "home_score": None, "away_score": None,
             "penalty_home": None, "penalty_away": None,
-            "status": "TIMED",
+            "advances_team": None, "status": "TIMED",
         })
     return out
 
@@ -507,6 +508,20 @@ def bracket_view(request: Request, user=Depends(require_login)):
     final_matches   = by_stage.get("Final", [])
     third_matches   = by_stage.get("Third Place", [])
 
+    # Si el Round of 32 real aún no está definido, lo emparejamos PROVISIONALMENTE
+    # con las posiciones actuales de los grupos (la API lo reemplaza el día del cruce).
+    real_set = any(
+        m["home_team"] != "Por definir" or m["away_team"] != "Por definir"
+        for m in all_knockout
+    )
+    provisional = False
+    if not real_set:
+        projected = _projected_r32(conn)
+        if projected:
+            left_cols[0]["matches"]  = projected[:8]
+            right_cols[0]["matches"] = projected[8:]
+            provisional = True
+
     conn.close()
 
     return templates.TemplateResponse("cuadro.html", {
@@ -515,6 +530,7 @@ def bracket_view(request: Request, user=Depends(require_login)):
         "right_cols": list(reversed(right_cols)),   # SF→QF→L16→L32 hacia afuera
         "final_matches":  final_matches,
         "third_matches":  third_matches,
+        "provisional": provisional,
         "stage_labels": STAGE_LABELS,
         "stage_icons":  STAGE_ICONS,
         "user_predictions": user_predictions,

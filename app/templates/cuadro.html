@@ -4,14 +4,22 @@
 
 <div class="mb-6">
     <p class="font-display text-xs uppercase tracking-[0.3em] text-fuchsia-400 mb-1">FIFA World Cup 26</p>
-    <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🎲 CUADRO</h1>
+    <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🎲 CUADRO</h1>
+        {% if provisional %}<span class="font-display text-[10px] uppercase tracking-wider text-amber-300/90 bg-amber-500/15 border border-amber-500/30 rounded-full px-2.5 py-1">{{ t('Provisional') }}</span>{% endif %}
+    </div>
+    {% if provisional %}
+    <p class="text-amber-300/70 text-sm mt-1">{{ t('Dieciseisavos proyectados con las posiciones actuales. Se actualizan con los cruces reales cuando terminen los grupos.') }}</p>
+    {% else %}
     <p class="text-white/40 text-sm mt-1">{{ t('Bracket completo · mitad izquierda y mitad derecha se encuentran en la Final.') }}</p>
+    {% endif %}
 </div>
 
 {# ── Macro: tarjeta de partido ───────────────────────────────── #}
 {% macro match_card(m, side='left') %}
-{% set pred    = user_predictions[m.id] %}
-{% set closed  = locked[m.id] %}
+{% set proj    = m.projected %}
+{% set pred    = user_predictions.get(m.id) %}
+{% set closed  = locked.get(m.id) %}
 {% set finished = m.status == 'FINISHED' %}
 {% set live    = m.status in ['IN_PLAY','PAUSED'] %}
 {% set home_tbd = m.home_team == 'Por definir' %}
@@ -93,8 +101,10 @@
 
     {# Pie #}
     <div class="px-2.5 py-1.5 border-t border-white/[0.05] flex items-center justify-between gap-1">
-        <span class="text-[9px] font-display text-white/20">{{ m.kickoff[5:10] }}</span>
-        {% if live %}
+        <span class="text-[9px] font-display text-white/20">{{ m.kickoff[5:10] if m.kickoff else '' }}</span>
+        {% if proj %}
+            <span class="text-[9px] font-display uppercase tracking-wider text-amber-400/60">{{ t('Provisional') }}</span>
+        {% elif live %}
             <span class="text-[9px] font-display text-red-400 font-bold flex items-center gap-1">
                 <span class="w-1 h-1 rounded-full bg-red-500 animate-livepulse inline-block"></span>LIVE
             </span>
