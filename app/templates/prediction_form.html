@@ -120,6 +120,18 @@
         {% endif %}
 
         <!-- Comodín x2 -->
+        {% if joker_locked %}
+        <!-- Comodín ya gastado en un partido cerrado de esta fase: no se puede mover -->
+        <div class="block rounded-2xl bg-white/[0.03] border border-white/10 p-5 opacity-90">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl shrink-0 grayscale">🃏</span>
+                <div class="flex-1 min-w-0">
+                    <p class="font-display text-sm uppercase tracking-wide text-white/60">{{ t('Comodín x2') }} — <span class="text-amber-300/80">{{ t('ya usado en esta fase') }}</span></p>
+                    <p class="text-xs text-white/45 mt-0.5">{{ t('Lo usaste en') }} <span class="font-bold text-white/70">{{ joker_other.home_team[:14] }} vs {{ joker_other.away_team[:14] }}</span> {{ t('y ese partido ya cerró, así que no se puede mover.') }}</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
         <label class="block rounded-2xl bg-gradient-to-b from-cyan-500/[0.10] to-cyan-500/[0.02] border border-cyan-500/25 p-5 cursor-pointer hover:border-cyan-400/50 transition">
             <div class="flex items-center gap-3">
                 <input type="checkbox" name="use_joker" value="1" {% if is_joker %}checked{% endif %}
@@ -139,6 +151,7 @@
             </p>
             {% endif %}
         </label>
+        {% endif %}
 
         <!-- Goleadores ordenados -->
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">

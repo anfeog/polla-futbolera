@@ -46,11 +46,13 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
 
     # Comodín: ¿ya tiene uno en otro partido de esta fase?
     joker_other = conn.execute("""
-        SELECT m.home_team, m.away_team
+        SELECT m.home_team, m.away_team, m.kickoff
         FROM predictions p JOIN matches m ON m.id = p.match_id
         WHERE p.user_id = ? AND p.is_joker = 1 AND m.stage = ? AND m.id != ?
         LIMIT 1
     """, (user["id"], match["stage"], match_id)).fetchone()
+    # Si ese partido ya cerró, el comodín está GASTADO en esta fase: no se mueve.
+    joker_locked = bool(joker_other and is_locked(joker_other["kickoff"]))
 
     conn.close()
 
@@ -70,6 +72,7 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "is_knockout": match["stage"] in KO_STAGES,
         "is_joker": bool(existing and existing["is_joker"]),
         "joker_other": joker_other,
+        "joker_locked": joker_locked,
     })
 
 
@@ -248,15 +251,26 @@ async def save_prediction(match_id: int, request: Request, user=Depends(require_
                 (pred_id, team_name, pos, player or None, is_own)
             )
 
-    # Comodín (x2): solo uno por fase. Si lo activa aquí, se quita de los demás.
+    # Comodín (x2): solo uno por fase. Se puede mover entre partidos ABIERTOS,
+    # pero si el comodín ya está en un partido de esta fase que YA CERRÓ, quedó
+    # gastado y no se puede mover ni reactivar en otro (anti-exploit: re-apuntar
+    # el comodín con resultados ya conocidos).
     want_joker = 1 if form.get("use_joker") else 0
-    if want_joker:
+    spent_rows = conn.execute("""
+        SELECT m.kickoff FROM predictions p JOIN matches m ON m.id = p.match_id
+        WHERE p.user_id = ? AND p.is_joker = 1 AND m.stage = ? AND m.id != ?
+    """, (user["id"], match["stage"], match_id)).fetchall()
+    joker_spent = any(is_locked(r["kickoff"]) for r in spent_rows)
+
+    if want_joker and not joker_spent:
+        # Mover: quitarlo de los demás partidos de la fase (todos abiertos) y ponerlo aquí.
         conn.execute("""
             UPDATE predictions SET is_joker = 0
             WHERE user_id = ? AND match_id IN (SELECT id FROM matches WHERE stage = ?)
         """, (user["id"], match["stage"]))
         conn.execute("UPDATE predictions SET is_joker = 1 WHERE id = ?", (pred_id,))
     else:
+        # No lo quiere, o ya está gastado en un partido cerrado de esta fase.
         conn.execute("UPDATE predictions SET is_joker = 0 WHERE id = ?", (pred_id,))
 
     conn.commit()

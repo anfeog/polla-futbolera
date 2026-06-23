@@ -288,6 +288,11 @@ STRINGS = {
     "— Elegir jugador —": ("— Escolher jogador —", "— Pick a player —"),
     "Gol": ("Gol", "Goal"),
     "🃏 Usar comodín": ("🃏 Usar coringa", "🃏 Use wildcard"),
+    "ya usado en esta fase": ("já usado nesta fase", "already used in this stage"),
+    "Lo usaste en": ("Você o usou em", "You used it on"),
+    "y ese partido ya cerró, así que no se puede mover.":
+        ("e esse jogo já fechou, então não pode ser movido.",
+         "and that match is closed, so it can't be moved."),
     "(x2 puntos)": ("(x2 pontos)", "(x2 points)"),
     "Duplica todos tus puntos de este partido. Solo": ("Dobra todos os seus pontos deste jogo. Apenas", "Doubles all your points for this match. Only"),
     "uno por fase": ("um por fase", "one per stage"),
