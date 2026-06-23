@@ -21,10 +21,14 @@ def _render_admin(request, user, **extra):
     awards = conn.execute("SELECT * FROM tournament_awards WHERE id=1").fetchone()
     n_players = conn.execute("SELECT COUNT(*) c FROM players").fetchone()["c"]
     n_matches = conn.execute("SELECT COUNT(*) c FROM matches").fetchone()["c"]
+    matches = conn.execute(
+        "SELECT id, home_team, away_team, stage FROM matches "
+        "WHERE home_team != 'Por definir' AND away_team != 'Por definir' ORDER BY kickoff"
+    ).fetchall()
     conn.close()
     ctx = {
         "request": request, "user": user, "users": users, "awards": awards,
-        "n_players": n_players, "n_matches": n_matches,
+        "n_players": n_players, "n_matches": n_matches, "matches": matches,
         "now_hhmmss": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
     }
     ctx.update(extra)
@@ -32,11 +36,13 @@ def _render_admin(request, user, **extra):
 
 
 @router.get("", response_class=HTMLResponse)
-def admin_panel(request: Request, user=Depends(require_admin), reset: str = ""):
+def admin_panel(request: Request, user=Depends(require_admin), reset: str = "", joker: str = ""):
     extra = {}
     if reset:
         extra["reset_user"] = reset
         extra["reset_password"] = TEMP_PASSWORD
+    if joker:
+        extra["joker_msg"] = joker
     return _render_admin(request, user, **extra)
 
 
@@ -89,6 +95,46 @@ def reset_password(user_id: int, user=Depends(require_admin)):
     conn.commit()
     conn.close()
     return RedirectResponse(f"/admin?reset={row['username']}", status_code=303)
+
+
+@router.post("/asignar-comodin")
+def assign_joker(
+    request: Request,
+    user_id: int = Form(...),
+    match_id: int = Form(...),
+    user=Depends(require_admin),
+):
+    """(Re)asigna el comodín de un jugador a un partido, aunque ya esté cerrado.
+    Útil para reparar comodines borrados por bugs. Respeta 'uno por fase'."""
+    from urllib.parse import quote
+    conn = get_db()
+    match = conn.execute(
+        "SELECT stage, home_team, away_team FROM matches WHERE id = ?", (match_id,)
+    ).fetchone()
+    urow = conn.execute(
+        "SELECT username FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    pred = conn.execute(
+        "SELECT id FROM predictions WHERE user_id = ? AND match_id = ?", (user_id, match_id)
+    ).fetchone()
+    if not match or not urow:
+        conn.close()
+        return RedirectResponse("/admin?joker=err_nodata", status_code=303)
+    if not pred:
+        # Sin predicción en ese partido no hay dónde poner el comodín.
+        conn.close()
+        return RedirectResponse("/admin?joker=err_nopred", status_code=303)
+    # Uno por fase: quitar el comodín de los demás partidos de esa fase y ponerlo aquí.
+    conn.execute(
+        "UPDATE predictions SET is_joker = 0 WHERE user_id = ? "
+        "AND match_id IN (SELECT id FROM matches WHERE stage = ?)",
+        (user_id, match["stage"]),
+    )
+    conn.execute("UPDATE predictions SET is_joker = 1 WHERE id = ?", (pred["id"],))
+    conn.commit()
+    conn.close()
+    label = f"{urow['username']} → {match['home_team']} vs {match['away_team']}"
+    return RedirectResponse(f"/admin?joker=ok:{quote(label)}", status_code=303)
 
 
 @router.post("/premios-ganadores")
