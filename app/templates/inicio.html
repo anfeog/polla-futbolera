@@ -37,10 +37,10 @@
                     {% else %}<div class="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white/10 ring-2 ring-white/25 flex items-center justify-center font-display font-bold shrink-0">{{ htla }}</div>{% endif %}
                 </div>
                 <div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 bg-black/30 border-x border-white/10 shrink-0">
-                    <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.home_score }}</span>
+                    <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.home_score if m.home_score is not none else 0 }}</span>
                     <img src="/static/pngtree-fifa-world-cup-trophy-png-image_6524057.png"
                          class="w-14 h-14 sm:w-20 sm:h-20 object-contain drop-shadow-[0_2px_8px_rgba(250,204,21,0.35)]" aria-hidden="true">
-                    <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.away_score }}</span>
+                    <span class="font-heavy text-5xl sm:text-6xl leading-none tabular-nums drop-shadow-lg">{{ m.away_score if m.away_score is not none else 0 }}</span>
                 </div>
                 <div class="flex items-center gap-2.5 flex-1 min-w-0 justify-start pr-4 pl-2 sm:pl-3 py-3">
                     {% if ac %}<img src="{{ ac }}" class="w-11 h-11 sm:w-14 sm:h-14 object-cover rounded-full ring-2 ring-white/25 shadow-lg shrink-0">

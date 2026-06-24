@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse  # noqa: F401
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates
-from app.timeutils import is_locked, lock_time, is_past
+from app.timeutils import is_locked, lock_time, is_past, _parse_kickoff
 from app.crests import slugify
 
 router = APIRouter()
@@ -378,11 +378,30 @@ def inicio(request: Request, user=Depends(require_login)):
     comodin_stages = [STAGE_LABELS.get(s, s) for s in stage_open if s not in joker_stages]
 
     # ── Partidos EN VIVO: marcador + pronósticos de todos (para el carrusel) ──
-    live_matches = []
-    live_rows = conn.execute("""
-        SELECT * FROM matches WHERE status IN ('IN_PLAY','PAUSED') ORDER BY kickoff
+    # Un partido se considera EN VIVO si su estado lo dice, o (como respaldo, por
+    # si la sincronización de estado va con retraso) si ya empezó y no terminó.
+    LIVE_STATUSES = ("IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT", "SUSPENDED")
+    DEAD_STATUSES = ("FINISHED", "CANCELLED", "POSTPONED", "AWARDED")
+    now_utc = datetime.now(timezone.utc)
+    candidates = conn.execute("""
+        SELECT * FROM matches
+        WHERE home_team != 'Por definir' AND away_team != 'Por definir'
+        ORDER BY kickoff
     """).fetchall()
-    for m in live_rows:
+    live_matches = []
+    for m in candidates:
+        st = m["status"]
+        if st in DEAD_STATUSES:
+            continue
+        is_live = st in LIVE_STATUSES
+        if not is_live:
+            try:
+                ko = _parse_kickoff(m["kickoff"])
+                is_live = ko <= now_utc <= ko + timedelta(hours=3)
+            except Exception:
+                is_live = False
+        if not is_live:
+            continue
         preds = conn.execute("""
             SELECT u.username, u.avatar, p.home_score_pred, p.away_score_pred
             FROM predictions p JOIN users u ON u.id = p.user_id
