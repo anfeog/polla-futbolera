@@ -324,8 +324,6 @@ function playerField(key, pos, squad, selected) {
     const oppSquad = squads[oppKey];
     if ((squad && squad.length) || (oppSquad && oppSquad.length)) {
         return `<select name="${name}"
-            data-own-squad='${JSON.stringify(squad || [])}'
-            data-opp-squad='${JSON.stringify(oppSquad || [])}'
             class="flex-1 min-w-0 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/50 transition">
             ${buildOptions(squad, selected)}
         </select>`;
@@ -387,17 +385,19 @@ function toggleOg(checkbox) {
     const row = checkbox.closest('label').parentElement;
     const sel = row.querySelector('select');
     if (!sel) return; // fallback texto libre, no hacer nada
-    const ownSquad = JSON.parse(sel.dataset.ownSquad || '[]');
-    const oppSquad = JSON.parse(sel.dataset.oppSquad || '[]');
-    const current = sel.value;
+    // Deducir el equipo del propio campo (scorer_home_2 -> home) y usar el objeto
+    // global `squads` (evita guardar las plantillas en atributos, que se rompían
+    // si un jugador tenía apóstrofo en el nombre).
+    const key = (sel.name.split('_')[1] === 'away') ? 'away' : 'home';
+    const oppKey = key === 'home' ? 'away' : 'home';
     if (checkbox.checked) {
         // OG marcado → mostrar plantilla del equipo CONTRARIO
-        sel.innerHTML = buildOptions(oppSquad, '');
+        sel.innerHTML = buildOptions(squads[oppKey], '');
         sel.style.borderColor = 'rgb(251,191,36)'; // amber
         sel.style.setProperty('--tw-ring-color', 'rgb(251,191,36,0.5)');
     } else {
         // OG desmarcado → volver al equipo propio
-        sel.innerHTML = buildOptions(ownSquad, '');
+        sel.innerHTML = buildOptions(squads[key], '');
         sel.style.borderColor = '';
     }
 }
