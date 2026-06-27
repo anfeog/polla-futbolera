@@ -410,15 +410,31 @@ def inicio(request: Request, user=Depends(require_login)):
         """, (m["id"],)).fetchall()
         live_matches.append({"m": dict(m), "preds": [dict(p) for p in preds]})
 
-    # ── ¡Modo Colombia! Si la Tricolor está jugando, el inicio se pone amarillo. ──
+    # ── ¡Modo Colombia! Si la Tricolor juega HOY, el inicio se viste de amarillo. ──
+    _COL_OFFSET = timedelta(hours=-5)   # hora de Colombia
+    today_col = (datetime.now(timezone.utc) + _COL_OFFSET).date().isoformat()
     colombia_live = False
+    colombia_today = False
     colombia_match_id = None
-    for lm in live_matches:
+    for lm in live_matches:                      # en vivo ahora (tiene prioridad)
         cm = lm["m"]
         if "Colombia" in (cm["home_team"], cm["away_team"]):
             colombia_live = True
             colombia_match_id = cm["id"]
             break
+    for r in conn.execute(
+        "SELECT id, kickoff FROM matches "
+        "WHERE home_team='Colombia' OR away_team='Colombia' ORDER BY kickoff"
+    ).fetchall():                                # ¿juega Colombia hoy (fecha Col)?
+        try:
+            if (_parse_kickoff(r["kickoff"]) + _COL_OFFSET).date().isoformat() == today_col:
+                colombia_today = True
+                if colombia_match_id is None:
+                    colombia_match_id = r["id"]
+                break
+        except Exception:
+            pass
+    colombia_yellow = colombia_today or colombia_live
 
     # ── Preview del cuadro eliminatorio a dos mitades (si ya hay cruces) ──────
     left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn)
@@ -450,6 +466,7 @@ def inicio(request: Request, user=Depends(require_login)):
         "comodin_stages": comodin_stages,
         "live_matches": live_matches,
         "colombia_live": colombia_live,
+        "colombia_yellow": colombia_yellow,
         "colombia_match_id": colombia_match_id,
         "bracket_ready": bracket_ready,
         "bracket_provisional": bracket_provisional,

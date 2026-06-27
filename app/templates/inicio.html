@@ -2,8 +2,8 @@
 {% block title %}Inicio — Polla Mundial 2026{% endblock %}
 {% block content %}
 
-{# ════════ ¡MODO COLOMBIA! cuando la Tricolor está en la cancha ════════ #}
-{% if colombia_live %}
+{# ════════ ¡MODO COLOMBIA! el día que juega la Tricolor ════════ #}
+{% if colombia_yellow %}
 <style>
 body {
     background-color: #0c0f07 !important;
@@ -13,20 +13,53 @@ body {
         radial-gradient(ellipse 70% 40% at 92% 6%, rgba(206,17,38,0.20), transparent 55%) !important;
     background-attachment: fixed !important;
 }
-@keyframes col-pulse { 0%,100%{ transform:scale(1); filter:brightness(1);} 50%{ transform:scale(1.015); filter:brightness(1.12);} }
+@keyframes col-pulse { 0%,100%{ transform:scale(1); filter:brightness(1);} 50%{ transform:scale(1.012); filter:brightness(1.1);} }
 @keyframes col-wave  { 0%,100%{ background-position:0% 50%;} 50%{ background-position:100% 50%;} }
-.col-banner { animation: col-pulse 1.5s ease-in-out infinite; }
+.col-banner { animation: col-pulse 1.6s ease-in-out infinite; }
 .col-stripe { background-size:200% 100%; animation: col-wave 3s linear infinite; }
 </style>
-<a href="{% if colombia_match_id %}/prediccion/{{ colombia_match_id }}{% else %}/inicio{% endif %}"
-   class="col-banner block rounded-2xl overflow-hidden mb-5 border-2 border-yellow-300/60 shadow-[0_10px_40px_-8px_rgba(252,211,77,0.55)]">
+<div class="col-banner rounded-2xl overflow-hidden mb-5 border-2 border-yellow-300/60 shadow-[0_10px_40px_-8px_rgba(252,211,77,0.55)]">
     <div class="col-stripe h-1.5" style="background:linear-gradient(90deg,#fcd116 0 60%,#003893 60% 80%,#ce1126 80% 100%);"></div>
     <div class="px-5 py-4 text-center" style="background:linear-gradient(180deg, rgba(252,211,77,0.22), rgba(252,211,77,0.05));">
         <p class="font-heavy text-2xl sm:text-3xl tracking-wide" style="color:#fde047; text-shadow:0 2px 12px rgba(0,0,0,0.55);">¡VAMOS, MI COLOMBIA! 🇨🇴</p>
-        <p class="font-display text-[11px] uppercase tracking-[0.3em] text-yellow-200/80 mt-1">La Tricolor está en la cancha · toca para ver</p>
+        <p class="font-display text-[11px] uppercase tracking-[0.3em] text-yellow-200/80 mt-1">
+            {% if colombia_live %}La Tricolor está en la cancha{% else %}Hoy juega la Tricolor · vamos con toda{% endif %}
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-2.5 mt-3">
+            {% if not colombia_live %}
+            <audio id="col-anthem" src="/static/colombia.mp3" preload="none"></audio>
+            <button id="col-anthem-btn" type="button" onclick="toggleColAnthem()"
+                    class="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-xs px-4 py-2 rounded-xl"
+                    style="background:#fcd116; color:#0a0d06; box-shadow:0 8px 20px -6px rgba(252,211,77,0.7);">
+                ▶ Poner la canción
+            </button>
+            {% endif %}
+            {% if colombia_match_id %}
+            <a href="/prediccion/{{ colombia_match_id }}"
+               class="inline-flex items-center gap-1.5 font-display font-semibold uppercase tracking-wider text-xs px-4 py-2 rounded-xl border border-yellow-300/50 text-yellow-100 hover:bg-yellow-400/10 transition">
+                Ver el partido →
+            </a>
+            {% endif %}
+        </div>
     </div>
     <div class="col-stripe h-1.5" style="background:linear-gradient(90deg,#fcd116 0 60%,#003893 60% 80%,#ce1126 80% 100%);"></div>
-</a>
+</div>
+{% if not colombia_live %}
+<script>
+function toggleColAnthem(){
+    var a = document.getElementById('col-anthem'), b = document.getElementById('col-anthem-btn');
+    if (!a || !b) return;
+    if (a.paused) { a.volume = 0.85; a.play(); b.textContent = '⏸ Pausar canción'; }
+    else { a.pause(); b.textContent = '▶ Poner la canción'; }
+}
+(function(){
+    var a = document.getElementById('col-anthem');
+    if (a) a.addEventListener('ended', function(){
+        var b = document.getElementById('col-anthem-btn'); if (b) b.textContent = '▶ Poner la canción';
+    });
+})();
+</script>
+{% endif %}
 {% endif %}
 
 {# ════════ Diapositivas del carrusel del inicio ════════ #}
@@ -38,20 +71,21 @@ body {
 {% set ac = crest(m.away_team, m.away_flag) %}
 {% set htla = m.home_tla if (m.home_tla and m.home_tla != '???') else m.home_team[:3].upper() %}
 {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else m.away_team[:3].upper() %}
-<div class="relative rounded-2xl overflow-hidden" style="background:#07091280;border:1px solid rgba(255,255,255,0.09);">
+{% set is_col = m.home_team == 'Colombia' or m.away_team == 'Colombia' %}
+<div class="relative rounded-2xl overflow-hidden" style="background:{{ '#1612069c' if is_col else '#07091280' }};border:1px solid {{ 'rgba(252,211,77,0.40)' if is_col else 'rgba(255,255,255,0.09)' }};{{ 'box-shadow:0 0 44px -10px rgba(252,211,77,0.45);' if is_col else '' }}">
     <img src="/static/the-iconic-golden-fifa-world-cup-trophy-a-symbol-of-global-football-achievement-presented-in-a-dramatic-spotlight-on-a-transparent-background-isolated-on-transparent-background-free-png.webp"
          class="absolute -bottom-6 -left-8 w-40 opacity-[0.07] pointer-events-none select-none" aria-hidden="true">
     <img src="/static/pngtree-fifa-world-cup-soccer-ball-2026-trionda-png-image_17698008.webp"
          class="absolute -bottom-8 -right-8 w-44 opacity-[0.06] pointer-events-none select-none" aria-hidden="true">
-    <div class="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+    <div class="relative flex items-center justify-between px-5 py-3 border-b {{ 'border-yellow-400/15' if is_col else 'border-white/[0.06]' }}">
         <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-red-500 animate-livepulse shrink-0"></span>
-            <span class="font-display text-[10px] uppercase tracking-[0.25em] text-red-300 font-semibold">{{ t('En vivo ahora') }}</span>
+            <span class="font-display text-[10px] uppercase tracking-[0.25em] {{ 'text-yellow-300' if is_col else 'text-red-300' }} font-semibold">{% if is_col %}¡Vamos Colombia!{% else %}{{ t('En vivo ahora') }}{% endif %}</span>
         </div>
         <a href="/como-jugar" class="font-display text-[10px] uppercase tracking-wider text-white/30 hover:text-sky-300 transition">📖 {{ t('Tutorial') }} →</a>
     </div>
     <div class="absolute inset-0 pointer-events-none"
-         style="background:linear-gradient(to right,rgba(220,38,38,.09) 0%,transparent 38%,transparent 62%,rgba(59,130,246,.09) 100%)"></div>
+         style="background:{{ 'radial-gradient(ellipse 80% 65% at 50% 0%, rgba(252,211,77,0.20), transparent 65%)' if is_col else 'linear-gradient(to right,rgba(220,38,38,.09) 0%,transparent 38%,transparent 62%,rgba(59,130,246,.09) 100%)' }}"></div>
     <a href="/prediccion/{{ m.id }}" class="block relative">
         <div class="px-3 sm:px-6 py-6">
             <div class="relative flex items-stretch rounded-2xl overflow-hidden border border-white/15
