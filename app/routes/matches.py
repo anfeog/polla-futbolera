@@ -410,6 +410,16 @@ def inicio(request: Request, user=Depends(require_login)):
         """, (m["id"],)).fetchall()
         live_matches.append({"m": dict(m), "preds": [dict(p) for p in preds]})
 
+    # ── ¡Modo Colombia! Si la Tricolor está jugando, el inicio se pone amarillo. ──
+    colombia_live = False
+    colombia_match_id = None
+    for lm in live_matches:
+        cm = lm["m"]
+        if "Colombia" in (cm["home_team"], cm["away_team"]):
+            colombia_live = True
+            colombia_match_id = cm["id"]
+            break
+
     # ── Preview del cuadro eliminatorio a dos mitades (si ya hay cruces) ──────
     left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn)
     real_set = any(
@@ -439,6 +449,8 @@ def inicio(request: Request, user=Depends(require_login)):
         "premios_pending": premios_pending,
         "comodin_stages": comodin_stages,
         "live_matches": live_matches,
+        "colombia_live": colombia_live,
+        "colombia_match_id": colombia_match_id,
         "bracket_ready": bracket_ready,
         "bracket_provisional": bracket_provisional,
         "bracket_left":  left_cols,

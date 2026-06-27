@@ -2,6 +2,33 @@
 {% block title %}Inicio — Polla Mundial 2026{% endblock %}
 {% block content %}
 
+{# ════════ ¡MODO COLOMBIA! cuando la Tricolor está en la cancha ════════ #}
+{% if colombia_live %}
+<style>
+body {
+    background-color: #0c0f07 !important;
+    background-image:
+        radial-gradient(ellipse 95% 55% at 50% -12%, rgba(252,211,77,0.38), transparent 60%),
+        radial-gradient(ellipse 70% 40% at 8% 6%,  rgba(0,56,168,0.20), transparent 55%),
+        radial-gradient(ellipse 70% 40% at 92% 6%, rgba(206,17,38,0.20), transparent 55%) !important;
+    background-attachment: fixed !important;
+}
+@keyframes col-pulse { 0%,100%{ transform:scale(1); filter:brightness(1);} 50%{ transform:scale(1.015); filter:brightness(1.12);} }
+@keyframes col-wave  { 0%,100%{ background-position:0% 50%;} 50%{ background-position:100% 50%;} }
+.col-banner { animation: col-pulse 1.5s ease-in-out infinite; }
+.col-stripe { background-size:200% 100%; animation: col-wave 3s linear infinite; }
+</style>
+<a href="{% if colombia_match_id %}/prediccion/{{ colombia_match_id }}{% else %}/inicio{% endif %}"
+   class="col-banner block rounded-2xl overflow-hidden mb-5 border-2 border-yellow-300/60 shadow-[0_10px_40px_-8px_rgba(252,211,77,0.55)]">
+    <div class="col-stripe h-1.5" style="background:linear-gradient(90deg,#fcd116 0 60%,#003893 60% 80%,#ce1126 80% 100%);"></div>
+    <div class="px-5 py-4 text-center" style="background:linear-gradient(180deg, rgba(252,211,77,0.22), rgba(252,211,77,0.05));">
+        <p class="font-heavy text-2xl sm:text-3xl tracking-wide" style="color:#fde047; text-shadow:0 2px 12px rgba(0,0,0,0.55);">¡VAMOS, MI COLOMBIA! 🇨🇴</p>
+        <p class="font-display text-[11px] uppercase tracking-[0.3em] text-yellow-200/80 mt-1">La Tricolor está en la cancha · toca para ver</p>
+    </div>
+    <div class="col-stripe h-1.5" style="background:linear-gradient(90deg,#fcd116 0 60%,#003893 60% 80%,#ce1126 80% 100%);"></div>
+</a>
+{% endif %}
+
 {# ════════ Diapositivas del carrusel del inicio ════════ #}
 
 {# — Diapositiva: partido en vivo (HUD estilo TV) — #}
