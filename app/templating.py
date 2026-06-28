@@ -18,6 +18,33 @@ templates.env.globals["LANGS"] = LANGS
 templates.env.globals["LANG_FLAGS"] = LANG_FLAGS
 
 
+# ── Nacionalidad de cada jugador (para el roast del "vendepatria") ────────────
+# Todos son colombianos, excepto los usuarios listados aquí.
+PLAYER_COUNTRIES = {
+    "iago": "Brazil",
+}
+
+
+def player_country(username: str) -> str:
+    return PLAYER_COUNTRIES.get((username or "").strip().lower(), "Colombia")
+
+
+def is_vendepatria(username, home_team, away_team, home_pred, away_pred) -> bool:
+    """True si el jugador pronosticó a SU PROPIA selección perdiendo."""
+    if home_pred is None or away_pred is None:
+        return False
+    country = player_country(username)
+    if country == home_team:
+        return home_pred < away_pred
+    if country == away_team:
+        return away_pred < home_pred
+    return False
+
+
+templates.env.globals["player_country"] = player_country
+templates.env.globals["is_vendepatria"] = is_vendepatria
+
+
 def _format_date(date_str: str) -> str:
     """'2026-06-11' → 'Jueves 11 Jun'"""
     try:

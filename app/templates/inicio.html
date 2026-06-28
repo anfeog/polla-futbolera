@@ -23,7 +23,7 @@ body {
     <div class="px-5 py-4 text-center" style="background:linear-gradient(180deg, rgba(252,211,77,0.22), rgba(252,211,77,0.05));">
         <p class="font-heavy text-2xl sm:text-3xl tracking-wide" style="color:#fde047; text-shadow:0 2px 12px rgba(0,0,0,0.55);">¡VAMOS, MI COLOMBIA! 🇨🇴</p>
         <p class="font-display text-[11px] uppercase tracking-[0.3em] text-yellow-200/80 mt-1">
-            {% if colombia_live %}La Tricolor está en la cancha{% else %}Hoy juega la Tricolor · vamos con toda{% endif %}
+            {% if colombia_live %}La ilusión · Colombia está en la cancha{% else %}La ilusión · hoy juega Colombia{% endif %}
         </p>
         <div class="flex flex-wrap items-center justify-center gap-2.5 mt-3">
             {% if not colombia_live %}
@@ -125,6 +125,12 @@ function toggleColAnthem(){
                 <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl {% if exact %}bg-emerald-500/25 border border-emerald-500/50{% elif winning %}bg-blue-500/15 border border-blue-500/30{% else %}bg-white/[0.04] border border-white/10{% endif %}">
                     <span class="text-sm leading-none">{{ p.avatar or '⚽' }}</span>
                     <span class="font-display text-[11px] text-white/55 truncate max-w-[64px]">{{ p.username }}</span>
+                    {% if is_vendepatria(p.username, m.home_team, m.away_team, p.home_score_pred, p.away_score_pred) %}
+                    <span class="vende" onclick="event.preventDefault(); this.classList.toggle('on')">
+                        <span class="text-sm leading-none" title="Este vendepatria fue en contra de su selección">🤡</span>
+                        <span class="vende-tip">Este vendepatria fue en contra de su selección</span>
+                    </span>
+                    {% endif %}
                     <span class="font-display text-xs font-semibold {% if exact %}text-emerald-300{% else %}text-white/90{% endif %}">{{ p.home_score_pred }}-{{ p.away_score_pred }}</span>
                 </div>
                 {% endfor %}

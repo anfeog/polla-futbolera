@@ -78,6 +78,16 @@
             color: transparent;
         }
         .brand-bar { background: linear-gradient(90deg, #2dd4bf, #38bdf8 45%, #d946ef); }
+        /* Roast "vendepatria": payaso con globo (hover en PC, tap en celular) */
+        .vende { position: relative; display: inline-flex; cursor: pointer; }
+        .vende-tip {
+            position: absolute; bottom: 135%; left: 50%; transform: translateX(-50%);
+            white-space: nowrap; background: #111827; color: #fde047;
+            border: 1px solid rgba(252,211,77,.45); font-size: 11px; font-weight: 600;
+            padding: 4px 9px; border-radius: 9px; box-shadow: 0 8px 22px rgba(0,0,0,.55);
+            display: none; z-index: 60; pointer-events: none;
+        }
+        .vende:hover .vende-tip, .vende.on .vende-tip { display: block; }
         /* Franja de segmentos duros estilo identidad 26 */
         .fifa-strip {
             background: linear-gradient(90deg,
