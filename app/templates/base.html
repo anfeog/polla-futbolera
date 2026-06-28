@@ -88,6 +88,16 @@
             display: none; z-index: 60; pointer-events: none;
         }
         .vende:hover .vende-tip, .vende.on .vende-tip { display: block; }
+        /* Payaso bien grande y con meneo, imposible de no ver */
+        .vende-emoji {
+            display: inline-block; font-size: 1.8rem; line-height: 1;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,.5));
+            animation: vende-wobble 1s ease-in-out infinite;
+        }
+        @keyframes vende-wobble {
+            0%,100% { transform: rotate(-9deg) scale(1); }
+            50%     { transform: rotate(9deg) scale(1.18); }
+        }
         /* Franja de segmentos duros estilo identidad 26 */
         .fifa-strip {
             background: linear-gradient(90deg,

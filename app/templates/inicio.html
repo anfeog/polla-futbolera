@@ -127,7 +127,7 @@ function toggleColAnthem(){
                     <span class="font-display text-[11px] text-white/55 truncate max-w-[64px]">{{ p.username }}</span>
                     {% if is_vendepatria(p.username, m.home_team, m.away_team, p.home_score_pred, p.away_score_pred, p.advances_team, m.stage) %}
                     <span class="vende" onclick="event.preventDefault(); this.classList.toggle('on')">
-                        <span class="text-sm leading-none" title="Este vendepatria fue en contra de su selección">🤡</span>
+                        <span class="vende-emoji" title="Este vendepatria fue en contra de su selección">🤡</span>
                         <span class="vende-tip">Este vendepatria fue en contra de su selección</span>
                     </span>
                     {% endif %}
