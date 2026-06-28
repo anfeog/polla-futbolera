@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
-from app.templating import templates
+from app.templating import templates, is_vendepatria
 from app.scoring import award_points_for_user, total_goals_bonus, live_provisional_points, POINTS_SOLO
 from app.i18n import t
 
@@ -266,6 +266,22 @@ def ranking(request: Request, user=Depends(require_login)):
     tg_bonus   = total_goals_bonus(conn)
     live_bonus = live_provisional_points(conn)   # {user_id: {result, scorers, joker, total}}
 
+    # Contador "vendepatria": veces que un jugador pronosticó a SU selección perdiendo.
+    vende_counts: dict = {}
+    vrows = conn.execute("""
+        SELECT p.user_id, u.username, m.home_team, m.away_team,
+               p.home_score_pred, p.away_score_pred
+        FROM predictions p
+        JOIN users u   ON u.id = p.user_id
+        JOIN matches m ON m.id = p.match_id
+        WHERE u.is_admin = 0
+          AND (m.home_team IN ('Colombia','Brazil') OR m.away_team IN ('Colombia','Brazil'))
+    """).fetchall()
+    for vr in vrows:
+        if is_vendepatria(vr["username"], vr["home_team"], vr["away_team"],
+                          vr["home_score_pred"], vr["away_score_pred"]):
+            vende_counts[vr["user_id"]] = vende_counts.get(vr["user_id"], 0) + 1
+
     ranking = []
     for r in rows:
         award_pts = award_points_for_user(r["id"], conn) + tg_bonus.get(r["id"], 0)
@@ -294,6 +310,7 @@ def ranking(request: Request, user=Depends(require_login)):
             "scorers_hit": r["scorers_hit"],
             "played": played,
             "pct": pct,
+            "vendepatria": vende_counts.get(r["id"], 0),
         })
 
     any_live = bool(live_bonus)

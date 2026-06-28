@@ -135,6 +135,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                     {% if row.award_points > 0 %}<span class="ml-1 text-[10px] text-amber-400" title="Puntos de premios">🏅{{ row.award_points }}</span>{% endif %}
                     {% if row.solo_hits > 0 %}<span class="ml-1 text-[10px] text-yellow-300" title="Marcadores que solo tú clavaste">🎯{{ row.solo_hits }}</span>{% endif %}
                     {% if row.joker_bonus > 0 %}<span class="ml-1 text-[10px] text-cyan-300" title="Bonus por comodín x2">🃏</span>{% endif %}
+                    {% if row.vendepatria > 0 %}<span class="vende align-middle ml-1" onclick="this.classList.toggle('on')"><span class="text-[11px]" title="Pronosticó a su selección perdiendo {{ row.vendepatria }} vez(ces)">🤡{{ row.vendepatria }}</span><span class="vende-tip">Vendepatria {{ row.vendepatria }}x · fue contra su selección</span></span>{% endif %}
                 </td>
                 <td class="py-3 px-2 text-center font-heavy text-lg {{ 'text-sky-300' if is_me else 'text-white' }}">
                     {{ "%.1f"|format(row.total_points) }}
