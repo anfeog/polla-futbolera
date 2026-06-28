@@ -138,7 +138,7 @@ def _prediction_readonly(conn, match, match_id, user, request):
     # Pronósticos de TODOS los participantes (transparencia)
     all_rows = conn.execute("""
         SELECT p.id, p.user_id, p.home_score_pred, p.away_score_pred,
-               p.is_joker, p.points, p.hit_exact, p.hit_winner,
+               p.is_joker, p.points, p.hit_exact, p.hit_winner, p.advances_team,
                u.username, u.avatar
         FROM predictions p
         JOIN users u ON u.id = p.user_id
@@ -151,6 +151,7 @@ def _prediction_readonly(conn, match, match_id, user, request):
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "is_me": r["user_id"] == user["id"],
             "home": r["home_score_pred"], "away": r["away_score_pred"],
+            "advances": r["advances_team"],
             "is_joker": r["is_joker"],
             "points": r["points"] or 0,
             "result_status": _result_status(r, finished),

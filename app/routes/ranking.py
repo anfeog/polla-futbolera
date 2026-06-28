@@ -270,7 +270,7 @@ def ranking(request: Request, user=Depends(require_login)):
     vende_counts: dict = {}
     vrows = conn.execute("""
         SELECT p.user_id, u.username, m.home_team, m.away_team,
-               p.home_score_pred, p.away_score_pred
+               p.home_score_pred, p.away_score_pred, p.advances_team
         FROM predictions p
         JOIN users u   ON u.id = p.user_id
         JOIN matches m ON m.id = p.match_id
@@ -279,7 +279,7 @@ def ranking(request: Request, user=Depends(require_login)):
     """).fetchall()
     for vr in vrows:
         if is_vendepatria(vr["username"], vr["home_team"], vr["away_team"],
-                          vr["home_score_pred"], vr["away_score_pred"]):
+                          vr["home_score_pred"], vr["away_score_pred"], vr["advances_team"]):
             vende_counts[vr["user_id"]] = vende_counts.get(vr["user_id"], 0) + 1
 
     ranking = []

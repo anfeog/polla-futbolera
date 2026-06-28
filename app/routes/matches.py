@@ -403,7 +403,7 @@ def inicio(request: Request, user=Depends(require_login)):
         if not is_live:
             continue
         preds = conn.execute("""
-            SELECT u.username, u.avatar, p.home_score_pred, p.away_score_pred
+            SELECT u.username, u.avatar, p.home_score_pred, p.away_score_pred, p.advances_team
             FROM predictions p JOIN users u ON u.id = p.user_id
             WHERE p.match_id = ? AND u.is_admin = 0
             ORDER BY u.username

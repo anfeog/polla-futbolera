@@ -29,16 +29,24 @@ def player_country(username: str) -> str:
     return PLAYER_COUNTRIES.get((username or "").strip().lower(), "Colombia")
 
 
-def is_vendepatria(username, home_team, away_team, home_pred, away_pred) -> bool:
-    """True si el jugador pronosticó a SU PROPIA selección perdiendo."""
+def is_vendepatria(username, home_team, away_team, home_pred, away_pred, advances_team=None) -> bool:
+    """True si el jugador pronosticó a SU PROPIA selección perdiendo.
+
+    En fase eliminatoria, un EMPATE solo cuenta si predijo que su selección NO
+    avanza (pierde en penales). Si predijo empate pero que su selección gana en
+    penales, NO cuenta.
+    """
     if home_pred is None or away_pred is None:
         return False
     country = player_country(username)
+    if country not in (home_team, away_team):
+        return False
+    if home_pred == away_pred:
+        # Empate: vendepatria solo si predijo que su selección no avanza (KO).
+        return bool(advances_team) and advances_team != country
     if country == home_team:
         return home_pred < away_pred
-    if country == away_team:
-        return away_pred < home_pred
-    return False
+    return away_pred < home_pred
 
 
 templates.env.globals["player_country"] = player_country
