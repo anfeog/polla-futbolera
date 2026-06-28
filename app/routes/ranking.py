@@ -269,7 +269,7 @@ def ranking(request: Request, user=Depends(require_login)):
     # Contador "vendepatria": veces que un jugador pronosticó a SU selección perdiendo.
     vende_counts: dict = {}
     vrows = conn.execute("""
-        SELECT p.user_id, u.username, m.home_team, m.away_team,
+        SELECT p.user_id, u.username, m.home_team, m.away_team, m.stage,
                p.home_score_pred, p.away_score_pred, p.advances_team
         FROM predictions p
         JOIN users u   ON u.id = p.user_id
@@ -279,7 +279,8 @@ def ranking(request: Request, user=Depends(require_login)):
     """).fetchall()
     for vr in vrows:
         if is_vendepatria(vr["username"], vr["home_team"], vr["away_team"],
-                          vr["home_score_pred"], vr["away_score_pred"], vr["advances_team"]):
+                          vr["home_score_pred"], vr["away_score_pred"],
+                          vr["advances_team"], vr["stage"]):
             vende_counts[vr["user_id"]] = vende_counts.get(vr["user_id"], 0) + 1
 
     ranking = []

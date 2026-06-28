@@ -125,7 +125,7 @@ function toggleColAnthem(){
                 <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl {% if exact %}bg-emerald-500/25 border border-emerald-500/50{% elif winning %}bg-blue-500/15 border border-blue-500/30{% else %}bg-white/[0.04] border border-white/10{% endif %}">
                     <span class="text-sm leading-none">{{ p.avatar or '⚽' }}</span>
                     <span class="font-display text-[11px] text-white/55 truncate max-w-[64px]">{{ p.username }}</span>
-                    {% if is_vendepatria(p.username, m.home_team, m.away_team, p.home_score_pred, p.away_score_pred, p.advances_team) %}
+                    {% if is_vendepatria(p.username, m.home_team, m.away_team, p.home_score_pred, p.away_score_pred, p.advances_team, m.stage) %}
                     <span class="vende" onclick="event.preventDefault(); this.classList.toggle('on')">
                         <span class="text-sm leading-none" title="Este vendepatria fue en contra de su selección">🤡</span>
                         <span class="vende-tip">Este vendepatria fue en contra de su selección</span>

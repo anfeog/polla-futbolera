@@ -29,12 +29,13 @@ def player_country(username: str) -> str:
     return PLAYER_COUNTRIES.get((username or "").strip().lower(), "Colombia")
 
 
-def is_vendepatria(username, home_team, away_team, home_pred, away_pred, advances_team=None) -> bool:
+def is_vendepatria(username, home_team, away_team, home_pred, away_pred,
+                   advances_team=None, stage=None) -> bool:
     """True si el jugador pronosticó a SU PROPIA selección perdiendo.
 
-    En fase eliminatoria, un EMPATE solo cuenta si predijo que su selección NO
-    avanza (pierde en penales). Si predijo empate pero que su selección gana en
-    penales, NO cuenta.
+    - Fase de grupos: un EMPATE ya cuenta (no apostó por su selección a ganar).
+    - Fase eliminatoria: un empate cuenta solo si predijo que su selección NO
+      avanza (pierde en penales). Si predijo que avanza (gana penales), no cuenta.
     """
     if home_pred is None or away_pred is None:
         return False
@@ -42,8 +43,11 @@ def is_vendepatria(username, home_team, away_team, home_pred, away_pred, advance
     if country not in (home_team, away_team):
         return False
     if home_pred == away_pred:
-        # Empate: vendepatria solo si predijo que su selección no avanza (KO).
-        return bool(advances_team) and advances_team != country
+        if stage and stage != "Group Stage":
+            # Eliminatoria: solo si predijo que su selección no avanza.
+            return bool(advances_team) and advances_team != country
+        # Fase de grupos: el empate ya es vendepatria.
+        return True
     if country == home_team:
         return home_pred < away_pred
     return away_pred < home_pred

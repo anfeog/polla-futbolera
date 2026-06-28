@@ -248,7 +248,7 @@ body {
                 <span class="font-display font-semibold uppercase tracking-wide text-sm {{ 'text-sky-300' if e.is_me else '' }} truncate">
                     {{ e.username }}{% if e.is_me %} <span class="text-[10px] text-white/40 normal-case">{{ t('(tú)') }}</span>{% endif %}
                 </span>
-                {% if is_vendepatria(e.username, match.home_team, match.away_team, e.home, e.away, e.advances) %}
+                {% if is_vendepatria(e.username, match.home_team, match.away_team, e.home, e.away, e.advances, match.stage) %}
                 <span class="vende shrink-0" onclick="this.classList.toggle('on')">
                     <span class="text-base leading-none" title="Este vendepatria fue en contra de su selección">🤡</span>
                     <span class="vende-tip">Este vendepatria fue en contra de su selección</span>
