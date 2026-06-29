@@ -130,8 +130,81 @@ def _best_thirds(conn):
     return thirds
 
 
-def _bracket_halves(conn):
-    """Cuadro eliminatorio partido en dos mitades que se encuentran en la Final.
+# Nº base de partido FIFA por fase (R32 73-88, R16 89-96, QF 97-100, SF 101-102,
+# 3er puesto 103, Final 104). El orden por kickoff dentro de cada fase coincide
+# con el número de partido.
+STAGE_BASE = {
+    "Last 32": 73, "Last 16": 89, "Quarter Finals": 97,
+    "Semi Finals": 101, "Third Place": 103, "Final": 104,
+}
+
+# Orden VISUAL del cuadro según el ÁRBOL OFICIAL FIFA 2026 (no es secuencial).
+BRACKET_LAYOUT = {
+    "left": {
+        "Last 32":        [74, 77, 73, 75, 83, 84, 81, 82],
+        "Last 16":        [89, 90, 93, 94],
+        "Quarter Finals": [97, 98],
+        "Semi Finals":    [101],
+    },
+    "right": {
+        "Last 32":        [76, 78, 79, 80, 86, 88, 85, 87],
+        "Last 16":        [91, 92, 95, 96],
+        "Quarter Finals": [99, 100],
+        "Semi Finals":    [102],
+    },
+}
+
+# Avance: nº de partido origen -> (nº destino, lado) según el árbol FIFA 2026.
+ADVANCE_MAP = {
+    74: (89, "home"), 77: (89, "away"),  73: (90, "home"),  75: (90, "away"),
+    76: (91, "home"), 78: (91, "away"),  79: (92, "home"),  80: (92, "away"),
+    83: (93, "home"), 84: (93, "away"),  81: (94, "home"),  82: (94, "away"),
+    86: (95, "home"), 88: (95, "away"),  85: (96, "home"),  87: (96, "away"),
+    89: (97, "home"), 90: (97, "away"),  93: (98, "home"),  94: (98, "away"),
+    91: (99, "home"), 92: (99, "away"),  95: (100, "home"), 96: (100, "away"),
+    97: (101, "home"), 98: (101, "away"), 99: (102, "home"), 100: (102, "away"),
+    101: (104, "home"), 102: (104, "away"),
+}
+
+
+def _ko_winner(m):
+    """Equipo que avanza de un partido KO terminado (o None)."""
+    hs, as_ = m.get("home_score"), m.get("away_score")
+    if m.get("status") != "FINISHED" or hs is None or as_ is None:
+        return None
+    if hs > as_:
+        side = "home"
+    elif as_ > hs:
+        side = "away"
+    else:  # empate -> lo decide quién avanza (penales)
+        adv = m.get("advances_team")
+        side = "home" if adv == m.get("home_team") else ("away" if adv == m.get("away_team") else None)
+        if side is None:
+            return None
+    return {"name": m[f"{side}_team"], "flag": m[f"{side}_flag"], "tla": m[f"{side}_tla"]}
+
+
+def _autofill_bracket(bynum):
+    """Rellena EN MEMORIA los slots 'Por definir' con el ganador del partido que
+    los alimenta (avance lógico), sin tocar la base. No pisa equipos ya definidos."""
+    for src in sorted(ADVANCE_MAP):
+        dst, slot = ADVANCE_MAP[src]
+        sm, dm = bynum.get(src), bynum.get(dst)
+        if not sm or not dm:
+            continue
+        w = _ko_winner(sm)
+        if not w:
+            continue
+        if not dm.get(f"{slot}_team") or dm.get(f"{slot}_team") == "Por definir":
+            dm[f"{slot}_team"] = w["name"]
+            dm[f"{slot}_flag"] = w["flag"]
+            dm[f"{slot}_tla"]  = w["tla"]
+
+
+def _bracket_halves(conn, projected=None):
+    """Cuadro eliminatorio en dos mitades que se encuentran en la Final, ordenado
+    según el árbol oficial FIFA 2026 y con auto-avance de ganadores.
+    Si `projected` (16 partidos del R32 en orden de nº) viene dado, reemplaza el R32.
     Devuelve (left_cols, right_cols, final_matches, ko_rows)."""
     ko_rows = conn.execute(
         "SELECT * FROM matches WHERE stage != 'Group Stage' ORDER BY kickoff ASC"
@@ -139,16 +212,29 @@ def _bracket_halves(conn):
     by_stage: dict = defaultdict(list)
     for m in ko_rows:
         by_stage[m["stage"]].append(dict(m))
-    HALF_STAGES = ["Last 32", "Last 16", "Quarter Finals", "Semi Finals"]
-    left_cols, right_cols = [], []
-    for s in HALF_STAGES:
-        ms = by_stage.get(s, [])
-        mid = len(ms) // 2
-        col = {"label": STAGE_LABELS.get(s, s), "icon": STAGE_ICONS.get(s, "⚽")}
-        left_cols.append({**col, "matches": ms[:mid]})
-        right_cols.append({**col, "matches": ms[mid:]})
+    # nº de partido FIFA -> dict del partido
+    bynum = {}
+    for s, base in STAGE_BASE.items():
+        for i, mm in enumerate(by_stage.get(s, [])):
+            bynum[base + i] = mm
+    # Proyección provisional del R32 (pre-torneo): reemplaza los nº 73-88.
+    if projected:
+        for i, pm in enumerate(projected):
+            bynum[73 + i] = pm
+    # Avance lógico de ganadores a la siguiente ronda (en memoria).
+    _autofill_bracket(bynum)
+
+    def cols(side):
+        out = []
+        for s in ("Last 32", "Last 16", "Quarter Finals", "Semi Finals"):
+            out.append({
+                "label": STAGE_LABELS.get(s, s), "icon": STAGE_ICONS.get(s, "⚽"),
+                "matches": [bynum[n] for n in BRACKET_LAYOUT[side][s] if n in bynum],
+            })
+        return out
+
     final_matches = by_stage.get("Final", [])
-    return left_cols, right_cols, final_matches, ko_rows
+    return cols("left"), cols("right"), final_matches, ko_rows
 
 
 # Plantilla oficial del Round of 32 (FIFA Mundial 2026), en orden de partido 73→88.
@@ -437,20 +523,15 @@ def inicio(request: Request, user=Depends(require_login)):
     colombia_yellow = colombia_today or colombia_live
 
     # ── Preview del cuadro eliminatorio a dos mitades (si ya hay cruces) ──────
-    left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn)
-    real_set = any(
-        m["home_team"] != "Por definir" or m["away_team"] != "Por definir"
-        for m in ko_rows
-    )
+    real_set = conn.execute(
+        "SELECT 1 FROM matches WHERE stage != 'Group Stage' "
+        "AND (home_team != 'Por definir' OR away_team != 'Por definir') LIMIT 1"
+    ).fetchone() is not None
     # Si el R32 real aún no está definido, lo emparejamos PROVISIONALMENTE con
     # las posiciones actuales de los grupos (la API lo reemplaza el día del cruce).
-    bracket_provisional = False
-    if not real_set:
-        projected = _projected_r32(conn)
-        if projected:
-            left_cols[0]["matches"]  = projected[:8]
-            right_cols[0]["matches"] = projected[8:]
-            bracket_provisional = True
+    projected = _projected_r32(conn) if not real_set else None
+    left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn, projected)
+    bracket_provisional = bool(projected)
     bracket_ready = real_set or bracket_provisional
 
     # ── Tabla de mejores terceros (si la fase de grupos ya tiene resultados) ──
@@ -539,22 +620,7 @@ def bracket_view(request: Request, user=Depends(require_login)):
     ).fetchall()
 
     user_predictions, locked = _pred_locked(conn, all_knockout, user["id"])
-
-    by_stage: dict = defaultdict(list)
-    for m in all_knockout:
-        by_stage[m["stage"]].append(m)
-
-    # Dividir cada ronda en mitad izquierda y mitad derecha
-    HALF_STAGES = ["Last 32", "Last 16", "Quarter Finals", "Semi Finals"]
-    left_cols, right_cols = [], []
-    for stage in HALF_STAGES:
-        ms = by_stage.get(stage, [])
-        mid = len(ms) // 2
-        left_cols.append({"stage": stage, "matches": ms[:mid]})
-        right_cols.append({"stage": stage, "matches": ms[mid:]})
-
-    final_matches   = by_stage.get("Final", [])
-    third_matches   = by_stage.get("Third Place", [])
+    third_matches = [dict(m) for m in all_knockout if m["stage"] == "Third Place"]
 
     # Si el Round of 32 real aún no está definido, lo emparejamos PROVISIONALMENTE
     # con las posiciones actuales de los grupos (la API lo reemplaza el día del cruce).
@@ -562,13 +628,10 @@ def bracket_view(request: Request, user=Depends(require_login)):
         m["home_team"] != "Por definir" or m["away_team"] != "Por definir"
         for m in all_knockout
     )
-    provisional = False
-    if not real_set:
-        projected = _projected_r32(conn)
-        if projected:
-            left_cols[0]["matches"]  = projected[:8]
-            right_cols[0]["matches"] = projected[8:]
-            provisional = True
+    projected = _projected_r32(conn) if not real_set else None
+    # Cuadro ordenado por el árbol oficial FIFA 2026 + auto-avance de ganadores.
+    left_cols, right_cols, final_matches, _ = _bracket_halves(conn, projected)
+    provisional = bool(projected)
 
     conn.close()
 
