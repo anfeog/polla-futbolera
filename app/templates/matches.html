@@ -81,7 +81,7 @@
                     <span class="font-display font-bold {{ 'text-emerald-400' if pred.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(pred.points) }} pts</span>
                     <span class="text-white/30 underline underline-offset-2">{{ t('ver') }}</span>
                 {% elif not closed %}
-                    <span class="text-white/40 underline underline-offset-2">{{ t('editar') }}</span>
+                    <span class="font-display uppercase tracking-wider text-[10px] font-bold px-2.5 py-0.5 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-200">✏️ {{ t('editar') }}</span>
                 {% else %}
                     <span class="font-display uppercase tracking-wider text-[10px] text-amber-400/80">🔒 {{ t('ver') }}</span>
                 {% endif %}

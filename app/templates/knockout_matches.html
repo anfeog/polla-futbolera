@@ -204,7 +204,10 @@
                             +{{ "%.1f"|format(pred.points) }} pts
                         </span>
                     {% elif not closed %}
-                        <a href="/prediccion/{{ m.id }}" class="text-white/40 hover:text-white underline underline-offset-2">editar</a>
+                        <a href="/prediccion/{{ m.id }}"
+                           class="font-display uppercase tracking-wider text-[10px] font-bold px-3 py-1 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-200 hover:bg-sky-500/30 transition">
+                            ✏️ Editar
+                        </a>
                     {% endif %}
                 </div>
             {% elif not closed %}
