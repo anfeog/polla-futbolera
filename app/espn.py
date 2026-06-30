@@ -62,8 +62,15 @@ def _fetch_goals(event_id: str) -> list:
         ty = ((e.get("type") or {}).get("text") or "")
         tyl = ty.lower()
         txt = (e.get("text") or "").lower()
+        # ── La TANDA DE PENALES (después de la prórroga) NO cuenta para el
+        # marcador del partido: son aparte. ESPN la marca como un período
+        # distinto (nº >= 5) o con "shootout"/"shoot-out" en el texto/tipo.
+        period_num = ((e.get("period") or {}).get("number")) or 0
+        if period_num >= 5 or "shootout" in tyl or "shoot-out" in tyl \
+                or "shootout" in txt or "shoot-out" in txt:
+            continue
         # Un gol puede venir como: "Goal", "Goal - Header", "Own Goal" (tienen
-        # 'goal'), o "Penalty - Scored" (penal convertido, NO tiene 'goal').
+        # 'goal'), o "Penalty - Scored" (penal convertido EN JUEGO, no tanda).
         # El texto de un gol siempre empieza con "Goal!".
         is_goal = ("goal" in tyl) or ("penalty" in tyl and "scored" in tyl) or txt.startswith("goal!")
         if not is_goal:
@@ -192,7 +199,16 @@ def sync_goalscorers(report: list = None) -> int:
         if hs is None or as_ is None:
             _log(name, "⚠️ ESPN sin marcador claro", status=status)
             continue
-        total = hs + as_
+
+        # Para partidos que van a penales, ESPN puede reportar el score
+        # incluyendo la tanda (ej. 4-3) en vez del 1-1 del tiempo normal.
+        # Si football-data.org ya guardó el marcador correcto en DB, úsalo
+        # como referencia en lugar del de ESPN.
+        if m["home_score"] is not None:
+            ref_h, ref_a = m["home_score"], m["away_score"]
+        else:
+            ref_h, ref_a = hs, as_
+        total = ref_h + ref_a
 
         try:
             goals = _fetch_goals(event["id"])
@@ -204,11 +220,18 @@ def sync_goalscorers(report: list = None) -> int:
                  status=status, goals=goals)
             continue
 
-        # Fijar marcador + estado FINISHED desde ESPN
-        conn.execute(
-            "UPDATE matches SET home_score=?, away_score=?, status='FINISHED' WHERE id=?",
-            (hs, as_, m["id"])
-        )
+        # Fijar marcador + estado FINISHED
+        # Si ya tenemos el marcador de football-data.org, no lo pisamos con el de ESPN
+        # (que puede incluir los penales). Solo actualizamos si no lo teníamos.
+        if m["home_score"] is None:
+            conn.execute(
+                "UPDATE matches SET home_score=?, away_score=?, status='FINISHED' WHERE id=?",
+                (hs, as_, m["id"])
+            )
+        elif m["status"] != "FINISHED":
+            conn.execute(
+                "UPDATE matches SET status='FINISHED' WHERE id=?", (m["id"],)
+            )
         # Reemplazar goleadores
         conn.execute("DELETE FROM match_goals WHERE match_id=?", (m["id"],))
         for g in goals:
