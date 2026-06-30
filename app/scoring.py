@@ -19,6 +19,7 @@ POINTS_EXACT = 3
 POINTS_WINNER = 1
 POINTS_SCORER = 2
 POINTS_OWN_GOAL = 20
+POINTS_OWN_GOAL_CLOSE = 5   # predijiste autogol y hubo, pero no en la posición exacta
 POINTS_AWARD = 10
 POINTS_ADVANCES = 1   # aciertas quién pasa en penales
 POINTS_PENALTY = 2    # aciertas el marcador exacto de penales
@@ -89,6 +90,9 @@ def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
     for team in (home_team, away_team):
         actual = _goals_by_team_ordered(real_goals, team)
         predicted = [p for p in scorer_preds if p["team"] == team]
+        og_predicted = any(gp["is_own_goal"] for gp in predicted)
+        og_actual    = any(g["is_own_goal"] for g in actual)
+        og_exact     = False
         for gp in predicted:
             pos = gp["position"] - 1
             if pos >= len(actual):
@@ -98,11 +102,17 @@ def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
                 if actual_goal["is_own_goal"]:
                     points += POINTS_OWN_GOAL
                     hits += 1
+                    og_exact = True
             elif (not actual_goal["is_own_goal"]
                     and gp["player_name"]
                     and _names_match(gp["player_name"], actual_goal["player_name"])):
                 points += POINTS_SCORER
                 hits += 1
+        # Consolación: predijiste autogol y hubo autogol del equipo, pero no en
+        # la posición exacta (no obtuviste el +20). +5 una vez por equipo.
+        if og_predicted and og_actual and not og_exact:
+            points += POINTS_OWN_GOAL_CLOSE
+            hits += 1
     return points, hits
 
 
@@ -343,6 +353,7 @@ def recalculate_all_for_match(match_id: int):
     for p in preds:
         calculate_match_points(p["id"])
     _mark_solo_hits(match_id)
+    _mark_solo_advance(match_id)
 
 
 def _mark_solo_hits(match_id: int):
@@ -356,5 +367,24 @@ def _mark_solo_hits(match_id: int):
     conn.execute("UPDATE predictions SET solo_hit = 0 WHERE match_id = ?", (match_id,))
     if len(exact) == 1:
         conn.execute("UPDATE predictions SET solo_hit = 1 WHERE id = ?", (exact[0]["id"],))
+    conn.commit()
+    conn.close()
+
+
+def _mark_solo_advance(match_id: int):
+    """Marca solo_advance=1 si EXACTAMENTE un usuario acertó quién avanza (KO).
+    Es un bonus aparte del de marcador exacto (se pueden ganar los dos)."""
+    conn = get_db()
+    match = conn.execute(
+        "SELECT stage, advances_team FROM matches WHERE id = ?", (match_id,)
+    ).fetchone()
+    conn.execute("UPDATE predictions SET solo_advance = 0 WHERE match_id = ?", (match_id,))
+    if match and match["stage"] in KO_STAGES and match["advances_team"]:
+        correct = conn.execute(
+            "SELECT id FROM predictions WHERE match_id = ? AND advances_team = ?",
+            (match_id, match["advances_team"])
+        ).fetchall()
+        if len(correct) == 1:
+            conn.execute("UPDATE predictions SET solo_advance = 1 WHERE id = ?", (correct[0]["id"],))
     conn.commit()
     conn.close()

@@ -318,8 +318,8 @@ def _migrate(conn):
     for col in ("advances_hit", "penalty_score_hit"):
         if col not in pred_cols:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
-    # Comodín (x2) y "Solo tú lo predijiste"
-    for col in ("is_joker", "solo_hit"):
+    # Comodín (x2), "Solo tú lo predijiste" (marcador) y "Solo tú" de quién avanza
+    for col in ("is_joker", "solo_hit", "solo_advance"):
         if col not in pred_cols:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
 

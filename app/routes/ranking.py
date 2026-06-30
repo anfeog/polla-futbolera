@@ -142,6 +142,7 @@ def _chart_context() -> dict:
                COALESCE(SUM(p.points), 0)            AS pts,
                COALESCE(SUM(p.points * p.is_joker), 0) AS joker_bonus,
                COALESCE(SUM(p.solo_hit), 0)          AS solo_hits,
+               COALESCE(SUM(p.solo_advance), 0)      AS solo_advance_hits,
                COALESCE(SUM(p.hit_exact), 0)         AS ex,
                COALESCE(SUM(p.hit_winner), 0)        AS wi,
                COALESCE(SUM(p.advances_hit), 0)      AS adv,
@@ -163,7 +164,7 @@ def _chart_context() -> dict:
         penales = (r["adv"] or 0) * 1 + (r["pen"] or 0) * 2
         award   = award_points_for_user(r["id"], conn2) + tg_bonus.get(r["id"], 0)
         comodin = r["joker_bonus"] or 0
-        solo    = (r["solo_hits"] or 0) * POINTS_SOLO
+        solo    = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
         # Lo que queda son goleadores/autogoles
         goleador = max(0, (r["pts"] or 0) - exacto - ganador - penales)
         total = (r["pts"] or 0) + comodin + solo + award
@@ -252,6 +253,7 @@ def ranking(request: Request, user=Depends(require_login)):
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points ELSE 0 END), 0)            AS match_points,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points * p.is_joker ELSE 0 END), 0) AS joker_bonus,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_hit ELSE 0 END), 0)          AS solo_hits,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_advance ELSE 0 END), 0)      AS solo_advance_hits,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.hit_exact ELSE 0 END), 0)         AS exact_hits,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.hit_winner ELSE 0 END), 0)        AS winner_hits,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.scorers_hit ELSE 0 END), 0)       AS scorers_hit,
@@ -289,7 +291,7 @@ def ranking(request: Request, user=Depends(require_login)):
         played = r["played"] or 0
         results_hit = r["exact_hits"] + r["winner_hits"]
         pct = min(round(results_hit / played * 100), 100) if played else 0
-        solo_pts = (r["solo_hits"] or 0) * POINTS_SOLO
+        solo_pts = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
         joker_bonus = r["joker_bonus"] or 0
         total = r["match_points"] + joker_bonus + solo_pts + award_pts
         live = live_bonus.get(r["id"]) or {}
@@ -305,7 +307,7 @@ def ranking(request: Request, user=Depends(require_login)):
             "prov_joker":       round(live.get("joker", 0), 1),
             "award_points": award_pts,
             "joker_bonus": joker_bonus,
-            "solo_hits": r["solo_hits"] or 0,
+            "solo_hits": (r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0),
             "exact_hits": r["exact_hits"],
             "winner_hits": r["winner_hits"],
             "scorers_hit": r["scorers_hit"],
