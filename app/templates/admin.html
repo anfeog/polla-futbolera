@@ -222,11 +222,22 @@
     </div>
     {% endif %}
 
+    {% if recalc_count %}
+    <div class="bg-emerald-900/40 border border-emerald-700 text-emerald-200 px-4 py-3 rounded-lg mb-4 text-sm">✅ Recalculados <strong>{{ recalc_count }}</strong> partidos terminados (reglas de puntaje aplicadas a todo).</div>
+    {% endif %}
+
     <div class="flex gap-3 flex-wrap">
         <form method="post" action="/admin/actualizar-resultados">
             <button type="submit"
                 class="bg-red-700 hover:bg-red-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
                 🔴 Forzar resultados ahora
+            </button>
+        </form>
+        <form method="post" action="/admin/recalcular-todo"
+              onsubmit="return confirm('¿Recalcular el puntaje de TODOS los partidos terminados? Aplica las reglas nuevas (autogol +5, solo-avanza) a lo ya jugado.')">
+            <button type="submit"
+                class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                🔄 Recalcular puntajes
             </button>
         </form>
         <form method="post" action="/admin/cargar-partidos">

@@ -36,13 +36,15 @@ def _render_admin(request, user, **extra):
 
 
 @router.get("", response_class=HTMLResponse)
-def admin_panel(request: Request, user=Depends(require_admin), reset: str = "", joker: str = ""):
+def admin_panel(request: Request, user=Depends(require_admin), reset: str = "", joker: str = "", recalc: str = ""):
     extra = {}
     if reset:
         extra["reset_user"] = reset
         extra["reset_password"] = TEMP_PASSWORD
     if joker:
         extra["joker_msg"] = joker
+    if recalc:
+        extra["recalc_count"] = recalc
     return _render_admin(request, user, **extra)
 
 
@@ -345,3 +347,18 @@ async def force_update_results(request: Request, user=Depends(require_admin)):
         force_recalced=recalced, force_scorers=scorers,
         force_live=live, force_report=report,
     )
+
+
+@router.post("/recalcular-todo")
+def recalc_all(request: Request, user=Depends(require_admin)):
+    """Recalcula los puntos de TODOS los partidos terminados. Úsalo cuando cambien
+    las reglas de puntaje para aplicarlas retroactivamente (autogol +5, solo-avanza…)."""
+    from app.scoring import recalculate_all_for_match
+    conn = get_db()
+    ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM matches WHERE status='FINISHED' AND home_score IS NOT NULL"
+    ).fetchall()]
+    conn.close()
+    for mid in ids:
+        recalculate_all_for_match(mid)
+    return RedirectResponse(f"/admin?recalc={len(ids)}", status_code=303)
