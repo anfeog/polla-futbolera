@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Tienda — Mundial 2026{% endblock %}
+{% block content %}
+
+<div class="max-w-lg mx-auto">
+    <div class="mb-6">
+        <p class="font-display text-xs uppercase tracking-[0.3em] text-amber-400 mb-1">FIFA World Cup 26</p>
+        <h1 class="font-display font-bold text-4xl sm:text-5xl tracking-wide">🛒 TIENDA</h1>
+        <p class="text-white/40 text-sm mt-1">Gasta tus puntos para comprar comodines. Comprar te resta puntos de la tabla: es el riesgo.</p>
+    </div>
+
+    <!-- Saldo -->
+    <div class="rounded-2xl bg-gradient-to-b from-amber-500/[0.14] to-white/[0.02] border border-amber-500/30 p-5 mb-5 text-center">
+        <p class="font-display text-[10px] uppercase tracking-[0.3em] text-amber-200/70 mb-1">Saldo disponible</p>
+        <p class="font-heavy text-4xl text-amber-300">{{ "%.0f"|format(balance) }} <span class="text-lg text-amber-200/60">pts</span></p>
+    </div>
+
+    {% if ok %}
+    <div class="rounded-xl bg-emerald-900/40 border border-emerald-700 text-emerald-200 px-4 py-3 mb-4 text-sm">✅ ¡Compra realizada! Actívalo en el partido que quieras desde su pronóstico.</div>
+    {% elif err == 'uno' %}
+    <div class="rounded-xl bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 mb-4 text-sm">⚠️ Ya tienes un comodín comprado en juego. Úsalo (o espera a que se juegue) antes de comprar otro.</div>
+    {% elif err == 'saldo' %}
+    <div class="rounded-xl bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 mb-4 text-sm">⚠️ No te alcanzan los puntos para esa compra.</div>
+    {% endif %}
+
+    <!-- Estado actual -->
+    {% if owned %}
+    <div class="rounded-xl bg-cyan-500/10 border border-cyan-500/30 px-4 py-3 mb-5 text-sm text-cyan-200 font-display">
+        🃏 Tienes un <b>{{ labels[owned] }}</b> sin usar. Actívalo en cualquier partido abierto desde <b>su pronóstico</b> (botón “Usar comodín comprado”).
+    </div>
+    {% elif active %}
+    <div class="rounded-xl bg-cyan-500/10 border border-cyan-500/30 px-4 py-3 mb-5 text-sm text-cyan-200 font-display">
+        🃏 Tu <b>{{ labels[active.boost] }}</b> está puesto en <b>{{ active.home_team[:12] }} vs {{ active.away_team[:12] }}</b>. Puedes moverlo (quitarlo allí y ponerlo en otro abierto).
+    </div>
+    {% endif %}
+
+    <!-- Items -->
+    <div class="space-y-3">
+        {% for tipo, price in prices.items() %}
+        {% set affordable = balance >= price and not owned and not active %}
+        <div class="flex items-center gap-4 rounded-2xl border p-5
+            {{ 'border-cyan-500/30 bg-gradient-to-b from-cyan-500/[0.10] to-white/[0.02]' if tipo == 2 else 'border-fuchsia-500/30 bg-gradient-to-b from-fuchsia-500/[0.10] to-white/[0.02]' }}">
+            <div class="text-4xl shrink-0">{{ '🃏' if tipo == 2 else '🔥' }}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-display font-bold uppercase tracking-wide {{ 'text-cyan-200' if tipo == 2 else 'text-fuchsia-200' }}">{{ labels[tipo] }}</p>
+                <p class="text-xs text-white/50 mt-0.5">Multiplica por <b>{{ tipo }}</b> todos tus puntos de un partido.</p>
+            </div>
+            <form method="post" action="/tienda/comprar" class="shrink-0">
+                <input type="hidden" name="tipo" value="{{ tipo }}">
+                <button type="submit" {{ 'disabled' if not affordable }}
+                    class="font-display font-bold uppercase tracking-wider text-sm px-4 py-2.5 rounded-xl transition
+                    {{ ('bg-amber-500 text-ink hover:bg-amber-400' if affordable else 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed') }}">
+                    {{ price }} pts
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <p class="text-[11px] text-white/30 mt-5 leading-relaxed">
+        Reglas: solo puedes tener <b>un comodín comprado en juego a la vez</b>. Convive con tu comodín gratis de cada fase, pero en un mismo partido vale <b>un solo multiplicador</b> (el más alto). Comprar descuenta los puntos de inmediato.
+    </p>
+</div>
+{% endblock %}

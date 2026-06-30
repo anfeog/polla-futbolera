@@ -290,6 +290,10 @@ def _migrate(conn):
         conn.execute("ALTER TABLE users ADD COLUMN tutorial_seen INTEGER DEFAULT 0")
     if "status_msg" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN status_msg TEXT")
+    # Tienda: puntos gastados y comodín comprado en inventario (0=ninguno, 2=x2, 3=x3)
+    for col in ("points_spent", "boost_owned"):
+        if col not in user_cols:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {col} INTEGER DEFAULT 0")
 
     pred_cols = cols("predictions")
     for col in ("hit_exact", "hit_winner", "scorers_hit"):
@@ -318,8 +322,9 @@ def _migrate(conn):
     for col in ("advances_hit", "penalty_score_hit"):
         if col not in pred_cols:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
-    # Comodín (x2), "Solo tú lo predijiste" (marcador) y "Solo tú" de quién avanza
-    for col in ("is_joker", "solo_hit", "solo_advance"):
+    # Comodín (x2), "Solo tú lo predijiste" (marcador), "Solo tú" de quién avanza,
+    # y el multiplicador COMPRADO de la tienda (0=ninguno, 2=x2, 3=x3).
+    for col in ("is_joker", "solo_hit", "solo_advance", "boost"):
         if col not in pred_cols:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} INTEGER DEFAULT 0")
 

@@ -198,9 +198,10 @@ body {
 
 <!-- Total del partido -->
 {% if finished %}
-{% set match_total = (pred.points or 0) * 2 if pred.is_joker else (pred.points or 0) %}
+{% set _mult = pred.boost if pred.boost else (2 if pred.is_joker else 1) %}
+{% set match_total = (pred.points or 0) * _mult %}
 <div class="rounded-2xl bg-gradient-to-r from-amber-500/[0.12] to-transparent border border-amber-500/25 px-5 py-4 flex items-center justify-between">
-    <span class="font-display text-sm uppercase tracking-wider text-amber-200">{{ t('Puntos de este partido') }}{% if pred.is_joker %} <span class="text-cyan-300 text-[10px] normal-case">({{ "%.1f"|format(pred.points or 0) }} 🃏 x2)</span>{% endif %}</span>
+    <span class="font-display text-sm uppercase tracking-wider text-amber-200">{{ t('Puntos de este partido') }}{% if _mult > 1 %} <span class="text-cyan-300 text-[10px] normal-case">({{ "%.1f"|format(pred.points or 0) }} 🃏 x{{ _mult }})</span>{% endif %}</span>
     <span class="font-heavy text-2xl text-amber-300">{{ "%.1f"|format(match_total) }}</span>
 </div>
 {% elif live %}

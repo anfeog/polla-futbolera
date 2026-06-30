@@ -153,6 +153,31 @@
         </label>
         {% endif %}
 
+        <!-- Comodín COMPRADO (tienda) -->
+        {% if boost_current or boost_owned %}
+        {% set bt = boost_current if boost_current else boost_owned %}
+        <label class="block rounded-2xl bg-gradient-to-b {{ 'from-fuchsia-500/[0.12] to-fuchsia-500/[0.02] border-fuchsia-500/30' if bt == 3 else 'from-amber-500/[0.12] to-amber-500/[0.02] border-amber-500/30' }} border p-5 cursor-pointer hover:opacity-95 transition">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="use_boost" value="1" {% if boost_current %}checked{% endif %} class="peer sr-only">
+                <div class="relative w-12 h-7 rounded-full bg-white/10 border border-white/15 transition-colors shrink-0
+                            {{ 'peer-checked:bg-fuchsia-500/60' if bt == 3 else 'peer-checked:bg-amber-500/60' }}
+                            after:content-[''] after:absolute after:top-1 after:left-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-300
+                            peer-checked:after:translate-x-5"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-display text-sm uppercase tracking-wide {{ 'text-fuchsia-200' if bt == 3 else 'text-amber-200' }}">
+                        {{ '🔥 Usar supercomodín' if bt == 3 else '🃏 Usar comodín comprado' }}
+                        <span class="{{ 'text-fuchsia-300' if bt == 3 else 'text-amber-300' }}">(x{{ bt }} puntos)</span>
+                    </p>
+                    <p class="text-xs text-white/45 mt-0.5">Tu comodín comprado en la tienda. Multiplica por {{ bt }} todos tus puntos de este partido. Reemplaza al gratis si ambos caen aquí.</p>
+                </div>
+            </div>
+        </label>
+        {% else %}
+        <a href="/tienda" class="block rounded-2xl bg-white/[0.03] border border-white/10 p-4 text-center hover:bg-white/[0.06] transition">
+            <p class="font-display text-xs uppercase tracking-wider text-white/50">🛒 ¿Quieres más poder? Compra un comodín x2 o supercomodín x3 en la <span class="text-amber-300">Tienda</span></p>
+        </a>
+        {% endif %}
+
         <!-- Goleadores ordenados -->
         <div class="rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.01] border border-white/10 p-6">
             <h2 class="font-display text-sm uppercase tracking-wider text-white/70 mb-1">

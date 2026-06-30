@@ -54,6 +54,12 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
     # Si ese partido ya cerró, el comodín está GASTADO en esta fase: no se mueve.
     joker_locked = bool(joker_other and is_locked(joker_other["kickoff"]))
 
+    # Tienda: comodín comprado en inventario y el que esté puesto en ESTE partido.
+    boost_owned = conn.execute(
+        "SELECT COALESCE(boost_owned, 0) b FROM users WHERE id = ?", (user["id"],)
+    ).fetchone()["b"]
+    boost_current = existing["boost"] if existing else 0
+
     conn.close()
 
     # Plantillas para los desplegables (solo nombres)
@@ -73,6 +79,8 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "is_joker": bool(existing and existing["is_joker"]),
         "joker_other": joker_other,
         "joker_locked": joker_locked,
+        "boost_owned": boost_owned,
+        "boost_current": boost_current,
     })
 
 
@@ -273,6 +281,22 @@ async def save_prediction(match_id: int, request: Request, user=Depends(require_
     else:
         # No lo quiere, o ya está gastado en un partido cerrado de esta fase.
         conn.execute("UPDATE predictions SET is_joker = 0 WHERE id = ?", (pred_id,))
+
+    # ── Comodín COMPRADO (tienda): equipar/quitar el que tiene en inventario ──
+    # No se cobra aquí (se pagó al comprar). Equipar consume el de inventario;
+    # quitarlo (en un partido aún abierto) lo devuelve al inventario para moverlo.
+    want_boost = 1 if form.get("use_boost") else 0
+    urow = conn.execute("SELECT COALESCE(boost_owned, 0) b FROM users WHERE id = ?", (user["id"],)).fetchone()
+    boost_owned = urow["b"]
+    cur_boost = conn.execute("SELECT boost FROM predictions WHERE id = ?", (pred_id,)).fetchone()["boost"] or 0
+    if want_boost and not cur_boost and boost_owned:
+        # Equipar el comprado aquí: sale del inventario.
+        conn.execute("UPDATE predictions SET boost = ? WHERE id = ?", (boost_owned, pred_id))
+        conn.execute("UPDATE users SET boost_owned = 0 WHERE id = ?", (user["id"],))
+    elif not want_boost and cur_boost:
+        # Quitarlo: vuelve al inventario (para moverlo a otro partido abierto).
+        conn.execute("UPDATE predictions SET boost = 0 WHERE id = ?", (pred_id,))
+        conn.execute("UPDATE users SET boost_owned = ? WHERE id = ?", (cur_boost, user["id"]))
 
     conn.commit()
     conn.close()

@@ -138,9 +138,10 @@ def _chart_context() -> dict:
     # ── 2) Barras apiladas: desglose de puntos por origen (top 5) ──────────────
     conn2 = get_db()
     agg = conn2.execute("""
-        SELECT u.id, u.username, u.avatar,
+        SELECT u.id, u.username, u.avatar, COALESCE(u.points_spent, 0) AS points_spent,
                COALESCE(SUM(p.points), 0)            AS pts,
-               COALESCE(SUM(p.points * p.is_joker), 0) AS joker_bonus,
+               COALESCE(SUM(p.points *
+                   ((CASE WHEN p.boost > 0 THEN p.boost WHEN p.is_joker THEN 2 ELSE 1 END) - 1)), 0) AS joker_bonus,
                COALESCE(SUM(p.solo_hit), 0)          AS solo_hits,
                COALESCE(SUM(p.solo_advance), 0)      AS solo_advance_hits,
                COALESCE(SUM(p.hit_exact), 0)         AS ex,
@@ -167,7 +168,7 @@ def _chart_context() -> dict:
         solo    = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
         # Lo que queda son goleadores/autogoles
         goleador = max(0, (r["pts"] or 0) - exacto - ganador - penales)
-        total = (r["pts"] or 0) + comodin + solo + award
+        total = (r["pts"] or 0) + comodin + solo + award - (r["points_spent"] or 0)
         breakdown.append({
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "exacto": exacto, "ganador": ganador, "goleador": round(goleador, 1),
@@ -249,9 +250,11 @@ def ranking(request: Request, user=Depends(require_login)):
     # sean consistentes con `played`. Los partidos en vivo (IN_PLAY) suman
     # aparte vía live_provisional_points. Así el % nunca pasa de 100.
     rows = conn.execute("""
-        SELECT u.id, u.username, u.avatar, u.status_msg,
+        SELECT u.id, u.username, u.avatar, u.status_msg, COALESCE(u.points_spent, 0) AS points_spent,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points ELSE 0 END), 0)            AS match_points,
-               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points * p.is_joker ELSE 0 END), 0) AS joker_bonus,
+               COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points *
+                   ((CASE WHEN p.boost > 0 THEN p.boost WHEN p.is_joker THEN 2 ELSE 1 END) - 1)
+                 ELSE 0 END), 0) AS joker_bonus,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_hit ELSE 0 END), 0)          AS solo_hits,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_advance ELSE 0 END), 0)      AS solo_advance_hits,
                COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.hit_exact ELSE 0 END), 0)         AS exact_hits,
@@ -293,7 +296,8 @@ def ranking(request: Request, user=Depends(require_login)):
         pct = min(round(results_hit / played * 100), 100) if played else 0
         solo_pts = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
         joker_bonus = r["joker_bonus"] or 0
-        total = r["match_points"] + joker_bonus + solo_pts + award_pts
+        spent = r["points_spent"] or 0
+        total = r["match_points"] + joker_bonus + solo_pts + award_pts - spent
         live = live_bonus.get(r["id"]) or {}
         ranking.append({
             "id": r["id"],
@@ -307,6 +311,7 @@ def ranking(request: Request, user=Depends(require_login)):
             "prov_joker":       round(live.get("joker", 0), 1),
             "award_points": award_pts,
             "joker_bonus": joker_bonus,
+            "spent": spent,
             "solo_hits": (r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0),
             "exact_hits": r["exact_hits"],
             "winner_hits": r["winner_hits"],

@@ -39,6 +39,42 @@ AWARD_POINTS = {
 
 KO_STAGES = {"Last 32", "Last 16", "Quarter Finals", "Semi Finals", "Third Place", "Final"}
 
+# ── Tienda de comodines ───────────────────────────────────────────────────────
+BOOST_PRICES = {2: 5, 3: 8}   # x2 cuesta 5 pts, supercomodín x3 cuesta 8 pts
+
+
+def effective_multiplier(is_joker, boost) -> int:
+    """Multiplicador de un partido: el comprado manda; si no, el comodín gratis."""
+    if boost and boost > 0:
+        return boost
+    return 2 if is_joker else 1
+
+
+def user_earned_points(conn, user_id: int) -> float:
+    """Puntos GANADOS (brutos, antes de descontar lo gastado en la tienda)."""
+    row = conn.execute("""
+        SELECT
+          COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points ELSE 0 END), 0) AS match_points,
+          COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points *
+              ((CASE WHEN p.boost > 0 THEN p.boost WHEN p.is_joker THEN 2 ELSE 1 END) - 1)
+            ELSE 0 END), 0) AS mult_bonus,
+          COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_hit + p.solo_advance ELSE 0 END), 0) AS solo_hits
+        FROM predictions p LEFT JOIN matches m ON m.id = p.match_id
+        WHERE p.user_id = ?
+    """, (user_id,)).fetchone()
+    earned = (row["match_points"] or 0) + (row["mult_bonus"] or 0) + (row["solo_hits"] or 0) * POINTS_SOLO
+    earned += award_points_for_user(user_id, conn)
+    earned += total_goals_bonus(conn).get(user_id, 0)
+    return earned
+
+
+def user_balance(conn, user_id: int) -> float:
+    """Saldo disponible para la tienda = ganados − gastados (= total en la tabla)."""
+    spent = conn.execute(
+        "SELECT COALESCE(points_spent, 0) s FROM users WHERE id = ?", (user_id,)
+    ).fetchone()["s"]
+    return user_earned_points(conn, user_id) - (spent or 0)
+
 
 def _goals_by_team_ordered(match_goals: list, team: str) -> list:
     """Devuelve los goles reales de un equipo ordenados por minuto."""
@@ -296,7 +332,7 @@ def live_provisional_points(conn) -> dict:
             "SELECT * FROM match_goals WHERE match_id = ?", (m["id"],)
         ).fetchall()
         preds = conn.execute(
-            "SELECT id, user_id, home_score_pred, away_score_pred, is_joker, points "
+            "SELECT id, user_id, home_score_pred, away_score_pred, is_joker, boost, points "
             "FROM predictions WHERE match_id = ?", (m["id"],)
         ).fetchall()
 
@@ -332,8 +368,8 @@ def live_provisional_points(conn) -> dict:
             if base <= 0:
                 continue
 
-            # Comodín x2: duplica todos los puntos del partido
-            joker_extra = base if p["is_joker"] else 0.0
+            # Comodín (gratis x2 o comprado x2/x3): suma el extra del multiplicador
+            joker_extra = base * (effective_multiplier(p["is_joker"], p["boost"]) - 1)
 
             b = _bucket(p["user_id"])
             b["result"]  += result_pts
