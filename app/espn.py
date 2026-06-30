@@ -73,11 +73,15 @@ def _fetch_goals(event_id: str) -> list:
             continue
         parts = e.get("participants") or []
         scorer = parts[0].get("athlete", {}).get("displayName") if parts else None
+        # Autogol: ESPN lo señala de formas distintas según el partido — un flag
+        # `ownGoal`, el tipo "Own Goal", o solo en el texto de la jugada
+        # ("... own goal"). Revisamos las tres para no perderlo.
+        is_og = bool(e.get("ownGoal")) or ("own goal" in tyl) or ("own goal" in txt)
         goals.append({
             "team": (e.get("team") or {}).get("displayName"),
             "scorer": (scorer or "").strip(),
             "minute": _parse_minute((e.get("clock") or {}).get("displayValue")),
-            "is_own_goal": 1 if (e.get("ownGoal") or "own goal" in tyl) else 0,
+            "is_own_goal": 1 if is_og else 0,
         })
     goals.sort(key=lambda g: g["minute"])
     return goals
