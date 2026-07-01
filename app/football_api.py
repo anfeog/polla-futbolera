@@ -199,13 +199,16 @@ async def update_finished_matches():
         is_live    = api_status in ("IN_PLAY", "PAUSED")
         score      = m.get("score", {})
 
-        # En vivo: usar el marcador actual (halfTime o currentScore según la API)
+        # OJO: si el partido se define por penales, football-data.org mete la
+        # tanda DENTRO de "fullTime" (ej. 4-5 en vez de 1-1). El marcador real
+        # del partido (90/120 min) está en "regularTime" cuando existe.
         if is_live:
             current = score.get("fullTime") or score.get("halfTime") or {}
             home_score = current.get("home")
             away_score = current.get("away")
         else:
-            full = score.get("fullTime", {})
+            reg = score.get("regularTime")
+            full = reg if reg is not None else score.get("fullTime", {})
             home_score = full.get("home")
             away_score = full.get("away")
 

@@ -4,7 +4,9 @@ Sistema de puntuación:
   - Aciertas ganador/empate (no marcador):   +1 pt
   - Aciertas jugador en la posición correcta
     de su equipo (ej: 1er gol Colombia):     +2 pts
-  - Aciertas que ese gol fue autogol:        +10 pts
+  - Autogol, jugador y posición exactos:     +20 pts
+  - Autogol, equipo correcto (no exacto):     +5 pts
+  - Autogol, pero equipo contrario:           +2 pts
   - Cada premio del Mundial acertado
     (Bota/Balón/Guante de Oro):              +10 pts
 
@@ -19,7 +21,8 @@ POINTS_EXACT = 3
 POINTS_WINNER = 1
 POINTS_SCORER = 2
 POINTS_OWN_GOAL = 20
-POINTS_OWN_GOAL_CLOSE = 5   # predijiste autogol y hubo, pero no en la posición exacta
+POINTS_OWN_GOAL_CLOSE = 5      # acertaste el EQUIPO del autogol, pero no la posición exacta
+POINTS_OWN_GOAL_WRONG_SIDE = 2 # predijiste autogol y lo hubo, pero en el equipo contrario
 POINTS_AWARD = 10
 POINTS_ADVANCES = 1   # aciertas quién pasa en penales
 POINTS_PENALTY = 2    # aciertas el marcador exacto de penales
@@ -116,17 +119,26 @@ def _names_match(pred: str, real: str) -> bool:
 def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
     """
     Puntos de goleador: +2 por jugador en su posición correcta dentro de su
-    equipo, +20 por autogol acertado. El orden es por minuto, que es estable
-    (el gol #1 ya marcado sigue siendo el #1), así sirve igual para el cálculo
-    final y para los puntos provisionales en vivo.
+    equipo. Autogol en 3 niveles:
+      +20  jugador exacto en la posición correcta
+      +5   acertaste el EQUIPO del autogol, pero no la posición exacta
+      +2   predijiste autogol y lo hubo, pero en el equipo contrario
+    El orden es por minuto, que es estable (el gol #1 ya marcado sigue siendo
+    el #1), así sirve igual para el cálculo final y para los puntos
+    provisionales en vivo.
     Devuelve (puntos, aciertos).
     """
     points = 0.0
     hits = 0
+    real_og_exists = any(g["is_own_goal"] for g in real_goals)
+    og_predicted_any = False
+    matched_og_side = False
     for team in (home_team, away_team):
         actual = _goals_by_team_ordered(real_goals, team)
         predicted = [p for p in scorer_preds if p["team"] == team]
         og_predicted = any(gp["is_own_goal"] for gp in predicted)
+        if og_predicted:
+            og_predicted_any = True
         og_actual    = any(g["is_own_goal"] for g in actual)
         og_exact     = False
         for gp in predicted:
@@ -149,6 +161,13 @@ def _goalscorer_points(scorer_preds, real_goals, home_team, away_team):
         if og_predicted and og_actual and not og_exact:
             points += POINTS_OWN_GOAL_CLOSE
             hits += 1
+        if og_predicted and og_actual:
+            matched_og_side = True
+    # Consolación mínima: acertaste que habría autogol, pero se lo asignaste
+    # al equipo contrario del que realmente lo sufrió/benefició.
+    if og_predicted_any and real_og_exists and not matched_og_side:
+        points += POINTS_OWN_GOAL_WRONG_SIDE
+        hits += 1
     return points, hits
 
 
@@ -197,15 +216,25 @@ def calculate_match_points(prediction_id: int) -> float:
     )
     points += sc_pts
 
-    # Puntos por penales (solo fase eliminatoria con empate en 90 min)
+    # Puntos por "quién avanza" (fase eliminatoria): el ganador real es quien
+    # avanza, ya sea por penales (match["advances_team"]) o por marcador limpio
+    # en 90/120 min (sin penales). Así, si alguien predijo empate + señaló
+    # quién pasaba y acertó al equipo que ganó, cuenta igual aunque el partido
+    # NO haya llegado a penales.
     advances_hit = 0
     penalty_score_hit = 0
-    if match["stage"] in KO_STAGES and match["advances_team"]:
+    real_advances = match["advances_team"]
+    if not real_advances and match["stage"] in KO_STAGES:
+        if rh > ra:
+            real_advances = match["home_team"]
+        elif ra > rh:
+            real_advances = match["away_team"]
+    if match["stage"] in KO_STAGES and real_advances:
         # +1 si acertaste quién avanza
-        if pred["advances_team"] and pred["advances_team"] == match["advances_team"]:
+        if pred["advances_team"] and pred["advances_team"] == real_advances:
             points += POINTS_ADVANCES
             advances_hit = 1
-        # +2 si acertaste el marcador exacto de penales
+        # +2 si acertaste el marcador exacto de penales (solo si de verdad hubo tanda)
         if (pred["penalty_home"] is not None and pred["penalty_away"] is not None
                 and match["penalty_home"] is not None and match["penalty_away"] is not None
                 and pred["penalty_home"] == match["penalty_home"]
@@ -412,13 +441,20 @@ def _mark_solo_advance(match_id: int):
     Es un bonus aparte del de marcador exacto (se pueden ganar los dos)."""
     conn = get_db()
     match = conn.execute(
-        "SELECT stage, advances_team FROM matches WHERE id = ?", (match_id,)
+        "SELECT stage, advances_team, home_team, away_team, home_score, away_score FROM matches WHERE id = ?",
+        (match_id,)
     ).fetchone()
     conn.execute("UPDATE predictions SET solo_advance = 0 WHERE match_id = ?", (match_id,))
-    if match and match["stage"] in KO_STAGES and match["advances_team"]:
+    real_advances = match["advances_team"] if match else None
+    if match and not real_advances and match["stage"] in KO_STAGES:
+        if match["home_score"] > match["away_score"]:
+            real_advances = match["home_team"]
+        elif match["away_score"] > match["home_score"]:
+            real_advances = match["away_team"]
+    if match and match["stage"] in KO_STAGES and real_advances:
         correct = conn.execute(
             "SELECT id FROM predictions WHERE match_id = ? AND advances_team = ?",
-            (match_id, match["advances_team"])
+            (match_id, real_advances)
         ).fetchall()
         if len(correct) == 1:
             conn.execute("UPDATE predictions SET solo_advance = 1 WHERE id = ?", (correct[0]["id"],))
