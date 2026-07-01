@@ -164,6 +164,23 @@
                     {% endfor %}
                 </div>
             </div>
+            <!-- Selector de "tema" (easter egg) -->
+            <div class="relative" id="theme-menu-desktop">
+                <button onclick="toggleThemeMenu('desktop')"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/15 transition select-none">
+                    <span class="text-base leading-none">🎨</span>
+                    <span class="text-[10px] font-display uppercase tracking-wider text-white/50">Tema</span>
+                </button>
+                <div id="theme-dropdown-desktop" class="hidden absolute right-0 top-full mt-1.5 bg-[#0d1425] border border-white/15 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[150px]">
+                    <div class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-display uppercase tracking-wide bg-sky-500/15 text-sky-300">
+                        <span class="text-lg leading-none">🌙</span> Oscuro
+                    </div>
+                    <button onclick="openMessiEasterEgg()"
+                            class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-display uppercase tracking-wide transition text-white/60 hover:bg-white/10 hover:text-white">
+                        <span class="text-lg leading-none">🔞</span> +18
+                    </button>
+                </div>
+            </div>
             {% if user.is_admin %}
             <a href="/admin" class="px-2.5 py-1.5 rounded-lg text-amber-400 hover:bg-amber-400/10 transition">Admin</a>
             {% endif %}
@@ -181,6 +198,20 @@
     </div>
     <div class="h-0.5 brand-bar opacity-80"></div>
 </nav>
+
+<!-- ══ EASTER EGG: modal +18 (recopilatorio de Messi) ══ -->
+<div id="messi-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm items-center justify-center p-4" onclick="if(event.target===this) closeMessiEasterEgg()">
+    <div class="w-full max-w-2xl">
+        <div class="flex items-center justify-between mb-2">
+            <span class="font-display uppercase tracking-wide text-amber-300 text-sm">🐐 Contenido +18 🔞</span>
+            <button onclick="closeMessiEasterEgg()" class="text-white/60 hover:text-white text-2xl leading-none px-2">&times;</button>
+        </div>
+        <div class="relative w-full aspect-video rounded-xl overflow-hidden border border-amber-400/30 shadow-2xl">
+            <iframe id="messi-iframe" class="w-full h-full" src="" title="Messi" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
 
 <!-- ══ DRAWER LATERAL (móvil) ══ -->
 <div id="drawer-overlay" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity sm:hidden"></div>
@@ -283,6 +314,33 @@ document.addEventListener('click', function(e) {
         document.getElementById('lang-dropdown-desktop').classList.add('hidden');
     }
 });
+
+// ── Dropdown de "tema" + easter egg +18 (Messi) ──────────────────
+function toggleThemeMenu(id) {
+    const dd = document.getElementById('theme-dropdown-' + id);
+    dd.classList.toggle('hidden');
+}
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('theme-menu-desktop');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('theme-dropdown-desktop').classList.add('hidden');
+    }
+});
+function openMessiEasterEgg() {
+    document.getElementById('theme-dropdown-desktop')?.classList.add('hidden');
+    document.getElementById('messi-iframe').src = 'https://www.youtube.com/embed/FD8RinpqiBE?autoplay=1';
+    const modal = document.getElementById('messi-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+function closeMessiEasterEgg() {
+    const modal = document.getElementById('messi-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('messi-iframe').src = '';
+    document.body.style.overflow = '';
+}
 
 (function () {
     const btn = document.getElementById('menu-btn');
