@@ -263,6 +263,11 @@ body {
                     {% endif %}
                 </span>
             </div>
+            {% if e.advances %}
+            <div class="text-[11px] font-display uppercase tracking-wider text-violet-300 mt-1.5">
+                {{ t('Pasa') }}: {{ e.advances }}
+            </div>
+            {% endif %}
             {% set chips = e.scorers.home + e.scorers.away %}
             {% if chips %}
             <div class="flex flex-wrap gap-1 mt-2">
