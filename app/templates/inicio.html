@@ -2,6 +2,23 @@
 {% block title %}Inicio — Polla Mundial 2026{% endblock %}
 {% block content %}
 
+{# ════════ Easter egg: "llamada entrante" el día de Paraguay vs Francia ════════ #}
+{% set _call = incoming_call_prank_info() %}
+{% if _call.active %}
+<button onclick="openFakeCallModal()"
+        class="w-full flex items-center gap-3 rounded-2xl overflow-hidden mb-5 border-2 border-emerald-400/50 shadow-[0_10px_40px_-8px_rgba(16,185,129,0.5)] px-5 py-4 text-left"
+        style="background:linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.04)); animation: col-pulse 1.6s ease-in-out infinite;">
+    <span class="text-3xl shrink-0 animate-pulse">📞</span>
+    <span class="flex-1 min-w-0">
+        <span class="block font-heavy text-xl sm:text-2xl tracking-wide text-emerald-300">Te están llamando…</span>
+        <span class="block font-display text-[11px] uppercase tracking-[0.25em] text-emerald-200/70 mt-0.5">Toca para contestar</span>
+    </span>
+</button>
+<style>
+@keyframes col-pulse { 0%,100%{ transform:scale(1); filter:brightness(1);} 50%{ transform:scale(1.012); filter:brightness(1.1);} }
+</style>
+{% endif %}
+
 {# ════════ ¡MODO COLOMBIA! el día que juega la Tricolor ════════ #}
 {% if colombia_yellow %}
 <style>
