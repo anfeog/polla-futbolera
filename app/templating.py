@@ -57,6 +57,37 @@ templates.env.globals["player_country"] = player_country
 templates.env.globals["is_vendepatria"] = is_vendepatria
 
 
+def show_incoming_call_prank() -> bool:
+    """Easter egg: el día que juega Paraguay vs Francia, al abrir la app se
+    simula una 'llamada entrante' (broma). Se muestra todo ese día, hora
+    Colombia (UTC-5), igual que el modo amarillo de Colombia."""
+    from datetime import datetime, timezone, timedelta
+    from app.database import get_db
+    from app.timeutils import _parse_kickoff
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT kickoff FROM matches
+            WHERE (home_team='Paraguay' AND away_team='France')
+               OR (home_team='France' AND away_team='Paraguay')
+            LIMIT 1
+        """).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return False
+    col_offset = timedelta(hours=-5)
+    today_col = (datetime.now(timezone.utc) + col_offset).date().isoformat()
+    try:
+        match_day_col = (_parse_kickoff(row["kickoff"]) + col_offset).date().isoformat()
+    except Exception:
+        return False
+    return match_day_col == today_col
+
+
+templates.env.globals["show_incoming_call_prank"] = show_incoming_call_prank
+
+
 def _format_date(date_str: str) -> str:
     """'2026-06-11' → 'Jueves 11 Jun'"""
     try:

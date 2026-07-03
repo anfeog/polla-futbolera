@@ -116,6 +116,73 @@
 {% if user %}
 {% set path = request.url.path %}
 
+<!-- ══ EASTER EGG: falsa llamada entrante (día Paraguay vs Francia) ══ -->
+{% if show_incoming_call_prank() %}
+<div id="fake-call-screen" class="hidden fixed inset-0 z-[200] bg-black flex flex-col items-center justify-between py-16 px-6 text-center">
+    <div class="flex flex-col items-center gap-2 mt-10">
+        <p class="text-white/50 text-sm font-display uppercase tracking-widest">Llamada entrante</p>
+        <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 shadow-2xl flex items-center justify-center bg-white/10 text-5xl animate-pulse">
+            🇵🇾
+        </div>
+        <p class="text-white text-2xl font-display font-bold mt-2">Paraguay</p>
+        <p class="text-white/40 text-xs">móvil</p>
+    </div>
+    <div class="flex items-center justify-center gap-16">
+        <button onclick="declineFakeCall()" class="flex flex-col items-center gap-2 group">
+            <span class="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-2xl shadow-xl group-active:scale-90 transition">📵</span>
+            <span class="text-white/50 text-[11px] font-display uppercase tracking-wide">Rechazar</span>
+        </button>
+        <button onclick="answerFakeCall()" class="flex flex-col items-center gap-2 group">
+            <span class="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-2xl shadow-xl group-active:scale-90 transition animate-pulse">📞</span>
+            <span class="text-white/50 text-[11px] font-display uppercase tracking-wide">Contestar</span>
+        </button>
+    </div>
+</div>
+
+<div id="fake-call-video-wrap" class="hidden fixed inset-0 z-[201] bg-black flex items-center justify-center">
+    <video id="fake-call-video" class="max-w-full max-h-full" src="/static/incoming_call.mp4" playsinline controls></video>
+    <button onclick="closeFakeCallVideo()" class="absolute top-4 right-4 text-white/70 hover:text-white text-3xl leading-none px-2">&times;</button>
+</div>
+
+<script>
+(function () {
+    var KEY = 'fakeCallShown_2026-07-04';
+    if (sessionStorage.getItem(KEY)) return;
+    sessionStorage.setItem(KEY, '1');
+    var screen = document.getElementById('fake-call-screen');
+    if (!screen) return;
+    screen.classList.remove('hidden');
+    screen.classList.add('flex');
+    if (navigator.vibrate) {
+        try { navigator.vibrate([400, 200, 400, 200, 400]); } catch (e) {}
+    }
+})();
+function declineFakeCall() {
+    var screen = document.getElementById('fake-call-screen');
+    screen.classList.add('hidden');
+    screen.classList.remove('flex');
+}
+function answerFakeCall() {
+    var screen = document.getElementById('fake-call-screen');
+    screen.classList.add('hidden');
+    screen.classList.remove('flex');
+    var wrap = document.getElementById('fake-call-video-wrap');
+    var video = document.getElementById('fake-call-video');
+    wrap.classList.remove('hidden');
+    wrap.classList.add('flex');
+    video.currentTime = 0;
+    video.play().catch(function () {});
+}
+function closeFakeCallVideo() {
+    var wrap = document.getElementById('fake-call-video-wrap');
+    var video = document.getElementById('fake-call-video');
+    video.pause();
+    wrap.classList.add('hidden');
+    wrap.classList.remove('flex');
+}
+</script>
+{% endif %}
+
 <!-- ══ BARRA SUPERIOR ══ -->
 <nav class="sticky top-0 z-30 backdrop-blur-xl bg-ink/70 border-b border-white/10">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">
