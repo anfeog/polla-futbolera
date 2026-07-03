@@ -57,35 +57,41 @@ templates.env.globals["player_country"] = player_country
 templates.env.globals["is_vendepatria"] = is_vendepatria
 
 
-def show_incoming_call_prank() -> bool:
+def incoming_call_prank_info() -> dict:
     """Easter egg: el día que juega Paraguay vs Francia, al abrir la app se
-    simula una 'llamada entrante' (broma). Se muestra todo ese día, hora
-    Colombia (UTC-5), igual que el modo amarillo de Colombia."""
+    simula una 'llamada entrante' (broma) con un video. Se activa todo ese
+    día, hora Colombia (UTC-5), igual que el modo amarillo de Colombia.
+    Devuelve {'active', 'match_id', 'locked'}: 'locked' indica si los
+    pronósticos de ese partido ya cerraron (para no dejar contestar/rechazar
+    si ya no se puede pronosticar)."""
     from datetime import datetime, timezone, timedelta
     from app.database import get_db
-    from app.timeutils import _parse_kickoff
+    from app.timeutils import _parse_kickoff, is_locked
     conn = get_db()
     try:
         row = conn.execute("""
-            SELECT kickoff FROM matches
+            SELECT id, kickoff FROM matches
             WHERE (home_team='Paraguay' AND away_team='France')
                OR (home_team='France' AND away_team='Paraguay')
             LIMIT 1
         """).fetchone()
     finally:
         conn.close()
+    inactive = {"active": False, "match_id": None, "locked": True}
     if not row:
-        return False
+        return inactive
     col_offset = timedelta(hours=-5)
     today_col = (datetime.now(timezone.utc) + col_offset).date().isoformat()
     try:
         match_day_col = (_parse_kickoff(row["kickoff"]) + col_offset).date().isoformat()
     except Exception:
-        return False
-    return match_day_col == today_col
+        return inactive
+    if match_day_col != today_col:
+        return inactive
+    return {"active": True, "match_id": row["id"], "locked": is_locked(row["kickoff"])}
 
 
-templates.env.globals["show_incoming_call_prank"] = show_incoming_call_prank
+templates.env.globals["incoming_call_prank_info"] = incoming_call_prank_info
 
 
 def _format_date(date_str: str) -> str:
