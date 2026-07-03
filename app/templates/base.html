@@ -120,8 +120,12 @@
 {% set _call = incoming_call_prank_info() %}
 {% if _call.active %}
 <div id="fake-call-video-wrap" class="hidden fixed inset-0 z-[200] bg-black flex-col items-center justify-center">
-    <div class="w-full max-w-md flex-1 flex items-center justify-center min-h-0">
-        <video id="fake-call-video" class="max-w-full max-h-full" src="/static/incoming_call.mp4" playsinline autoplay loop muted></video>
+    <div class="relative w-full max-w-md flex-1 flex items-center justify-center min-h-0">
+        <video id="fake-call-video" class="max-w-full max-h-full" src="/static/incoming_call.mp4" playsinline autoplay loop muted onclick="unmuteFakeCallVideo()"></video>
+        <button id="fake-call-unmute" onclick="unmuteFakeCallVideo()"
+                class="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 border border-white/25 text-white text-xs font-display uppercase tracking-wide animate-pulse">
+            🔊 Activar sonido
+        </button>
     </div>
 
     {% if not _call.locked %}
@@ -168,6 +172,13 @@ function closeFakeCallVideo() {
     video.pause();
     wrap.classList.add('hidden');
     wrap.classList.remove('flex');
+}
+function unmuteFakeCallVideo() {
+    var video = document.getElementById('fake-call-video');
+    var btn = document.getElementById('fake-call-unmute');
+    video.muted = false;
+    video.play().catch(function () {});
+    if (btn) btn.style.display = 'none';
 }
 function fakeCallChoose(homeScore, awayScore) {
     var label = homeScore > awayScore ? '1-0 a favor de Paraguay' : '0-1 a favor de Francia';
