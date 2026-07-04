@@ -58,14 +58,12 @@ templates.env.globals["is_vendepatria"] = is_vendepatria
 
 
 def incoming_call_prank_info() -> dict:
-    """Easter egg: cuando se acerca Paraguay vs Francia, se puede simular una
-    'llamada entrante' (broma) con un video. Se activa apenas termine la
-    jornada de partidos de HOY (último kickoff de hoy + 2h de margen), y
-    sigue activa hasta que el propio partido Paraguay-Francia arranque.
+    """Easter egg: simula una 'llamada entrante' (broma) con un video antes de
+    Paraguay vs Francia. Activa desde ya y hasta que arranque ese partido.
     Devuelve {'active', 'match_id', 'locked'}: 'locked' indica si los
     pronósticos de ese partido ya cerraron (para no dejar contestar/rechazar
     si ya no se puede pronosticar)."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timezone
     from app.database import get_db
     from app.timeutils import _parse_kickoff, is_locked
     conn = get_db()
@@ -76,35 +74,18 @@ def incoming_call_prank_info() -> dict:
                OR (home_team='France' AND away_team='Paraguay')
             LIMIT 1
         """).fetchone()
-        all_kickoffs = conn.execute(
-            "SELECT kickoff FROM matches WHERE kickoff IS NOT NULL AND id != ?", (pf["id"],)
-        ).fetchall() if pf else []
     finally:
         conn.close()
     inactive = {"active": False, "match_id": None, "locked": True}
     if not pf:
         return inactive
-    col_offset = timedelta(hours=-5)
-    now = datetime.now(timezone.utc)
-    today_col = (now + col_offset).date().isoformat()
     try:
         pf_kickoff = _parse_kickoff(pf["kickoff"])
     except Exception:
         return inactive
 
-    # Último partido programado "hoy" (fecha Colombia) -> fin de la jornada.
-    last_today = None
-    for r in all_kickoffs:
-        try:
-            k = _parse_kickoff(r["kickoff"])
-        except Exception:
-            continue
-        if (k + col_offset).date().isoformat() == today_col:
-            if last_today is None or k > last_today:
-                last_today = k
-    cutoff = (last_today + timedelta(hours=2)) if last_today else now
-
-    active = cutoff <= now < pf_kickoff
+    now = datetime.now(timezone.utc)
+    active = now < pf_kickoff
     return {"active": active, "match_id": pf["id"], "locked": is_locked(pf["kickoff"])}
 
 
