@@ -201,10 +201,12 @@ def _autofill_bracket(bynum):
             dm[f"{slot}_tla"]  = w["tla"]
 
 
-def _bracket_halves(conn, projected=None):
+def _bracket_halves(conn, projected=None, include_r32=True):
     """Cuadro eliminatorio en dos mitades que se encuentran en la Final, ordenado
     según el árbol oficial FIFA 2026 y con auto-avance de ganadores.
     Si `projected` (16 partidos del R32 en orden de nº) viene dado, reemplaza el R32.
+    Si `include_r32` es False, se omite la columna de Dieciseisavos (para vistas
+    resumidas una vez esa ronda ya se jugó).
     Devuelve (left_cols, right_cols, final_matches, ko_rows)."""
     ko_rows = conn.execute(
         "SELECT * FROM matches WHERE stage != 'Group Stage' ORDER BY kickoff ASC"
@@ -224,9 +226,13 @@ def _bracket_halves(conn, projected=None):
     # Avance lógico de ganadores a la siguiente ronda (en memoria).
     _autofill_bracket(bynum)
 
+    stages = ("Last 32", "Last 16", "Quarter Finals", "Semi Finals")
+    if not include_r32:
+        stages = stages[1:]
+
     def cols(side):
         out = []
-        for s in ("Last 32", "Last 16", "Quarter Finals", "Semi Finals"):
+        for s in stages:
             out.append({
                 "label": STAGE_LABELS.get(s, s), "icon": STAGE_ICONS.get(s, "⚽"),
                 "matches": [bynum[n] for n in BRACKET_LAYOUT[side][s] if n in bynum],
@@ -530,7 +536,9 @@ def inicio(request: Request, user=Depends(require_login)):
     # Si el R32 real aún no está definido, lo emparejamos PROVISIONALMENTE con
     # las posiciones actuales de los grupos (la API lo reemplaza el día del cruce).
     projected = _projected_r32(conn) if not real_set else None
-    left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn, projected)
+    # En el inicio ya no interesan los dieciseisavos (fase ya jugada): se
+    # muestra el cuadro arrancando desde octavos, para que se vea más compacto.
+    left_cols, right_cols, final_matches, ko_rows = _bracket_halves(conn, projected, include_r32=False)
     bracket_provisional = bool(projected)
     bracket_ready = real_set or bracket_provisional
 
