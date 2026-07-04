@@ -169,7 +169,7 @@ function toggleColAnthem(){
 {% set atla = m.away_tla if (m.away_tla and m.away_tla != '???') else (m.away_team[:3].upper() if not away_tbd else '?') %}
 {% set hc = crest(m.home_team, m.home_flag) if not home_tbd else none %}
 {% set ac = crest(m.away_team, m.away_flag) if not away_tbd else none %}
-<div class="rounded-lg overflow-hidden border border-white/[0.08] bg-black/30">
+<div class="rounded-lg overflow-hidden border-2 border-white/25 bg-black/50 shadow-md">
     <div class="flex items-center gap-1.5 px-2 py-1 {{ 'bg-emerald-500/10' if home_adv }}">
         {% if hc %}<img src="{{ hc }}" class="w-4 h-4 object-contain shrink-0">
         {% elif not home_tbd %}<div class="w-4 h-4 rounded-full bg-white/10 shrink-0"></div>
@@ -177,7 +177,12 @@ function toggleColAnthem(){
         <span class="font-display text-[10px] font-semibold uppercase tracking-wide flex-1 truncate {{ 'text-white/25 italic' if home_tbd else ('text-emerald-300' if home_adv else 'text-white/70') }}">{{ htla }}</span>
         {% if m.home_score is not none %}<span class="font-heavy text-xs shrink-0 {{ 'text-emerald-300' if home_adv else 'text-white/40' }}">{{ m.home_score }}</span>{% endif %}
     </div>
-    <div class="flex items-center gap-1.5 px-2 py-1 border-t border-white/5 {{ 'bg-emerald-500/10' if away_adv }}">
+    <div class="flex items-center gap-1 px-2 py-0.5">
+        <div class="flex-1 h-px bg-white/15"></div>
+        <span class="text-[7px] text-white/25 font-display">vs</span>
+        <div class="flex-1 h-px bg-white/15"></div>
+    </div>
+    <div class="flex items-center gap-1.5 px-2 py-1 {{ 'bg-emerald-500/10' if away_adv }}">
         {% if ac %}<img src="{{ ac }}" class="w-4 h-4 object-contain shrink-0">
         {% elif not away_tbd %}<div class="w-4 h-4 rounded-full bg-white/10 shrink-0"></div>
         {% else %}<div class="w-4 h-4 rounded-full border border-dashed border-white/20 shrink-0"></div>{% endif %}
@@ -191,7 +196,7 @@ function toggleColAnthem(){
 {% macro kcol(col) %}
 <div class="flex flex-col gap-1 shrink-0" style="width:80px">
     <p class="text-center font-display text-[8px] uppercase tracking-[0.1em] text-white/30 truncate">{{ col.icon }} {{ t(col.label) }}</p>
-    <div class="flex flex-col justify-center flex-1 gap-1">
+    <div class="flex flex-col justify-center flex-1 gap-3">
     {% if col.matches %}
         {% for m in col.matches[:4] %}{{ mini_match(m) }}{% endfor %}
         {% if col.matches | length > 4 %}
