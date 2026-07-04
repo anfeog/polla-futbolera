@@ -340,6 +340,23 @@ function fakeCallChoose(homeScore, awayScore) {
             </a>
             {% endfor %}
         </div>
+        <!-- Tema (drawer móvil): easter egg -->
+        <div class="relative" id="theme-menu-mobile">
+            <button onclick="toggleThemeMenu('mobile')"
+                    class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/15 transition">
+                <span class="text-base leading-none">🎨</span>
+                <span class="text-white/70 text-xs font-display uppercase tracking-wider">Tema</span>
+            </button>
+            <div id="theme-dropdown-mobile" class="hidden mt-1.5 bg-[#0d1425] border border-white/15 rounded-xl shadow-2xl overflow-hidden">
+                <div class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-display uppercase tracking-wide bg-sky-500/15 text-sky-300">
+                    <span class="text-lg leading-none">🌙</span> Oscuro
+                </div>
+                <button onclick="openMessiEasterEgg()"
+                        class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-display uppercase tracking-wide transition text-white/60 hover:bg-white/10 hover:text-white">
+                    <span class="text-lg leading-none">🔞</span> +18
+                </button>
+            </div>
+        </div>
         <a href="/logout" class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300 transition text-sm font-display uppercase tracking-wide text-white/60">
             {{ t('Cerrar sesión') }}
         </a>
@@ -399,13 +416,16 @@ function toggleThemeMenu(id) {
     dd.classList.toggle('hidden');
 }
 document.addEventListener('click', function(e) {
-    const menu = document.getElementById('theme-menu-desktop');
-    if (menu && !menu.contains(e.target)) {
-        document.getElementById('theme-dropdown-desktop').classList.add('hidden');
-    }
+    ['desktop', 'mobile'].forEach(function (id) {
+        const menu = document.getElementById('theme-menu-' + id);
+        if (menu && !menu.contains(e.target)) {
+            document.getElementById('theme-dropdown-' + id)?.classList.add('hidden');
+        }
+    });
 });
 function openMessiEasterEgg() {
     document.getElementById('theme-dropdown-desktop')?.classList.add('hidden');
+    document.getElementById('theme-dropdown-mobile')?.classList.add('hidden');
     document.getElementById('messi-iframe').src = 'https://www.youtube.com/embed/FD8RinpqiBE?autoplay=1';
     const modal = document.getElementById('messi-modal');
     modal.classList.remove('hidden');
