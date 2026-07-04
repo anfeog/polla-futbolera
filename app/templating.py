@@ -77,7 +77,7 @@ def incoming_call_prank_info() -> dict:
             LIMIT 1
         """).fetchone()
         all_kickoffs = conn.execute(
-            "SELECT kickoff FROM matches WHERE kickoff IS NOT NULL"
+            "SELECT kickoff FROM matches WHERE kickoff IS NOT NULL AND id != ?", (pf["id"],)
         ).fetchall() if pf else []
     finally:
         conn.close()
