@@ -534,10 +534,9 @@ def inicio(request: Request, user=Depends(require_login)):
     bracket_provisional = bool(projected)
     bracket_ready = real_set or bracket_provisional
 
-    # ── Tabla de mejores terceros (si la fase de grupos ya tiene resultados) ──
-    best_thirds = _best_thirds(conn)
-    if not any(t["P"] > 0 for t in best_thirds):
-        best_thirds = []
+    # ── Mejores terceros: ya no se muestra en el inicio (fase de grupos
+    # terminada, el cuadro ya tiene los octavos definidos). ──────────────────
+    best_thirds = []
 
     conn.close()
     return templates.TemplateResponse("inicio.html", {
