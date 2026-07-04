@@ -127,24 +127,23 @@
     {% if not _call.locked %}
     <div class="w-full max-w-md px-5 pb-6 pt-3 text-center shrink-0">
         <p class="text-amber-300 text-xs font-display uppercase tracking-wide leading-relaxed mb-3">
-            ⚠️ Atenção: se você <b>atender</b>, seu palpite de Paraguai x França fica automaticamente <b>1-0 Paraguai</b>.
-            Se <b>recusar</b>, fica <b>0-1 França</b>. Salva na hora — pense bem antes.
+            {{ t('⚠️ Ojo: si contestas tu pronóstico de Paraguay vs Francia queda automáticamente 1-0 Paraguay. Si rechazas, queda 0-1 Francia. Se guarda de una — piénsalo bien.') }}
         </p>
         <div class="flex items-center justify-center gap-14">
             <button onclick="fakeCallChoose(0,1)" class="flex flex-col items-center gap-2 group">
                 <span class="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-2xl shadow-xl group-active:scale-90 transition">📵</span>
-                <span class="text-white/60 text-[11px] font-display uppercase tracking-wide">Recusar</span>
+                <span class="text-white/60 text-[11px] font-display uppercase tracking-wide">{{ t('Rechazar') }}</span>
             </button>
             <button onclick="fakeCallChoose(1,0)" class="flex flex-col items-center gap-2 group">
                 <span class="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-2xl shadow-xl group-active:scale-90 transition animate-pulse">📞</span>
-                <span class="text-white/60 text-[11px] font-display uppercase tracking-wide">Atender</span>
+                <span class="text-white/60 text-[11px] font-display uppercase tracking-wide">{{ t('Contestar') }}</span>
             </button>
         </div>
     </div>
     {% else %}
     <div class="w-full max-w-md px-5 pb-6 pt-3 text-center shrink-0">
-        <p class="text-white/40 text-xs font-display uppercase tracking-wide mb-3">Os palpites desse jogo já fecharam.</p>
-        <button onclick="closeFakeCallVideo()" class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-display uppercase tracking-wide">Fechar</button>
+        <p class="text-white/40 text-xs font-display uppercase tracking-wide mb-3">{{ t('Los pronósticos de este partido ya cerraron.') }}</p>
+        <button onclick="closeFakeCallVideo()" class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-display uppercase tracking-wide">{{ t('Cerrar') }}</button>
     </div>
     {% endif %}
 </div>
@@ -171,8 +170,8 @@ function closeFakeCallVideo() {
     wrap.classList.remove('flex');
 }
 function fakeCallChoose(homeScore, awayScore) {
-    var label = homeScore > awayScore ? '1-0 a favor do Paraguai' : '0-1 a favor da França';
-    if (!confirm('Tem certeza? Seu palpite de Paraguai x França vai ficar ' + label + '. Isso substitui qualquer palpite que você já tenha feito para esse jogo.')) {
+    var label = homeScore > awayScore ? '1-0 {{ t("a favor de Paraguay") }}' : '0-1 {{ t("a favor de Francia") }}';
+    if (!confirm('{{ t("¿Seguro? Tu pronóstico de Paraguay vs Francia va a quedar") }} ' + label + '. {{ t("Esto reemplaza cualquier pronóstico que ya hayas puesto para ese partido.") }}')) {
         return;
     }
     var body = new URLSearchParams();
@@ -182,14 +181,14 @@ function fakeCallChoose(homeScore, awayScore) {
         .then(function (r) {
             closeFakeCallVideo();
             if (r.ok || r.redirected) {
-                alert('Pronto — seu palpite ficou ' + label + '.');
+                alert('{{ t("Listo — tu pronóstico quedó") }} ' + label + '.');
             } else {
-                alert('Não foi possível salvar o palpite (o jogo já fechou?).');
+                alert('{{ t("No se pudo guardar el pronóstico (¿ya cerró el partido?).") }}');
             }
         })
         .catch(function () {
             closeFakeCallVideo();
-            alert('Não foi possível salvar o palpite por um erro de conexão.');
+            alert('{{ t("No se pudo guardar el pronóstico por un error de conexión.") }}');
         });
 }
 </script>

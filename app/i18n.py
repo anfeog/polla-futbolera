@@ -309,6 +309,31 @@ STRINGS = {
     "Sin goleadores": ("Sem artilheiros", "No scorers"),
     "pronóstico(s)": ("palpite(s)", "prediction(s)"),
     "Pasa": ("Passa", "Advances"),
+    # ── Easter egg: llamada entrante (Paraguay vs Francia) ──────
+    "Te están llamando…": ("Estão te ligando…", "You're getting a call…"),
+    "Toca para contestar": ("Toque para atender", "Tap to answer"),
+    "⚠️ Ojo: si contestas tu pronóstico de Paraguay vs Francia queda automáticamente 1-0 Paraguay. Si rechazas, queda 0-1 Francia. Se guarda de una — piénsalo bien.":
+        ("⚠️ Atenção: se você atender, seu palpite de Paraguai x França fica automaticamente 1-0 Paraguai. Se recusar, fica 0-1 França. Salva na hora — pense bem antes.",
+         "⚠️ Heads up: if you answer, your Paraguay vs France prediction automatically becomes 1-0 Paraguay. If you reject, it becomes 0-1 France. It saves instantly — think it through."),
+    "Rechazar": ("Recusar", "Reject"),
+    "Contestar": ("Atender", "Answer"),
+    "Los pronósticos de este partido ya cerraron.": ("Os palpites desse jogo já fecharam.", "Predictions for this match already closed."),
+    "Cerrar": ("Fechar", "Close"),
+    "a favor de Paraguay": ("a favor do Paraguai", "for Paraguay"),
+    "a favor de Francia": ("a favor da França", "for France"),
+    "¿Seguro? Tu pronóstico de Paraguay vs Francia va a quedar":
+        ("Tem certeza? Seu palpite de Paraguai x França vai ficar",
+         "Are you sure? Your Paraguay vs France prediction will become"),
+    "Esto reemplaza cualquier pronóstico que ya hayas puesto para ese partido.":
+        ("Isso substitui qualquer palpite que você já tenha feito para esse jogo.",
+         "This replaces any prediction you've already made for that match."),
+    "Listo — tu pronóstico quedó": ("Pronto — seu palpite ficou", "Done — your prediction is now"),
+    "No se pudo guardar el pronóstico (¿ya cerró el partido?).":
+        ("Não foi possível salvar o palpite (o jogo já fechou?).",
+         "Couldn't save the prediction (did the match already close?)."),
+    "No se pudo guardar el pronóstico por un error de conexión.":
+        ("Não foi possível salvar o palpite por um erro de conexão.",
+         "Couldn't save the prediction due to a connection error."),
 }
 
 
