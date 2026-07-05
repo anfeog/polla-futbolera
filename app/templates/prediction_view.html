@@ -259,13 +259,18 @@ body {
                     <span class="font-heavy text-base">{{ e.home }}<span class="text-white/30">–</span>{{ e.away }}</span>
                     {% if e.is_joker %}<span class="text-xs text-cyan-300" title="Comodín x2">🃏</span>{% endif %}
                     {% if finished %}
-                    <span class="font-display text-xs font-bold {{ 'text-emerald-300' if e.points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(e.points * 2 if e.is_joker else e.points) }}</span>
+                    <span class="font-display text-xs font-bold {{ 'text-emerald-300' if e.total_points > 0 else 'text-white/30' }}">+{{ "%.1f"|format(e.total_points) }}</span>
                     {% endif %}
                 </span>
             </div>
             {% if e.advances %}
             <div class="text-[11px] font-display uppercase tracking-wider text-violet-300 mt-1.5">
                 {{ t('Pasa') }}: {{ e.advances }}
+            </div>
+            {% endif %}
+            {% if finished and e.solo_bonus > 0 %}
+            <div class="text-[11px] font-display uppercase tracking-wider text-amber-300 mt-1">
+                🥇 {{ t('Solo tú') }} +{{ "%.0f"|format(e.solo_bonus) }}
             </div>
             {% endif %}
             {% set chips = e.scorers.home + e.scorers.away %}

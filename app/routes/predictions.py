@@ -5,6 +5,7 @@ from app.auth import require_login
 from app.templating import templates
 from app.timeutils import is_locked
 from app.football_api import get_squad
+from app.scoring import effective_multiplier, POINTS_SOLO
 
 router = APIRouter()
 
@@ -146,7 +147,8 @@ def _prediction_readonly(conn, match, match_id, user, request):
     # Pronósticos de TODOS los participantes (transparencia)
     all_rows = conn.execute("""
         SELECT p.id, p.user_id, p.home_score_pred, p.away_score_pred,
-               p.is_joker, p.points, p.hit_exact, p.hit_winner, p.advances_team,
+               p.is_joker, p.boost, p.points, p.hit_exact, p.hit_winner, p.advances_team,
+               p.solo_hit, p.solo_advance,
                u.username, u.avatar
         FROM predictions p
         JOIN users u ON u.id = p.user_id
@@ -155,19 +157,24 @@ def _prediction_readonly(conn, match, match_id, user, request):
 
     everyone = []
     for r in all_rows:
+        base = r["points"] or 0
+        mult = effective_multiplier(r["is_joker"], r["boost"])
+        solo_bonus = ((r["solo_hit"] or 0) + (r["solo_advance"] or 0)) * POINTS_SOLO
         everyone.append({
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "is_me": r["user_id"] == user["id"],
             "home": r["home_score_pred"], "away": r["away_score_pred"],
             "advances": r["advances_team"],
             "is_joker": r["is_joker"],
-            "points": r["points"] or 0,
+            "points": base,
+            "total_points": base * mult + solo_bonus,
+            "solo_bonus": solo_bonus,
             "result_status": _result_status(r, finished),
             "scorers": _scorer_lines_for(conn, match, match_id, r["id"], finished, real_cache),
         })
     # Ordenar: si ya se jugó, por puntos desc; si no, alfabético
     if finished:
-        everyone.sort(key=lambda e: (-e["points"], e["username"].lower()))
+        everyone.sort(key=lambda e: (-e["total_points"], e["username"].lower()))
     else:
         everyone.sort(key=lambda e: e["username"].lower())
 
