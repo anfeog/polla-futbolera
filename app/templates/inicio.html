@@ -19,6 +19,22 @@
 </style>
 {% endif %}
 
+{# ════════ Easter egg: meme Vini/Haaland el día de Brazil vs Norway ════════ #}
+{% if vini_haaland_prank_info().active %}
+<button onclick="openViniCallModal()"
+        class="w-full flex items-center gap-3 rounded-2xl overflow-hidden mb-5 border-2 border-yellow-400/50 shadow-[0_10px_40px_-8px_rgba(250,204,21,0.5)] px-5 py-4 text-left"
+        style="background:linear-gradient(180deg, rgba(250,204,21,0.18), rgba(250,204,21,0.04)); animation: col-pulse 1.6s ease-in-out infinite;">
+    <span class="text-3xl shrink-0 animate-pulse">🎥</span>
+    <span class="flex-1 min-w-0">
+        <span class="block font-heavy text-xl sm:text-2xl tracking-wide text-yellow-300">{{ t('Vini y Haaland te mandaron algo…') }}</span>
+        <span class="block font-display text-[11px] uppercase tracking-[0.25em] text-yellow-200/70 mt-0.5">{{ t('Toca para verlo') }}</span>
+    </span>
+</button>
+<style>
+@keyframes col-pulse { 0%,100%{ transform:scale(1); filter:brightness(1);} 50%{ transform:scale(1.012); filter:brightness(1.1);} }
+</style>
+{% endif %}
+
 {# ════════ ¡MODO COLOMBIA! el día que juega la Tricolor ════════ #}
 {% if colombia_yellow %}
 <style>

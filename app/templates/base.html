@@ -194,6 +194,41 @@ function fakeCallChoose(homeScore, awayScore) {
 </script>
 {% endif %}
 
+<!-- ══ EASTER EGG: llamada meme Vini/Haaland (Brazil vs Norway) ══ -->
+{% if vini_haaland_prank_info().active %}
+<div id="vini-call-video-wrap" class="hidden fixed inset-0 z-[200] bg-black flex-col items-center justify-center">
+    <div class="relative w-full max-w-md flex-1 flex items-center justify-center min-h-0">
+        <video id="vini-call-video" class="max-w-full max-h-full" src="/static/vini_haaland_call.mp4" playsinline loop></video>
+    </div>
+    <div class="w-full max-w-md px-5 pb-6 pt-3 text-center shrink-0">
+        <button onclick="closeViniCallVideo()" class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-display uppercase tracking-wide">{{ t('Cerrar') }}</button>
+    </div>
+</div>
+
+<script>
+function openViniCallModal() {
+    var wrap = document.getElementById('vini-call-video-wrap');
+    var video = document.getElementById('vini-call-video');
+    if (!wrap || !video) return;
+    wrap.classList.remove('hidden');
+    wrap.classList.add('flex');
+    video.currentTime = 0;
+    video.muted = false;
+    video.play().catch(function () {});
+    if (navigator.vibrate) {
+        try { navigator.vibrate([400, 200, 400, 200, 400]); } catch (e) {}
+    }
+}
+function closeViniCallVideo() {
+    var wrap = document.getElementById('vini-call-video-wrap');
+    var video = document.getElementById('vini-call-video');
+    video.pause();
+    wrap.classList.add('hidden');
+    wrap.classList.remove('flex');
+}
+</script>
+{% endif %}
+
 <!-- ══ BARRA SUPERIOR ══ -->
 <nav class="sticky top-0 z-30 backdrop-blur-xl bg-ink/70 border-b border-white/10">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between relative">

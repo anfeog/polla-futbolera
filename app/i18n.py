@@ -334,6 +334,9 @@ STRINGS = {
     "No se pudo guardar el pronóstico por un error de conexión.":
         ("Não foi possível salvar o palpite por um erro de conexão.",
          "Couldn't save the prediction due to a connection error."),
+    # ── Easter egg: meme Vini/Haaland (Brazil vs Norway) ────────
+    "Vini y Haaland te mandaron algo…": ("Vini e Haaland te mandaram uma coisa…", "Vini and Haaland sent you something…"),
+    "Toca para verlo": ("Toque para ver", "Tap to watch"),
 }
 
 

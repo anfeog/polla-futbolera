@@ -92,6 +92,35 @@ def incoming_call_prank_info() -> dict:
 templates.env.globals["incoming_call_prank_info"] = incoming_call_prank_info
 
 
+def vini_haaland_prank_info() -> dict:
+    """Easter egg: otra 'llamada' con el meme de Vini/Haaland antes de
+    Brazil vs Norway. Activa desde ya hasta que arranque ese partido.
+    Solo un video (sin la mecánica de fijar pronóstico)."""
+    from datetime import datetime, timezone
+    from app.database import get_db
+    from app.timeutils import _parse_kickoff
+    conn = get_db()
+    try:
+        m = conn.execute("""
+            SELECT kickoff FROM matches
+            WHERE (home_team='Brazil' AND away_team='Norway')
+               OR (home_team='Norway' AND away_team='Brazil')
+            LIMIT 1
+        """).fetchone()
+    finally:
+        conn.close()
+    if not m:
+        return {"active": False}
+    try:
+        kickoff = _parse_kickoff(m["kickoff"])
+    except Exception:
+        return {"active": False}
+    return {"active": datetime.now(timezone.utc) < kickoff}
+
+
+templates.env.globals["vini_haaland_prank_info"] = vini_haaland_prank_info
+
+
 def _format_date(date_str: str) -> str:
     """'2026-06-11' → 'Jueves 11 Jun'"""
     try:
