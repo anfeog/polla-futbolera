@@ -43,7 +43,7 @@ AWARD_POINTS = {
 KO_STAGES = {"Last 32", "Last 16", "Quarter Finals", "Semi Finals", "Third Place", "Final"}
 
 # ── Tienda de comodines ───────────────────────────────────────────────────────
-BOOST_PRICES = {2: 5, 3: 8}   # x2 cuesta 5 pts, supercomodín x3 cuesta 8 pts
+BOOST_PRICES = {2: 2, 3: 5}   # x2 cuesta 2 pts, supercomodín x3 cuesta 5 pts
 
 
 def effective_multiplier(is_joker, boost) -> int:
@@ -235,10 +235,15 @@ def calculate_match_points(prediction_id: int) -> float:
         # selector de penales (ese solo aparece cuando predices empate).
         pred_advances = (pred["advances_team"] if ph == pa
                          else (match["home_team"] if ph > pa else match["away_team"]))
-        # +1 si acertaste quién avanza
+        # +1 si acertaste quién avanza. OJO: si predijiste un ganador directo
+        # (no empate), acertar el ganador (+1 arriba) YA ES lo mismo que
+        # acertar quién avanza — no se suma dos veces por la misma jugada.
+        # El +1 aparte solo aplica cuando predijiste empate (adivinaste algo
+        # extra: quién se lleva la tanda de penales).
         if pred_advances and pred_advances == real_advances:
-            points += POINTS_ADVANCES
             advances_hit = 1
+            if ph == pa:
+                points += POINTS_ADVANCES
         # +2 si acertaste el marcador exacto de penales (solo si de verdad hubo tanda)
         if (pred["penalty_home"] is not None and pred["penalty_away"] is not None
                 and match["penalty_home"] is not None and match["penalty_away"] is not None
