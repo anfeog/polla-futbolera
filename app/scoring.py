@@ -230,8 +230,13 @@ def calculate_match_points(prediction_id: int) -> float:
         elif ra > rh:
             real_advances = match["away_team"]
     if match["stage"] in KO_STAGES and real_advances:
+        # Quién predijiste que avanza: si tu marcador YA es un ganador claro
+        # (no empate), ese equipo es tu voto implícito — no hace falta el
+        # selector de penales (ese solo aparece cuando predices empate).
+        pred_advances = (pred["advances_team"] if ph == pa
+                         else (match["home_team"] if ph > pa else match["away_team"]))
         # +1 si acertaste quién avanza
-        if pred["advances_team"] and pred["advances_team"] == real_advances:
+        if pred_advances and pred_advances == real_advances:
             points += POINTS_ADVANCES
             advances_hit = 1
         # +2 si acertaste el marcador exacto de penales (solo si de verdad hubo tanda)
@@ -438,7 +443,9 @@ def _mark_solo_hits(match_id: int):
 
 def _mark_solo_advance(match_id: int):
     """Marca solo_advance=1 si EXACTAMENTE un usuario acertó quién avanza (KO).
-    Es un bonus aparte del de marcador exacto (se pueden ganar los dos)."""
+    Cuenta tanto a quien usó el selector de empate como a quien predijo un
+    ganador directo (su marcador YA implica a quién elige). Es un bonus
+    aparte del de marcador exacto (se pueden ganar los dos)."""
     conn = get_db()
     match = conn.execute(
         "SELECT stage, advances_team, home_team, away_team, home_score, away_score FROM matches WHERE id = ?",
@@ -452,11 +459,18 @@ def _mark_solo_advance(match_id: int):
         elif match["away_score"] > match["home_score"]:
             real_advances = match["away_team"]
     if match and match["stage"] in KO_STAGES and real_advances:
-        correct = conn.execute(
-            "SELECT id FROM predictions WHERE match_id = ? AND advances_team = ?",
-            (match_id, real_advances)
+        preds = conn.execute(
+            "SELECT id, home_score_pred, away_score_pred, advances_team FROM predictions WHERE match_id = ?",
+            (match_id,)
         ).fetchall()
+        correct = []
+        for p in preds:
+            ph, pa = p["home_score_pred"], p["away_score_pred"]
+            pred_advances = (p["advances_team"] if ph == pa
+                             else (match["home_team"] if ph > pa else match["away_team"]))
+            if pred_advances == real_advances:
+                correct.append(p["id"])
         if len(correct) == 1:
-            conn.execute("UPDATE predictions SET solo_advance = 1 WHERE id = ?", (correct[0]["id"],))
+            conn.execute("UPDATE predictions SET solo_advance = 1 WHERE id = ?", (correct[0],))
     conn.commit()
     conn.close()
