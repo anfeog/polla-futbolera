@@ -238,10 +238,24 @@ async def update_finished_matches():
             continue
 
         # ── Partido FINISHED ───────────────────────────────────────
-        penalties = score.get("penalties") or {}
-        pen_home  = penalties.get("home")
-        pen_away  = penalties.get("away")
-        if pen_home is not None and pen_away is not None:
+        # OJO: el campo "penalties" de football-data.org a veces llega
+        # incompleto/empatado (ej. 3-3, cuando una tanda real nunca puede
+        # terminar en empate) porque no siempre cuenta el último penal
+        # decisivo. Cuando el partido se definió en penales, el marcador de
+        # la tanda real es "fullTime - regularTime" (fullTime SÍ incluye el
+        # resultado final de la tanda) — se prioriza sobre "penalties".
+        duration = score.get("duration")
+        reg = score.get("regularTime") or {}
+        full = score.get("fullTime") or {}
+        pen_home = pen_away = None
+        if duration == "PENALTY_SHOOTOUT" and reg.get("home") is not None and full.get("home") is not None:
+            pen_home = full["home"] - reg["home"]
+            pen_away = full["away"] - reg["away"]
+        else:
+            penalties = score.get("penalties") or {}
+            pen_home = penalties.get("home")
+            pen_away = penalties.get("away")
+        if pen_home is not None and pen_away is not None and pen_home != pen_away:
             advances = row["home_team"] if pen_home > pen_away else row["away_team"]
         else:
             advances = None
