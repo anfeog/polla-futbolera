@@ -273,6 +273,15 @@ def init_db():
     """)
     c.execute("INSERT OR IGNORE INTO tournament_awards (id) VALUES (1)")
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS banners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT NOT NULL,
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+
     conn.commit()
     _migrate(conn)
     conn.close()

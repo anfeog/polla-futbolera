@@ -546,6 +546,9 @@ def inicio(request: Request, user=Depends(require_login)):
     # terminada, el cuadro ya tiene los octavos definidos). ──────────────────
     best_thirds = []
 
+    # ── Letreros publicados por el admin ─────────────────────────────────────
+    banners = conn.execute("SELECT text FROM banners WHERE active = 1 ORDER BY id DESC").fetchall()
+
     conn.close()
     return templates.TemplateResponse("inicio.html", {
         "request": request, "user": user, "matches": upcoming,
@@ -553,6 +556,7 @@ def inicio(request: Request, user=Depends(require_login)):
         "premios_pending": premios_pending,
         "comodin_stages": comodin_stages,
         "live_matches": live_matches,
+        "banners": banners,
         "colombia_live": colombia_live,
         "colombia_yellow": colombia_yellow,
         "colombia_match_id": colombia_match_id,

@@ -40,6 +40,41 @@
     </form>
 </div>
 
+<!-- Letreros (banners de Inicio) -->
+<div id="letreros" class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+    <h2 class="font-semibold mb-4">📣 Letreros (Inicio)</h2>
+    <form method="post" action="/admin/letreros/crear" class="flex gap-3 flex-wrap mb-4">
+        <input name="text" type="text" placeholder="Texto del letrero" required
+            class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-yellow-500 transition flex-1 min-w-[220px]">
+        <button type="submit"
+            class="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            Publicar
+        </button>
+    </form>
+    {% if banners %}
+    <div class="space-y-2">
+        {% for b in banners %}
+        <div class="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-4 py-2.5">
+            <span class="flex-1 text-sm {{ 'text-white/90' if b.active else 'text-white/30 line-through' }}">{{ b.text }}</span>
+            <form method="post" action="/admin/letreros/{{ b.id }}/toggle">
+                <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg transition
+                    {{ 'bg-emerald-700/40 text-emerald-300 hover:bg-emerald-700/60' if b.active else 'bg-gray-700 text-gray-300 hover:bg-gray-600' }}">
+                    {{ 'Activo' if b.active else 'Inactivo' }}
+                </button>
+            </form>
+            <form method="post" action="/admin/letreros/{{ b.id }}/borrar" onsubmit="return confirm('¿Borrar este letrero?');">
+                <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-900/40 text-red-300 hover:bg-red-900/60 transition">
+                    Borrar
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-white/30 text-sm">No hay letreros todavía.</p>
+    {% endif %}
+</div>
+
 <!-- Lista de usuarios -->
 <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mb-8">
     <div class="px-4 py-3 border-b border-gray-800">

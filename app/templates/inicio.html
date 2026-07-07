@@ -2,6 +2,17 @@
 {% block title %}Inicio — Polla Mundial 2026{% endblock %}
 {% block content %}
 
+{# ════════ Letreros publicados por el admin ════════ #}
+{% if banners %}
+<div class="space-y-2 mb-5">
+    {% for b in banners %}
+    <div class="rounded-xl border border-amber-400/30 bg-amber-500/[0.08] px-4 py-3 text-center">
+        <p class="font-display text-sm text-amber-200">{{ b.text }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 {# ════════ Easter egg: "llamada entrante" el día de Paraguay vs Francia ════════ #}
 {% set _call = incoming_call_prank_info() %}
 {% if _call.active %}

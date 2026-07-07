@@ -25,10 +25,12 @@ def _render_admin(request, user, **extra):
         "SELECT id, home_team, away_team, stage FROM matches "
         "WHERE home_team != 'Por definir' AND away_team != 'Por definir' ORDER BY kickoff"
     ).fetchall()
+    banners = conn.execute("SELECT * FROM banners ORDER BY id DESC").fetchall()
     conn.close()
     ctx = {
         "request": request, "user": user, "users": users, "awards": awards,
         "n_players": n_players, "n_matches": n_matches, "matches": matches,
+        "banners": banners,
         "now_hhmmss": datetime.now(timezone.utc).strftime("%H:%M:%S UTC"),
     }
     ctx.update(extra)
@@ -362,3 +364,32 @@ def recalc_all(request: Request, user=Depends(require_admin)):
     for mid in ids:
         recalculate_all_for_match(mid)
     return RedirectResponse(f"/admin?recalc={len(ids)}", status_code=303)
+
+
+@router.post("/letreros/crear")
+def create_banner(request: Request, text: str = Form(...), user=Depends(require_admin)):
+    text = text.strip()
+    if text:
+        conn = get_db()
+        conn.execute("INSERT INTO banners (text) VALUES (?)", (text,))
+        conn.commit()
+        conn.close()
+    return RedirectResponse("/admin#letreros", status_code=303)
+
+
+@router.post("/letreros/{banner_id}/toggle")
+def toggle_banner(banner_id: int, user=Depends(require_admin)):
+    conn = get_db()
+    conn.execute("UPDATE banners SET active = 1 - active WHERE id = ?", (banner_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse("/admin#letreros", status_code=303)
+
+
+@router.post("/letreros/{banner_id}/borrar")
+def delete_banner(banner_id: int, user=Depends(require_admin)):
+    conn = get_db()
+    conn.execute("DELETE FROM banners WHERE id = ?", (banner_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse("/admin#letreros", status_code=303)
