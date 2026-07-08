@@ -64,13 +64,21 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
     # Excepción pública: el pronóstico de Andrés en Argentina vs Suiza se
     # muestra a TODOS, aunque el partido siga abierto (fuera de la regla
     # anti-copia normal). Solo el de él — nadie más se ve antes del cierre.
+    # Se arma igual que la tarjeta de "todos" en la vista post-cierre.
     andres_preview = None
     if {match["home_team"], match["away_team"]} == {"Argentina", "Switzerland"}:
-        andres_preview = conn.execute("""
-            SELECT p.home_score_pred, p.away_score_pred, u.avatar
+        r = conn.execute("""
+            SELECT p.id, p.home_score_pred, p.away_score_pred, p.is_joker, p.advances_team, u.avatar
             FROM predictions p JOIN users u ON u.id = p.user_id
             WHERE u.username = 'Andres' AND p.match_id = ?
         """, (match_id,)).fetchone()
+        if r:
+            andres_preview = {
+                "username": "Andrés", "avatar": r["avatar"] or "⚽",
+                "home": r["home_score_pred"], "away": r["away_score_pred"],
+                "advances": r["advances_team"], "is_joker": r["is_joker"],
+                "scorers": _scorer_lines_for(conn, match, match_id, r["id"], False, {}),
+            }
 
     conn.close()
 

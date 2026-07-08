@@ -11,10 +11,40 @@
     </div>
 
     {% if andres_preview %}
-    <div class="max-w-md mx-auto mb-6 rounded-xl border border-amber-400/30 bg-amber-500/[0.08] px-4 py-3 text-center">
-        <p class="font-display text-xs uppercase tracking-wider text-amber-300">
-            {{ andres_preview.avatar or '⚽' }} Andrés predijo: <b>{{ andres_preview.home_score_pred }}-{{ andres_preview.away_score_pred }}</b>
-        </p>
+    {% set e = andres_preview %}
+    <div class="max-w-md mx-auto mb-6">
+        <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-2 px-1">👥 {{ t('Lo que pronosticaron todos') }}</p>
+        <div class="rounded-2xl border p-3.5 bg-white/[0.03] border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="text-lg leading-none shrink-0">{{ e.avatar }}</span>
+                <span class="font-display font-semibold uppercase tracking-wide text-sm truncate">{{ e.username }}</span>
+                {% if is_vendepatria(e.username, match.home_team, match.away_team, e.home, e.away, e.advances, match.stage) %}
+                <span class="vende shrink-0" onclick="this.classList.toggle('on')">
+                    <span class="vende-emoji" title="Este vendepatria fue en contra de su selección">🤡</span>
+                    <span class="vende-tip">Este vendepatria fue en contra de su selección</span>
+                </span>
+                {% endif %}
+                <span class="ml-auto flex items-center gap-2 shrink-0">
+                    <span class="font-heavy text-base">{{ e.home }}<span class="text-white/30">–</span>{{ e.away }}</span>
+                    {% if e.is_joker %}<span class="text-xs text-cyan-300" title="Comodín x2">🃏</span>{% endif %}
+                </span>
+            </div>
+            {% if e.advances %}
+            <div class="text-[11px] font-display uppercase tracking-wider text-violet-300 mt-1.5">
+                {{ t('Pasa') }}: {{ e.advances }}
+            </div>
+            {% endif %}
+            {% set chips = e.scorers.home + e.scorers.away %}
+            {% if chips %}
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for s in chips %}
+                <span class="text-[11px] font-display px-1.5 py-0.5 rounded bg-white/5 text-white/60 border border-white/10">
+                    {{ s.predicted }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 
