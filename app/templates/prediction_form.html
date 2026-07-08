@@ -10,6 +10,14 @@
         <p class="text-white/50 text-sm">{{ match.kickoff[:10] }} · {{ match.kickoff[11:16] }} UTC</p>
     </div>
 
+    {% if andres_preview %}
+    <div class="max-w-md mx-auto mb-6 rounded-xl border border-amber-400/30 bg-amber-500/[0.08] px-4 py-3 text-center">
+        <p class="font-display text-xs uppercase tracking-wider text-amber-300">
+            {{ andres_preview.avatar or '⚽' }} Andrés predijo: <b>{{ andres_preview.home_score_pred }}-{{ andres_preview.away_score_pred }}</b>
+        </p>
+    </div>
+    {% endif %}
+
     <div class="flex flex-col lg:flex-row gap-6 items-start lg:justify-center">
 
     <!-- ══ COLUMNA IZQUIERDA: Formulario ══ -->

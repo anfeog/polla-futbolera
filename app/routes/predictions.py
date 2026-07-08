@@ -61,6 +61,17 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
     ).fetchone()["b"]
     boost_current = existing["boost"] if existing else 0
 
+    # Excepción pública: el pronóstico de Andrés en Argentina vs Suiza se
+    # muestra a TODOS, aunque el partido siga abierto (fuera de la regla
+    # anti-copia normal). Solo el de él — nadie más se ve antes del cierre.
+    andres_preview = None
+    if {match["home_team"], match["away_team"]} == {"Argentina", "Switzerland"}:
+        andres_preview = conn.execute("""
+            SELECT p.home_score_pred, p.away_score_pred, u.avatar
+            FROM predictions p JOIN users u ON u.id = p.user_id
+            WHERE u.username = 'Andres' AND p.match_id = ?
+        """, (match_id,)).fetchone()
+
     conn.close()
 
     # Plantillas para los desplegables (solo nombres)
@@ -82,6 +93,7 @@ def prediction_form(match_id: int, request: Request, user=Depends(require_login)
         "joker_locked": joker_locked,
         "boost_owned": boost_owned,
         "boost_current": boost_current,
+        "andres_preview": andres_preview,
     })
 
 
