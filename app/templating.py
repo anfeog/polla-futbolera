@@ -118,6 +118,35 @@ def vini_haaland_prank_info() -> dict:
     return {"active": datetime.now(timezone.utc) < kickoff}
 
 
+def andres_joke_note(home_team, away_team) -> str | None:
+    """Easter egg: en la tarjeta de Argentina vs Suiza (Cuartos), muestra el
+    pronóstico-broma de Andrés (y SOLO el de él, no el de los demás)."""
+    teams = {home_team, away_team}
+    if teams != {"Argentina", "Switzerland"}:
+        return None
+    from app.database import get_db
+    conn = get_db()
+    try:
+        p = conn.execute("""
+            SELECT p.home_score_pred, p.away_score_pred
+            FROM predictions p JOIN users u ON u.id = p.user_id
+            WHERE u.username = 'Andres' AND p.match_id = (
+                SELECT id FROM matches
+                WHERE (home_team='Argentina' AND away_team='Switzerland')
+                   OR (home_team='Switzerland' AND away_team='Argentina')
+                LIMIT 1
+            )
+        """).fetchone()
+    finally:
+        conn.close()
+    if not p:
+        return None
+    return f"🐐 Andrés predijo {p['home_score_pred']}-{p['away_score_pred']}"
+
+
+templates.env.globals["andres_joke_note"] = andres_joke_note
+
+
 templates.env.globals["vini_haaland_prank_info"] = vini_haaland_prank_info
 
 

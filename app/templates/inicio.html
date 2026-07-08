@@ -157,6 +157,12 @@
         <span class="font-display text-[10px] font-semibold uppercase tracking-wide flex-1 truncate {{ 'text-white/25 italic' if away_tbd else ('text-emerald-300' if away_adv else 'text-white/70') }}">{{ atla }}</span>
         {% if m.away_score is not none %}<span class="font-heavy text-xs shrink-0 {{ 'text-emerald-300' if away_adv else 'text-white/40' }}">{{ m.away_score }}</span>{% endif %}
     </div>
+    {% set _note = andres_joke_note(m.home_team, m.away_team) %}
+    {% if _note %}
+    <div class="px-1.5 py-1 border-t border-amber-400/20 bg-amber-500/[0.08] text-center">
+        <span class="text-[8px] font-display text-amber-300 leading-tight">{{ _note }}</span>
+    </div>
+    {% endif %}
 </div>
 {% endmacro %}
 
