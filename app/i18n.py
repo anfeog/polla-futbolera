@@ -309,6 +309,8 @@ STRINGS = {
     "Sin goleadores": ("Sem artilheiros", "No scorers"),
     "pronóstico(s)": ("palpite(s)", "prediction(s)"),
     "Pasa": ("Passa", "Advances"),
+    "EN VIVO": ("AO VIVO", "LIVE"),
+    "Finalizado": ("Encerrado", "Finished"),
     # ── Easter egg: llamada entrante (Paraguay vs Francia) ──────
     "Te están llamando…": ("Estão te ligando…", "You're getting a call…"),
     "Toca para contestar": ("Toque para atender", "Tap to answer"),
