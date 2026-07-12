@@ -29,6 +29,8 @@ POINTS_PENALTY = 2    # aciertas el marcador exacto de penales
 POINTS_SOLO = 3       # eres el ÚNICO que clava el marcador exacto de un partido
 POINTS_TOTAL_EXACT = 20   # clavas el total de goles del Mundial
 POINTS_TOTAL_CLOSE = 5    # nadie lo clava: el más cercano se lleva esto
+POINTS_FINAL_PARTICIPANT = 3   # el equipo que dijiste (campeón o subcampeón) SÍ jugó la Final,
+                                # sin importar si acertaste cuál de los dos ganó
 
 # Puntos por cada pregunta bonus (la "verdad" la fija el admin)
 AWARD_POINTS = {
@@ -286,6 +288,20 @@ def award_points_for_user(user_id: int, conn=None) -> int:
             pv = pred[field] if field in pred.keys() else None
             if rv and _norm(pv) == _norm(rv):
                 pts += value
+
+        # Bono aparte: el equipo que dijiste como campeón y/o como subcampeón
+        # realmente jugó la Final — no importa si acertaste cuál de los dos
+        # ganó. +3 por cada uno (hasta +6 si adivinaste los dos finalistas).
+        real_champion  = real["champion"] if "champion" in real.keys() else None
+        real_runner_up = real["runner_up"] if "runner_up" in real.keys() else None
+        real_finalists = {_norm(real_champion), _norm(real_runner_up)} - {""}
+        if real_finalists:
+            pred_champion  = pred["champion"] if "champion" in pred.keys() else None
+            pred_runner_up = pred["runner_up"] if "runner_up" in pred.keys() else None
+            for pv in (pred_champion, pred_runner_up):
+                if pv and _norm(pv) in real_finalists:
+                    pts += POINTS_FINAL_PARTICIPANT
+
     if own:
         conn.close()
     return pts
