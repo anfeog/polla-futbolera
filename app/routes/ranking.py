@@ -56,9 +56,11 @@ def goleadores(request: Request, user=Depends(require_login)):
         LIMIT 5
     """).fetchall()
 
-    # Total de goles anotados en el torneo
+    # Total de goles anotados en el torneo (los autogoles SÍ cuentan como gol
+    # del partido en las estadísticas oficiales, aunque no sumen para el
+    # jugador en el ranking de goleadores de arriba).
     total_goals = conn.execute(
-        "SELECT COUNT(*) c FROM match_goals WHERE is_own_goal = 0"
+        "SELECT COUNT(*) c FROM match_goals"
     ).fetchone()["c"]
 
     total_matches_played = conn.execute(

@@ -190,7 +190,11 @@ def sync_goalscorers(report: list = None) -> int:
             continue
 
         status, scores = _event_status_scores(event)
-        if status != "STATUS_FULL_TIME":
+        # ESPN marca los partidos decididos en tiempo extra o penales con un
+        # status distinto a "tiempo completo" normal — también cuentan como
+        # terminados (si no, nunca se sincronizan sus goleadores).
+        FINISHED_STATUSES = {"STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}
+        if status not in FINISHED_STATUSES:
             _log(name, "⏳ ESPN dice que aún no termina", status=status)
             continue
 
