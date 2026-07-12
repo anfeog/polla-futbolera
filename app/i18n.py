@@ -127,6 +127,7 @@ STRINGS = {
     "Premio bonus": ("Prêmio bônus", "Bonus award"),
     "Comodín x2": ("Coringa x2", "Wildcard x2"),
     "Solo tú lo clavaste +3": ("Só você cravou +3", "Only you nailed it +3"),
+    "Total de goles del Mundial: el más cercano": ("Total de gols da Copa: o mais próximo", "World Cup total goals: closest guess"),
     "Solo tú": ("Só você", "Only you"),
     "Tu estado del podio": ("Seu status do pódio", "Your podium status"),
     "Pica a tus rivales con una frase corta. Aparece en tu viñeta encima del podio.":

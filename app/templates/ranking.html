@@ -134,6 +134,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
                     <span class="text-lg mr-1.5 align-middle">{{ row.avatar }}</span>{{ row.username }}{% if is_me %} <span class="text-[10px] text-white/40 normal-case">{{ t('(tú)') }}</span>{% endif %}
                     {% if row.award_points > 0 %}<span class="ml-1 text-[10px] text-amber-400" title="Puntos de premios">🏅{{ row.award_points }}</span>{% endif %}
                     {% if row.solo_hits > 0 %}<span class="ml-1 text-[10px] text-yellow-300" title="Marcadores que solo tú clavaste">🎯{{ row.solo_hits }}</span>{% endif %}
+                    {% if row.goals_bonus > 0 %}<span class="ml-1 text-[10px] text-emerald-300" title="Le pegó más cerca al total de goles del Mundial">⚽+{{ row.goals_bonus }}</span>{% endif %}
                     {% if row.joker_bonus > 0 %}<span class="ml-1 text-[10px] text-cyan-300" title="Bonus por comodín x2">🃏</span>{% endif %}
                     {% if row.vendepatria > 0 %}<span class="vende align-middle ml-1" onclick="this.classList.toggle('on')"><span class="vende-emoji align-middle" title="Pronosticó a su selección perdiendo {{ row.vendepatria }} vez(ces)">🤡</span><span class="font-heavy text-sm text-amber-300 align-middle">{{ row.vendepatria }}</span><span class="vende-tip">Vendepatria {{ row.vendepatria }}x · fue contra su selección</span></span>{% endif %}
                 </td>
@@ -167,6 +168,7 @@ estModal.addEventListener('click', (e) => { if (e.target === estModal) closeEsta
     <span>🏅 {{ t('Premio bonus') }}</span>
     <span>🃏 {{ t('Comodín x2') }}</span>
     <span>🎯 {{ t('Solo tú lo clavaste +3') }}</span>
+    <span>⚽ {{ t('Total de goles del Mundial: el más cercano') }}</span>
 </div>
 {% endif %}
 

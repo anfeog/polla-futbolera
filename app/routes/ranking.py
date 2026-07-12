@@ -318,6 +318,7 @@ def ranking(request: Request, user=Depends(require_login)):
             "exact_hits": r["exact_hits"],
             "winner_hits": r["winner_hits"],
             "scorers_hit": r["scorers_hit"],
+            "goals_bonus": tg_bonus.get(r["id"], 0),
             "played": played,
             "pct": pct,
             "vendepatria": vende_counts.get(r["id"], 0),
