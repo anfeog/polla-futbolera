@@ -311,12 +311,13 @@ def real_total_goals(conn) -> int:
 def total_goals_bonus(conn) -> dict:
     """
     Bonus por predecir el total de goles del Mundial.
-    Solo se reparte cuando el torneo terminó (Final jugada).
-    Devuelve {user_id: puntos}: +20 a quien lo clave; si nadie acierta,
-    +5 a el/los más cercano(s).
+    Se reparte cuando el torneo terminó (Final jugada), O ANTES si ya es
+    matemáticamente imposible que alguien lo clave exacto (los goles solo
+    suben — si el total real ya superó la apuesta más alta, nadie puede
+    acertar y se define ya el/los más cercano(s)).
+    Devuelve {user_id: puntos}: +20 a quien lo clave; si nadie puede
+    acertar, +5 a el/los más cercano(s).
     """
-    if not tournament_finished(conn):
-        return {}
     real = real_total_goals(conn)
     preds = conn.execute("""
         SELECT ap.user_id, ap.total_goals
@@ -325,6 +326,11 @@ def total_goals_bonus(conn) -> dict:
         WHERE u.is_admin = 0 AND ap.total_goals IS NOT NULL
     """).fetchall()
     if not preds:
+        return {}
+
+    finished = tournament_finished(conn)
+    exact_impossible = real > max(p["total_goals"] for p in preds)
+    if not finished and not exact_impossible:
         return {}
 
     out = {}
