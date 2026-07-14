@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.database import get_db
 from app.auth import require_login
 from app.templating import templates, is_vendepatria
-from app.scoring import award_points_for_user, total_goals_bonus, live_provisional_points, POINTS_SOLO
+from app.scoring import award_points_for_user, total_goals_bonus, live_provisional_points, POINTS_SOLO, solo_bonus_for_user
 from app.i18n import t
 
 router = APIRouter()
@@ -167,7 +167,7 @@ def _chart_context() -> dict:
         penales = (r["adv"] or 0) * 1 + (r["pen"] or 0) * 2
         award   = award_points_for_user(r["id"], conn2) + tg_bonus.get(r["id"], 0)
         comodin = r["joker_bonus"] or 0
-        solo    = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
+        solo    = solo_bonus_for_user(conn2, r["id"])
         # Lo que queda son goleadores/autogoles
         goleador = max(0, (r["pts"] or 0) - exacto - ganador - penales)
         total = (r["pts"] or 0) + comodin + solo + award - (r["points_spent"] or 0)
@@ -296,7 +296,7 @@ def ranking(request: Request, user=Depends(require_login)):
         played = r["played"] or 0
         results_hit = r["exact_hits"] + r["winner_hits"]
         pct = min(round(results_hit / played * 100), 100) if played else 0
-        solo_pts = ((r["solo_hits"] or 0) + (r["solo_advance_hits"] or 0)) * POINTS_SOLO
+        solo_pts = solo_bonus_for_user(conn, r["id"])
         joker_bonus = r["joker_bonus"] or 0
         spent = r["points_spent"] or 0
         total = r["match_points"] + joker_bonus + solo_pts + award_pts - spent

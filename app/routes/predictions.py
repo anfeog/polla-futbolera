@@ -179,7 +179,7 @@ def _prediction_readonly(conn, match, match_id, user, request):
     for r in all_rows:
         base = r["points"] or 0
         mult = effective_multiplier(r["is_joker"], r["boost"])
-        solo_bonus = ((r["solo_hit"] or 0) + (r["solo_advance"] or 0)) * POINTS_SOLO
+        solo_bonus = ((r["solo_hit"] or 0) + (r["solo_advance"] or 0)) * POINTS_SOLO * mult
         everyone.append({
             "username": r["username"], "avatar": r["avatar"] or "⚽",
             "is_me": r["user_id"] == user["id"],

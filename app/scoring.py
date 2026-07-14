@@ -55,6 +55,23 @@ def effective_multiplier(is_joker, boost) -> int:
     return 2 if is_joker else 1
 
 
+def solo_bonus_for_user(conn, user_id: int) -> float:
+    """Bono 'solo tú' (+3) de todos los partidos TERMINADOS de un usuario,
+    multiplicado por el comodín/boost que tuviera puesto en CADA partido
+    (si tenías x2 en ese partido y sacaste el 'solo tú', son +6, no +3)."""
+    rows = conn.execute("""
+        SELECT p.solo_hit, p.solo_advance, p.is_joker, p.boost
+        FROM predictions p JOIN matches m ON m.id = p.match_id
+        WHERE p.user_id = ? AND m.status = 'FINISHED'
+          AND (p.solo_hit = 1 OR p.solo_advance = 1)
+    """, (user_id,)).fetchall()
+    total = 0.0
+    for r in rows:
+        hits = (r["solo_hit"] or 0) + (r["solo_advance"] or 0)
+        total += hits * POINTS_SOLO * effective_multiplier(r["is_joker"], r["boost"])
+    return total
+
+
 def user_earned_points(conn, user_id: int) -> float:
     """Puntos GANADOS (brutos, antes de descontar lo gastado en la tienda)."""
     row = conn.execute("""
@@ -62,12 +79,11 @@ def user_earned_points(conn, user_id: int) -> float:
           COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points ELSE 0 END), 0) AS match_points,
           COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.points *
               ((CASE WHEN p.boost > 0 THEN p.boost WHEN p.is_joker THEN 2 ELSE 1 END) - 1)
-            ELSE 0 END), 0) AS mult_bonus,
-          COALESCE(SUM(CASE WHEN m.status='FINISHED' THEN p.solo_hit + p.solo_advance ELSE 0 END), 0) AS solo_hits
+            ELSE 0 END), 0) AS mult_bonus
         FROM predictions p LEFT JOIN matches m ON m.id = p.match_id
         WHERE p.user_id = ?
     """, (user_id,)).fetchone()
-    earned = (row["match_points"] or 0) + (row["mult_bonus"] or 0) + (row["solo_hits"] or 0) * POINTS_SOLO
+    earned = (row["match_points"] or 0) + (row["mult_bonus"] or 0) + solo_bonus_for_user(conn, user_id)
     earned += award_points_for_user(user_id, conn)
     earned += total_goals_bonus(conn).get(user_id, 0)
     return earned
