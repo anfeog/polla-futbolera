@@ -549,12 +549,24 @@ def inicio(request: Request, user=Depends(require_login)):
     # ── Letreros publicados por el admin ─────────────────────────────────────
     banners = conn.execute("SELECT text FROM banners WHERE active = 1 ORDER BY id DESC").fetchall()
 
-    # ── Cuartos de Final: cuadrícula 2x2 ──────────────────────────────────────
-    qf_matches = conn.execute("""
-        SELECT * FROM matches
-        WHERE stage='Quarter Finals' AND home_team != 'Por definir' AND away_team != 'Por definir'
-        ORDER BY kickoff
-    """).fetchall()
+    # ── Fase eliminatoria actual: cuadrícula ──────────────────────────────────
+    # Avanza sola: la primera fase (Cuartos → Semis → Tercer puesto → Final)
+    # que ya tenga equipos reales y aún no esté 100% jugada.
+    qf_matches = []
+    qf_stage_label = None
+    for stage in ("Quarter Finals", "Semi Finals", "Third Place", "Final"):
+        stage_matches = conn.execute("""
+            SELECT * FROM matches
+            WHERE stage=? AND home_team != 'Por definir' AND away_team != 'Por definir'
+            ORDER BY kickoff
+        """, (stage,)).fetchall()
+        if not stage_matches:
+            continue
+        all_finished = all(m["status"] == "FINISHED" for m in stage_matches)
+        qf_matches = stage_matches
+        qf_stage_label = stage
+        if not all_finished:
+            break
 
     conn.close()
     return templates.TemplateResponse("inicio.html", {
@@ -563,6 +575,7 @@ def inicio(request: Request, user=Depends(require_login)):
         "premios_pending": premios_pending,
         "comodin_stages": comodin_stages,
         "qf_matches": qf_matches,
+        "qf_stage_label": STAGE_LABELS.get(qf_stage_label, qf_stage_label),
         "live_matches": live_matches,
         "banners": banners,
         "colombia_live": colombia_live,

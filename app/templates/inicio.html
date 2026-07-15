@@ -328,10 +328,10 @@
 </div>
 {% endif %}
 
-{# ════════ Cuartos de Final: cuadrícula 2x2 ════════ #}
+{# ════════ Fase eliminatoria actual: cuadrícula ════════ #}
 {% if qf_matches %}
 <div class="mb-8">
-    <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-3 px-1">⚔️ {{ t('Cuartos de Final') }}</p>
+    <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-3 px-1">⚔️ {{ t(qf_stage_label) }}</p>
     <div class="grid grid-cols-2 gap-3">
         {% for m in qf_matches %}
         {% set live = m.status in ('IN_PLAY', 'PAUSED') %}
