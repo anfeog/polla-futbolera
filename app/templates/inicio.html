@@ -276,18 +276,18 @@
         <h2 class="font-heavy text-3xl sm:text-4xl tracking-wide" style="color:#fcd34d; text-shadow:0 2px 20px rgba(0,0,0,0.8);">{{ t('LA GRAN FINAL') }}</h2>
         <p class="font-display text-[11px] uppercase tracking-[0.35em] text-amber-200/70">✨ {{ t('Es el sueño') }} ✨</p>
         <img src="/static/pngtree-fifa-world-cup-trophy-png-image_6524057.png" alt="Copa del Mundo"
-             class="h-28 sm:h-36 object-contain my-1" style="filter:drop-shadow(0 10px 30px rgba(251,191,36,0.55));">
-        <div class="flex items-center justify-center gap-3 sm:gap-5 mt-1">
+             class="h-28 sm:h-36 object-contain my-1 mx-auto" style="filter:drop-shadow(0 10px 30px rgba(251,191,36,0.55));">
+        <div class="grid items-center gap-2 sm:gap-3 mt-1 w-full" style="grid-template-columns:1fr auto 1fr;">
             {% set hc = crest(m.home_team, m.home_flag) %}
             {% set ac = crest(m.away_team, m.away_flag) %}
-            <span class="flex items-center gap-2">
-                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
-                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.home_team }}</span>
+            <span class="flex items-center gap-2 justify-end min-w-0">
+                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow shrink-0">{% endif %}
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white truncate">{{ m.home_team }}</span>
             </span>
-            <span class="font-heavy text-amber-400/80 text-lg">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
-            <span class="flex items-center gap-2">
-                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.away_team }}</span>
-                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+            <span class="font-heavy text-amber-400/80 text-lg text-center px-1">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
+            <span class="flex items-center gap-2 justify-start min-w-0">
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white truncate">{{ m.away_team }}</span>
+                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow shrink-0">{% endif %}
             </span>
         </div>
         <p class="match-datetime font-display text-[11px] uppercase tracking-[0.25em] text-amber-200/60 mt-1" data-kickoff="{{ m.kickoff }}">{{ m.kickoff[:10] }} · {{ m.kickoff[11:16] }}</p>
@@ -302,17 +302,17 @@
     <div class="relative z-10 px-5 py-6 text-center flex flex-col items-center gap-1.5">
         <p class="font-display text-[10px] uppercase tracking-[0.45em]" style="color:rgba(230,170,110,0.75);">FIFA World Cup 26</p>
         <h2 class="font-heavy text-2xl sm:text-3xl tracking-wide" style="color:#cd7f32; text-shadow:0 2px 16px rgba(0,0,0,0.8);">🥉 {{ t('TERCER PUESTO') }}</h2>
-        <div class="flex items-center justify-center gap-3 sm:gap-5 mt-2">
+        <div class="grid items-center gap-2 sm:gap-3 mt-2 w-full" style="grid-template-columns:1fr auto 1fr;">
             {% set hc = crest(m.home_team, m.home_flag) %}
             {% set ac = crest(m.away_team, m.away_flag) %}
-            <span class="flex items-center gap-2">
-                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
-                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.home_team }}</span>
+            <span class="flex items-center gap-2 justify-end min-w-0">
+                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow shrink-0">{% endif %}
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white truncate">{{ m.home_team }}</span>
             </span>
-            <span class="font-heavy text-lg" style="color:rgba(205,127,50,0.85);">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
-            <span class="flex items-center gap-2">
-                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.away_team }}</span>
-                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+            <span class="font-heavy text-lg text-center px-1" style="color:rgba(205,127,50,0.85);">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
+            <span class="flex items-center gap-2 justify-start min-w-0">
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white truncate">{{ m.away_team }}</span>
+                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow shrink-0">{% endif %}
             </span>
         </div>
         <p class="match-datetime font-display text-[11px] uppercase tracking-[0.25em] mt-1" style="color:rgba(230,170,110,0.6);" data-kickoff="{{ m.kickoff }}">{{ m.kickoff[:10] }} · {{ m.kickoff[11:16] }}</p>
@@ -396,7 +396,9 @@
 {% endif %}
 
 {# ════════ Fase eliminatoria actual: cuadrícula ════════ #}
-{% if qf_matches %}
+{# Con la Gran Final ya definida, el carrusel cubre Final y Tercer puesto:
+   la cuadrícula de la fase anterior (semis) sobra. #}
+{% if qf_matches and not final_ready %}
 <div class="mb-8">
     <p class="font-display text-xs uppercase tracking-[0.25em] text-white/40 mb-3 px-1">⚔️ {{ t(qf_stage_label) }}</p>
     <div class="grid grid-cols-2 gap-3">
