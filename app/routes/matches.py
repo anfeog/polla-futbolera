@@ -549,6 +549,42 @@ def inicio(request: Request, user=Depends(require_login)):
     # ── Letreros publicados por el admin ─────────────────────────────────────
     banners = conn.execute("SELECT text FROM banners WHERE active = 1 ORDER BY id DESC").fetchall()
 
+    # ── LA GRAN FINAL + Tercer puesto (reemplazan el cuadro al definirse) ─────
+    final_row = conn.execute(
+        "SELECT * FROM matches WHERE stage='Final' ORDER BY kickoff LIMIT 1").fetchone()
+    third_row = conn.execute(
+        "SELECT * FROM matches WHERE stage='Third Place' ORDER BY kickoff LIMIT 1").fetchone()
+    final_match = dict(final_row) if final_row else None
+    third_match = dict(third_row) if third_row else None
+    # Autorrellenar desde las semis: ganadores → Final, perdedores → tercer puesto
+    semis = conn.execute(
+        "SELECT * FROM matches WHERE stage='Semi Finals' AND status='FINISHED' ORDER BY kickoff"
+    ).fetchall()
+    winners, losers = [], []
+    for sm in semis:
+        w = _ko_winner(dict(sm))
+        if not w:
+            continue
+        lside = "away" if w["name"] == sm["home_team"] else "home"
+        winners.append(w)
+        losers.append({"name": sm[f"{lside}_team"], "flag": sm[f"{lside}_flag"], "tla": sm[f"{lside}_tla"]})
+
+    def _fill_from(match, pool):
+        if not match:
+            return
+        for side in ("home", "away"):
+            if match[f"{side}_team"] == "Por definir":
+                for cand in pool:
+                    if cand["name"] not in (match["home_team"], match["away_team"]):
+                        match[f"{side}_team"] = cand["name"]
+                        match[f"{side}_flag"] = cand["flag"]
+                        match[f"{side}_tla"]  = cand["tla"]
+                        break
+    _fill_from(final_match, winners)
+    _fill_from(third_match, losers)
+    final_ready = bool(final_match and final_match["home_team"] != "Por definir"
+                       and final_match["away_team"] != "Por definir")
+
     # ── Fase eliminatoria actual: cuadrícula ──────────────────────────────────
     # Avanza sola: la primera fase (Cuartos → Semis → Tercer puesto → Final)
     # que ya tenga equipos reales y aún no esté 100% jugada.
@@ -588,6 +624,9 @@ def inicio(request: Request, user=Depends(require_login)):
         "bracket_final": final_matches,
         "best_thirds": best_thirds,
         "thirds_qualify": 8,   # 8 mejores terceros clasifican (12 grupos)
+        "final_ready": final_ready,
+        "final_match": final_match,
+        "third_match": third_match,
     })
 
 

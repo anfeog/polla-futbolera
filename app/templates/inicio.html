@@ -259,15 +259,82 @@
 </div>
 {% endmacro %}
 
-{# ════════ Carrusel: en vivo · terceros · cuadro (uno a la vez) ════════ #}
-{% set slide_count = (live_matches | length) + (1 if best_thirds else 0) + (1 if bracket_ready else 0) %}
+{# — Diapositiva: LA GRAN FINAL (dorada, Messi y Yamal como protagonistas) — #}
+{% macro final_slide(m) %}
+<a href="/prediccion/{{ m.id }}" class="relative block rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-[0_10px_50px_-10px_rgba(251,191,36,0.55)]"
+   style="background:radial-gradient(ellipse 90% 70% at 50% 0%, rgba(251,191,36,0.22), rgba(20,12,2,0.92) 70%), #0d0a04;">
+    <img src="/static/final_messi.png" alt="Messi" class="absolute left-0 top-0 h-full pointer-events-none select-none"
+         style="width:34%; object-fit:cover; object-position:top; opacity:0.85;
+                -webkit-mask-image:linear-gradient(to right, black 45%, transparent 95%);
+                mask-image:linear-gradient(to right, black 45%, transparent 95%);">
+    <img src="/static/final_yamal.png" alt="Lamine Yamal" class="absolute right-0 top-0 h-full pointer-events-none select-none"
+         style="width:34%; object-fit:cover; object-position:top; opacity:0.85;
+                -webkit-mask-image:linear-gradient(to left, black 45%, transparent 95%);
+                mask-image:linear-gradient(to left, black 45%, transparent 95%);">
+    <div class="relative z-10 px-5 py-6 text-center flex flex-col items-center gap-1.5">
+        <p class="font-display text-[10px] uppercase tracking-[0.45em] text-amber-300/80">FIFA World Cup 26</p>
+        <h2 class="font-heavy text-3xl sm:text-4xl tracking-wide" style="color:#fcd34d; text-shadow:0 2px 20px rgba(0,0,0,0.8);">{{ t('LA GRAN FINAL') }}</h2>
+        <p class="font-display text-[11px] uppercase tracking-[0.35em] text-amber-200/70">✨ {{ t('Es el sueño') }} ✨</p>
+        <img src="/static/pngtree-fifa-world-cup-trophy-png-image_6524057.png" alt="Copa del Mundo"
+             class="h-28 sm:h-36 object-contain my-1" style="filter:drop-shadow(0 10px 30px rgba(251,191,36,0.55));">
+        <div class="flex items-center justify-center gap-3 sm:gap-5 mt-1">
+            {% set hc = crest(m.home_team, m.home_flag) %}
+            {% set ac = crest(m.away_team, m.away_flag) %}
+            <span class="flex items-center gap-2">
+                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.home_team }}</span>
+            </span>
+            <span class="font-heavy text-amber-400/80 text-lg">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
+            <span class="flex items-center gap-2">
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.away_team }}</span>
+                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+            </span>
+        </div>
+        <p class="match-datetime font-display text-[11px] uppercase tracking-[0.25em] text-amber-200/60 mt-1" data-kickoff="{{ m.kickoff }}">{{ m.kickoff[:10] }} · {{ m.kickoff[11:16] }}</p>
+    </div>
+</a>
+{% endmacro %}
+
+{# — Diapositiva: Tercer puesto (bronce) — #}
+{% macro third_slide(m) %}
+<a href="/prediccion/{{ m.id }}" class="relative block rounded-2xl overflow-hidden border-2 shadow-[0_10px_40px_-10px_rgba(180,110,60,0.5)]"
+   style="border-color:rgba(205,127,50,0.55); background:radial-gradient(ellipse 90% 70% at 50% 0%, rgba(205,127,50,0.20), rgba(18,10,4,0.92) 70%), #0c0805;">
+    <div class="relative z-10 px-5 py-6 text-center flex flex-col items-center gap-1.5">
+        <p class="font-display text-[10px] uppercase tracking-[0.45em]" style="color:rgba(230,170,110,0.75);">FIFA World Cup 26</p>
+        <h2 class="font-heavy text-2xl sm:text-3xl tracking-wide" style="color:#cd7f32; text-shadow:0 2px 16px rgba(0,0,0,0.8);">🥉 {{ t('TERCER PUESTO') }}</h2>
+        <div class="flex items-center justify-center gap-3 sm:gap-5 mt-2">
+            {% set hc = crest(m.home_team, m.home_flag) %}
+            {% set ac = crest(m.away_team, m.away_flag) %}
+            <span class="flex items-center gap-2">
+                {% if hc %}<img src="{{ hc }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.home_team }}</span>
+            </span>
+            <span class="font-heavy text-lg" style="color:rgba(205,127,50,0.85);">{% if m.home_score is not none %}{{ m.home_score }} - {{ m.away_score }}{% else %}VS{% endif %}</span>
+            <span class="flex items-center gap-2">
+                <span class="font-display font-bold uppercase tracking-wide text-sm sm:text-base text-white">{{ m.away_team }}</span>
+                {% if ac %}<img src="{{ ac }}" class="w-7 h-7 object-contain drop-shadow">{% endif %}
+            </span>
+        </div>
+        <p class="match-datetime font-display text-[11px] uppercase tracking-[0.25em] mt-1" style="color:rgba(230,170,110,0.6);" data-kickoff="{{ m.kickoff }}">{{ m.kickoff[:10] }} · {{ m.kickoff[11:16] }}</p>
+        <p class="font-display text-[10px] uppercase tracking-wider text-white/35 mt-1">{{ t('Toca para pronosticar') }} →</p>
+    </div>
+</a>
+{% endmacro %}
+
+{# ════════ Carrusel: en vivo · gran final · tercer puesto (o cuadro) ════════ #}
+{% set slide_count = (live_matches | length) + (1 if best_thirds else 0) + (2 if final_ready else (1 if bracket_ready else 0)) %}
 {% if slide_count > 0 %}
 <div class="relative mb-8">
     <div id="hero-carousel" class="flex items-start overflow-x-auto overflow-y-hidden snap-x snap-mandatory transition-[height] duration-200"
          style="scrollbar-width:none;-ms-overflow-style:none">
         {% for lm in live_matches %}<div class="snap-start shrink-0 w-full">{{ live_slide(lm) }}</div>{% endfor %}
         {% if best_thirds %}<div class="snap-start shrink-0 w-full">{{ thirds_slide(best_thirds, thirds_qualify) }}</div>{% endif %}
-        {% if bracket_ready %}<div class="snap-start shrink-0 w-full">{{ bracket_slide(bracket_left, bracket_right, bracket_final, bracket_provisional) }}</div>{% endif %}
+        {% if final_ready %}
+        <div class="snap-start shrink-0 w-full">{{ final_slide(final_match) }}</div>
+        <div class="snap-start shrink-0 w-full">{{ third_slide(third_match) }}</div>
+        {% elif bracket_ready %}
+        <div class="snap-start shrink-0 w-full">{{ bracket_slide(bracket_left, bracket_right, bracket_final, bracket_provisional) }}</div>
+        {% endif %}
     </div>
     {% if slide_count > 1 %}
     <button type="button" data-car-prev aria-label="Anterior"

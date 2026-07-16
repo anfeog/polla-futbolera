@@ -312,6 +312,10 @@ STRINGS = {
     "Pasa": ("Passa", "Advances"),
     "EN VIVO": ("AO VIVO", "LIVE"),
     "Finalizado": ("Encerrado", "Finished"),
+    "LA GRAN FINAL": ("A GRANDE FINAL", "THE GRAND FINAL"),
+    "Es el sueño": ("É o sonho", "It's the dream"),
+    "TERCER PUESTO": ("TERCEIRO LUGAR", "THIRD PLACE"),
+    "Toca para pronosticar": ("Toque para palpitar", "Tap to predict"),
     # ── Easter egg: llamada entrante (Paraguay vs Francia) ──────
     "Te están llamando…": ("Estão te ligando…", "You're getting a call…"),
     "Toca para contestar": ("Toque para atender", "Tap to answer"),

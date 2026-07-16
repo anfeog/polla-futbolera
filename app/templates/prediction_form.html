@@ -511,6 +511,40 @@ awayInput.addEventListener('input', checkPenalties);
 // Estado inicial
 checkPenalties();
 {% endif %}
+
+// ── Easter egg del TERCER PUESTO: himno según a quién pongas ganando ─────
+// Inglaterra ganando → Wonderwall (Oasis). Francia ganando → Dictador Anthem.
+{% if match.stage == 'Third Place' %}
+(function () {
+    var homeTeam = {{ match.home_team | tojson }};
+    var awayTeam = {{ match.away_team | tojson }};
+    var SONGS = { 'England': 'tp-wonderwall', 'France': 'tp-dictador' };
+    var hs = document.getElementById('home_score');
+    var as_ = document.getElementById('away_score');
+    if (!hs || !as_) return;
+    function update() {
+        var h = parseInt(hs.value) || 0, a = parseInt(as_.value) || 0;
+        var winner = h > a ? homeTeam : (a > h ? awayTeam : null);
+        var wantId = winner && SONGS[winner] ? SONGS[winner] : null;
+        Object.keys(SONGS).forEach(function (team) {
+            var el = document.getElementById(SONGS[team]);
+            if (!el) return;
+            if (SONGS[team] !== wantId) { el.pause(); el.currentTime = 0; }
+        });
+        if (wantId) {
+            var want = document.getElementById(wantId);
+            if (want && want.paused) { want.volume = 0.85; want.play().catch(function () {}); }
+        }
+    }
+    hs.addEventListener('input', update);
+    as_.addEventListener('input', update);
+})();
+{% endif %}
 </script>
+
+{% if match.stage == 'Third Place' %}
+<audio id="tp-wonderwall" src="/static/wonderwall.mp3" preload="none"></audio>
+<audio id="tp-dictador" src="/static/dictador.mp3" preload="none"></audio>
+{% endif %}
 
 {% endblock %}
