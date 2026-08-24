@@ -2,13 +2,15 @@
 
 Quiniela (polla) del Mundial FIFA 2026 para jugar entre amigos: cada participante pronostica marcadores, goleadores y premios del torneo, y una tabla de posiciones en vivo decide quién manda. Los resultados reales se sincronizan solos desde las APIs públicas — nadie tiene que cargar marcadores a mano.
 
-Corre en producción durante todo el Mundial con un grupo real de jugadores, actualizándose partido a partido.
+> **Estado**: proyecto terminado. Corrió en producción en **Fly.io** durante todo el Mundial 2026 (junio–julio) con un grupo real de jugadores, sincronizándose partido a partido; al terminar el torneo se dio de baja el hosting. Se puede levantar en local en dos comandos (ver abajo).
 
 ## Capturas
 
-| Inicio | Tabla de posiciones |
+| Inicio — La Gran Final | Tabla de posiciones |
 |---|---|
 | ![Inicio](docs/inicio.png) | ![Tabla](docs/tabla.png) |
+
+El podio muestra las "viñetas" que cada líder puede dejarle al resto, y la gráfica de evolución cuenta la historia del torneo día a día.
 
 ## Qué se puede hacer
 
