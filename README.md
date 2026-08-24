@@ -31,7 +31,7 @@ El podio muestra las "viñetas" que cada líder puede dejarle al resto, y la gr�
 | Frontend | HTML + **Tailwind CSS** + JavaScript vanilla (sin frameworks) |
 | Base de datos | SQLite en desarrollo · **Turso** (libSQL en la nube) en producción, vía su API HTTP con una capa de compatibilidad propia |
 | Datos en vivo | [football-data.org](https://www.football-data.org/) (fixture y marcadores) + API pública de **ESPN** (goleadores y autogoles), sincronizados por un scheduler (APScheduler) cada 5 min |
-| Hosting | **Fly.io** |
+| Hosting | **Render** |
 
 ## Correr en local
 
